@@ -1,5 +1,8 @@
 /* ----------------------------------
  * Styles applicatifs Primary
+ * Les éléments natifs (button, input, textarea, etc.)
+ * sont déjà stylés via natives.css
+ * Les focus-visible et listes sont gérés par reset.css
  * ----------------------------------
  */
 
@@ -43,26 +46,9 @@
   color: var(--on-surface-secondary);
 }
 
-.footer-link {
-  color: var(--link);
-  text-decoration: none;
-
-  &:hover,
-  &:focus {
-    color: var(--link-hover);
-    text-decoration: underline;
-  }
-}
-
 /* Navigation par étapes */
 .steps-nav {
   margin-bottom: var(--spacing-xl);
-}
-
-.steps-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .step {
@@ -181,37 +167,7 @@
   color: var(--on-surface-secondary);
 }
 
-.custom-vars-input {
-  width: 100%;
-  padding: var(--spacing-m);
-  background: var(--form-control-background);
-  border: var(--form-control-border-width) solid
-    var(--form-control-border-color);
-  border-radius: var(--form-control-border-radius);
-  font-family: var(--font-mono);
-  font-size: var(--text-s);
-  line-height: 1.6;
-  color: var(--on-form-control);
-  resize: vertical;
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-    border-color: var(--primary);
-  }
-
-  &::placeholder {
-    color: var(--on-surface-secondary);
-    opacity: 0.6;
-  }
-}
-
 /* Configuration */
-.config-form {
-  /* Hérité du layout stack */
-}
-
 .config-fieldset {
   margin: 0;
   padding: var(--spacing-m);
@@ -238,7 +194,7 @@
   border: 2px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease;
 
   &:hover {
     border-color: var(--border-medium);
@@ -247,11 +203,6 @@
   &:has(input:checked) {
     border-color: var(--primary);
     background: var(--layer-2);
-  }
-
-  &:has(input:focus-visible) {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
   }
 }
 
@@ -282,7 +233,7 @@
   color: var(--on-surface);
 }
 
-/* Radio buttons et checkboxes */
+/* Labels personnalisés pour radio/checkbox */
 .config-radio,
 .config-checkbox {
   display: flex;
@@ -293,7 +244,7 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
 
   &:hover {
     background: var(--layer-2);
@@ -302,11 +253,6 @@
   &:has(input:checked) {
     background: var(--layer-2);
     border-color: var(--primary);
-  }
-
-  &:has(input:focus-visible) {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
   }
 }
 
@@ -344,63 +290,7 @@
   overflow-y: auto;
 }
 
-/* Boutons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--gap-xs);
-  padding: var(--spacing-s) var(--spacing-m);
-  background: var(--surface);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: var(--text-m);
-  font-weight: var(--font-weight-semibold);
-  color: var(--on-surface);
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-
-    &:hover {
-      transform: none;
-      box-shadow: none;
-    }
-  }
-}
-
-.btn--primary {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--on-primary);
-
-  &:hover:not(:disabled) {
-    background: var(--link-hover);
-    border-color: var(--link-hover);
-  }
-}
-
-.btn--secondary {
-  /* Styles par défaut */
-}
-
+/* Actions de navigation */
 .step-actions {
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-l);

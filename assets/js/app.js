@@ -13,11 +13,13 @@ const state = {
     spacingResponsive: true,
     customVars: "",
   },
+  themeContent: "", // Contenu original de theme.css
 };
 
 // Éléments DOM
 const elements = {
   steps: document.querySelectorAll(".step"),
+  stepButtons: document.querySelectorAll(".step-button"),
   sections: document.querySelectorAll(".step-section"),
   btnPrev: document.getElementById("btn-prev"),
   btnNext: document.getElementById("btn-next"),
@@ -49,11 +51,69 @@ async function loadThemeFile() {
   try {
     const response = await fetch("assets/css/theme.css");
     const content = await response.text();
+    state.themeContent = content; // Sauvegarder le contenu original
     elements.themePreview.textContent = content;
   } catch (error) {
     console.error("Erreur lors du chargement de theme.css:", error);
     elements.themePreview.textContent = "/* Erreur de chargement */";
   }
+}
+
+/**
+ * Parse les variables de couleur depuis une chaîne CSS
+ */
+function parseColorVariables(cssText) {
+  const colors = new Set();
+  // Regex pour trouver les variables de couleur au format --color-{nom}-{numéro}
+  const colorRegex = /--color-(\w+)-(?:\d+|fade|bright):/g;
+  let match;
+
+  while ((match = colorRegex.exec(cssText)) !== null) {
+    colors.add(match[1]);
+  }
+
+  return Array.from(colors);
+}
+
+/**
+ * Met à jour les choix de couleurs dans le formulaire
+ */
+function updateColorChoices() {
+  const customColors = parseColorVariables(state.config.customVars);
+  const colorChoicesContainer = document.querySelector(".color-choices");
+
+  // Couleurs par défaut
+  const defaultColors = ["blue", "red", "green", "orange"];
+  const allColors = [...defaultColors, ...customColors];
+
+  // Régénérer les choix
+  colorChoicesContainer.innerHTML = allColors
+    .map((color, index) => {
+      const isChecked =
+        color === state.config.primaryColor ||
+        (index === 0 && !state.config.primaryColor);
+      return `
+      <label class="color-choice">
+        <input type="radio" name="primary-color" value="${color}" ${
+        isChecked ? "checked" : ""
+      } />
+        <span class="color-swatch" style="background: var(--color-${color}-500)"></span>
+        <span class="color-name">${
+          color.charAt(0).toUpperCase() + color.slice(1)
+        }</span>
+      </label>
+    `;
+    })
+    .join("");
+
+  // Réattacher les événements
+  colorChoicesContainer
+    .querySelectorAll('input[name="primary-color"]')
+    .forEach((input) => {
+      input.addEventListener("change", (e) => {
+        state.config.primaryColor = e.target.value;
+      });
+    });
 }
 
 /**
@@ -63,6 +123,23 @@ function attachEventListeners() {
   // Navigation
   elements.btnPrev.addEventListener("click", previousStep);
   elements.btnNext.addEventListener("click", nextStep);
+
+  // Navigation directe via les boutons d'étapes
+  elements.stepButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetStep = parseInt(button.dataset.step, 10);
+      if (targetStep !== state.currentStep) {
+        state.currentStep = targetStep;
+
+        // Générer le CSS si on arrive à l'étape 3
+        if (state.currentStep === 3) {
+          generateCSS();
+        }
+
+        updateUI();
+      }
+    });
+  });
 
   // Configuration
   document.querySelectorAll('input[name="primary-color"]').forEach((input) => {
@@ -91,6 +168,8 @@ function attachEventListeners() {
 
   elements.customVarsInput.addEventListener("input", (e) => {
     state.config.customVars = e.target.value;
+    // Mettre à jour les choix de couleurs quand l'utilisateur ajoute des variables
+    updateColorChoices();
   });
 
   // Actions de génération
@@ -131,11 +210,17 @@ function updateUI() {
   // Mettre à jour les indicateurs d'étapes
   elements.steps.forEach((step, index) => {
     step.classList.toggle("is-active", index + 1 === state.currentStep);
+  });
 
-    if (index + 1 === state.currentStep) {
-      step.setAttribute("aria-current", "step");
+  // Mettre à jour les boutons d'étapes
+  elements.stepButtons.forEach((button, index) => {
+    const stepNumber = index + 1;
+    const isActive = stepNumber === state.currentStep;
+
+    if (isActive) {
+      button.setAttribute("aria-current", "step");
     } else {
-      step.removeAttribute("aria-current");
+      button.removeAttribute("aria-current");
     }
   });
 
@@ -175,15 +260,8 @@ function generateCSS() {
     customVars,
   } = state.config;
 
-  // Mapping des couleurs
-  const colorMap = {
-    blue: "var(--color-blue-500)",
-    red: "var(--color-red-500)",
-    green: "var(--color-green-500)",
-    orange: "var(--color-orange-500)",
-  };
-
-  const primaryValue = colorMap[primaryColor];
+  // Utiliser directement le nom de la couleur pour référencer la variable
+  const primaryValue = `var(--color-${primaryColor}-500)`;
 
   // Générer l'en-tête
   let css = `/* ----------------------------------
@@ -194,7 +272,11 @@ function generateCSS() {
  * - Couleur primaire : ${primaryColor}
  * - Theme : ${themeMode === "both" ? "light et dark" : themeMode}
  * - Typographie responsive : ${typoResponsive ? "oui" : "non"}
- * - Espacements responsive : ${spacingResponsive ? "oui" : "non"}
+ * - Espacements responsive : ${spacingResponsive ? "oui" : "non"}${
+    customVars.trim()
+      ? "\n * - Variables personnalisées ajoutées dans theme.css"
+      : ""
+  }
  * ----------------------------------
  */
 
@@ -344,18 +426,38 @@ function generateCSS() {
   --form-control-border-color: var(--color-gray-400);
   --form-control-border-radius: var(--radius-md);
   --checkables-border-color: var(--color-gray-400);
-  --checkable-size: 1.25em;\n`;
-
-  // Variables personnalisées
-  if (customVars.trim()) {
-    css += `\n  /* Custom Variables */\n`;
-    css += `  ${customVars.trim()}\n`;
-  }
-
-  css += `}\n`;
+  --checkable-size: 1.25em;
+}\n`;
 
   // Afficher le résultat
   elements.generatedCss.textContent = css;
+}
+
+/**
+ * Génère le contenu de theme.css avec les variables personnalisées
+ */
+function generateThemeCSS() {
+  const { customVars } = state.config;
+
+  if (!customVars.trim()) {
+    return state.themeContent; // Retourner le contenu original si pas de variables custom
+  }
+
+  // Ajouter les variables personnalisées à la fin du :root existant
+  let themeCSS = state.themeContent;
+
+  // Trouver la dernière occurrence de la fermeture du :root
+  const lastBraceIndex = themeCSS.lastIndexOf("}");
+
+  if (lastBraceIndex !== -1) {
+    const customSection = `\n  /* Custom Color Variables (ajoutées par Primary) */\n  ${customVars.trim()}\n`;
+    themeCSS =
+      themeCSS.slice(0, lastBraceIndex) +
+      customSection +
+      themeCSS.slice(lastBraceIndex);
+  }
+
+  return themeCSS;
 }
 
 /**
@@ -381,19 +483,50 @@ async function copyToClipboard() {
 }
 
 /**
- * Télécharge le fichier CSS
+ * Télécharge le(s) fichier(s) CSS
  */
 function downloadFile() {
-  const content = elements.generatedCss.textContent;
+  const { customVars } = state.config;
+  const hasCustomVars = customVars.trim() !== "";
+
+  if (hasCustomVars) {
+    // Télécharger les deux fichiers
+    downloadBothFiles();
+  } else {
+    // Télécharger uniquement theme-tokens.css
+    downloadSingleFile("theme-tokens.css", elements.generatedCss.textContent);
+  }
+}
+
+/**
+ * Télécharge un seul fichier
+ */
+function downloadSingleFile(filename, content) {
   const blob = new Blob([content], { type: "text/css" });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement("a");
   link.href = url;
-  link.download = "theme-tokens.css";
+  link.download = filename;
   link.click();
 
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Télécharge theme.css et theme-tokens.css ensemble
+ */
+function downloadBothFiles() {
+  const themeContent = generateThemeCSS();
+  const tokensContent = elements.generatedCss.textContent;
+
+  // Télécharger theme.css
+  downloadSingleFile("theme.css", themeContent);
+
+  // Télécharger theme-tokens.css après un court délai
+  setTimeout(() => {
+    downloadSingleFile("theme-tokens.css", tokensContent);
+  }, 100);
 }
 
 // Lancer l'application au chargement de la page

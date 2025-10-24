@@ -7,5 +7,272 @@
     <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
     <link rel="stylesheet" href="assets/css/app.css" />
   </head>
-  <body></body>
+  <body>
+    <header class="app-header">
+      <div data-layout="boxed">
+        <h1 class="app-title">Primary</h1>
+        <p class="app-subtitle">Générateur de tokens CSS pour Alsacréations</p>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div data-layout="boxed">
+        <!-- Indicateur d'étapes -->
+        <nav class="steps-nav" aria-label="Étapes de configuration">
+          <ol class="steps-list" data-layout="cluster" data-justify="center">
+            <li class="step is-active" aria-current="step">
+              <span class="step-number">1</span>
+              <span class="step-label">Sources</span>
+            </li>
+            <li class="step">
+              <span class="step-number">2</span>
+              <span class="step-label">Configuration</span>
+            </li>
+            <li class="step">
+              <span class="step-number">3</span>
+              <span class="step-label">Génération</span>
+            </li>
+          </ol>
+        </nav>
+
+        <!-- Étape 1 : Sources -->
+        <section
+          class="step-section is-visible"
+          id="step-sources"
+          aria-labelledby="step-sources-title"
+        >
+          <div data-layout="stack" data-gap="l">
+            <header>
+              <h2 id="step-sources-title" class="step-title">Sources</h2>
+              <p class="step-description">
+                Variables primitives du thème et personnalisations
+              </p>
+            </header>
+
+            <div data-layout="stack" data-gap="m">
+              <!-- Affichage theme.css -->
+              <div class="source-display">
+                <h3 class="source-title">Variables primitives (theme.css)</h3>
+                <pre
+                  class="source-code"
+                  aria-label="Contenu du fichier theme.css"
+                ><code id="theme-preview"><!-- Sera rempli par JS --></code></pre>
+              </div>
+
+              <!-- Variables personnalisées -->
+              <div class="custom-vars">
+                <label for="custom-vars-input" class="custom-vars-label">
+                  Variables de couleurs personnalisées (optionnel)
+                </label>
+                <p class="custom-vars-hint" id="custom-vars-hint">
+                  Ajoutez vos propres variables de couleurs au format :
+                  <code>--ma-couleur: #ff0000;</code>
+                </p>
+                <textarea
+                  id="custom-vars-input"
+                  class="custom-vars-input"
+                  aria-describedby="custom-vars-hint"
+                  rows="6"
+                  placeholder="--ma-couleur-1: #ff5733;&#10;--ma-couleur-2: oklch(60% 0.15 180);"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Étape 2 : Configuration -->
+        <section
+          class="step-section"
+          id="step-config"
+          aria-labelledby="step-config-title"
+          hidden
+        >
+          <div data-layout="stack" data-gap="l">
+            <header>
+              <h2 id="step-config-title" class="step-title">Configuration</h2>
+              <p class="step-description">
+                Personnalisez vos tokens sémantiques
+              </p>
+            </header>
+
+            <form class="config-form" data-layout="stack" data-gap="l">
+              <!-- Couleur primaire -->
+              <fieldset class="config-fieldset">
+                <legend class="config-legend">Couleur primaire</legend>
+                <div class="color-choices" data-layout="cluster" data-gap="s">
+                  <label class="color-choice">
+                    <input
+                      type="radio"
+                      name="primary-color"
+                      value="blue"
+                      checked
+                    />
+                    <span
+                      class="color-swatch"
+                      style="background: var(--color-blue-500)"
+                    ></span>
+                    <span class="color-name">Bleu</span>
+                  </label>
+                  <label class="color-choice">
+                    <input type="radio" name="primary-color" value="red" />
+                    <span
+                      class="color-swatch"
+                      style="background: var(--color-red-500)"
+                    ></span>
+                    <span class="color-name">Rouge</span>
+                  </label>
+                  <label class="color-choice">
+                    <input type="radio" name="primary-color" value="green" />
+                    <span
+                      class="color-swatch"
+                      style="background: var(--color-green-500)"
+                    ></span>
+                    <span class="color-name">Vert</span>
+                  </label>
+                  <label class="color-choice">
+                    <input type="radio" name="primary-color" value="orange" />
+                    <span
+                      class="color-swatch"
+                      style="background: var(--color-orange-500)"
+                    ></span>
+                    <span class="color-name">Orange</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <!-- Mode thème -->
+              <fieldset class="config-fieldset">
+                <legend class="config-legend">Mode thème</legend>
+                <div data-layout="stack" data-gap="s">
+                  <label class="config-radio">
+                    <input
+                      type="radio"
+                      name="theme-mode"
+                      value="both"
+                      checked
+                    />
+                    <span>Light et dark (avec <code>light-dark()</code>)</span>
+                  </label>
+                  <label class="config-radio">
+                    <input type="radio" name="theme-mode" value="light" />
+                    <span>Light uniquement</span>
+                  </label>
+                  <label class="config-radio">
+                    <input type="radio" name="theme-mode" value="dark" />
+                    <span>Dark uniquement</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <!-- Typographie responsive -->
+              <fieldset class="config-fieldset">
+                <legend class="config-legend">Typographie</legend>
+                <label class="config-checkbox">
+                  <input type="checkbox" name="typo-responsive" checked />
+                  <span
+                    >Tailles de texte responsive (avec
+                    <code>clamp()</code>)</span
+                  >
+                </label>
+              </fieldset>
+
+              <!-- Espacements responsive -->
+              <fieldset class="config-fieldset">
+                <legend class="config-legend">Espacements</legend>
+                <label class="config-checkbox">
+                  <input type="checkbox" name="spacing-responsive" checked />
+                  <span
+                    >Espacements responsive (avec <code>clamp()</code>)</span
+                  >
+                </label>
+              </fieldset>
+            </form>
+          </div>
+        </section>
+
+        <!-- Étape 3 : Génération -->
+        <section
+          class="step-section"
+          id="step-generate"
+          aria-labelledby="step-generate-title"
+          hidden
+        >
+          <div data-layout="stack" data-gap="l">
+            <header>
+              <h2 id="step-generate-title" class="step-title">Génération</h2>
+              <p class="step-description">
+                Votre fichier theme-tokens.css personnalisé
+              </p>
+            </header>
+
+            <div data-layout="stack" data-gap="m">
+              <!-- Code généré -->
+              <div class="generated-output">
+                <div class="output-header" data-layout="repel">
+                  <h3 class="output-title">theme-tokens.css</h3>
+                  <div
+                    class="output-actions"
+                    data-layout="cluster"
+                    data-gap="s"
+                  >
+                    <button
+                      type="button"
+                      class="btn btn--secondary"
+                      id="btn-copy"
+                    >
+                      <span aria-hidden="true">📋</span>
+                      Copier
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--primary"
+                      id="btn-download"
+                    >
+                      <span aria-hidden="true">⬇️</span>
+                      Télécharger
+                    </button>
+                  </div>
+                </div>
+                <pre
+                  class="generated-code"
+                ><code id="generated-css"><!-- Sera rempli par JS --></code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Navigation -->
+        <nav
+          class="step-actions"
+          data-layout="repel"
+          aria-label="Navigation entre les étapes"
+        >
+          <button
+            type="button"
+            class="btn btn--secondary"
+            id="btn-prev"
+            disabled
+          >
+            Précédent
+          </button>
+          <button type="button" class="btn btn--primary" id="btn-next">
+            Suivant
+          </button>
+        </nav>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <div data-layout="boxed">
+        <p class="footer-text">
+          Made with <span aria-label="amour">❤️</span> by
+          <a href="https://www.alsacreations.fr" class="footer-link"
+            >Alsacréations</a
+          >
+        </p>
+      </div>
+    </footer>
+
+    <script src="assets/js/app.js" type="module"></script>
+  </body>
 </html>

@@ -13,10 +13,36 @@
 
 **Objectif :** Permettre à l'utilisateur de configurer et générer un fichier de tokens CSS personnalisé avec :
 
-- Choix du thème (light/dark avec `light-dark()`)
+- Choix du thème (light uniquement, dark uniquement, ou les deux avec `light-dark()`)
 - Typographie responsive ou fixe
 - Espacements responsive ou fixes
 - Couleur primaire personnalisable
+- Possibilité d'ajouter des variables de couleurs personnalisées
+
+## Fonctionnement de l'application
+
+L'application s'articule en **3 étapes** :
+
+### 1. Sources
+
+- Affichage du fichier `theme.css` (non modifiable, en lecture seule)
+- Textarea permettant à l'utilisateur d'ajouter des variables de couleurs personnalisées
+
+### 2. Configuration
+
+- **Couleur primaire** : Sélection parmi les couleurs disponibles dans le theme
+- **Mode thème** :
+  - Light uniquement
+  - Dark uniquement
+  - Light et dark (avec `light-dark()`)
+- **Typographie** : Responsive (avec `clamp()`) ou fixe
+- **Espacements** : Responsive (avec `clamp()`) ou fixes
+
+### 3. Génération et téléchargement
+
+- Affichage du contenu généré `theme-tokens.css` complet
+- Bouton de téléchargement du fichier
+- Copie possible dans le presse-papier (optionnel)
 
 ## Principes fondamentaux
 

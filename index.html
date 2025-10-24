@@ -11,317 +11,345 @@
       href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css"
     />
   </head>
-  <body>
-    <header class="header" role="banner">
-      <div data-layout="boxed">
+  <body data-layout="boxed">
+    <header class="header" role="banner" data-layout="repel">
+      <div>
         <h1 class="title">Primary</h1>
         <p class="subtitle">Générateur de tokens CSS pour Alsacréations</p>
       </div>
+
+      <!-- Indicateur d'étapes -->
+      <nav
+        class="steps-nav"
+        aria-label="Étapes de configuration"
+        role="navigation"
+      >
+        <ol class="steps-list" data-layout="cluster" data-justify="center">
+          <li class="step is-active">
+            <button
+              type="button"
+              class="step-button"
+              data-step="1"
+              aria-current="step"
+            >
+              <span class="step-number">1</span>
+              <span class="step-label">Sources</span>
+            </button>
+          </li>
+          <li class="step">
+            <button type="button" class="step-button" data-step="2">
+              <span class="step-number">2</span>
+              <span class="step-label">Configuration</span>
+            </button>
+          </li>
+          <li class="step">
+            <button type="button" class="step-button" data-step="3">
+              <span class="step-number">3</span>
+              <span class="step-label">Génération</span>
+            </button>
+          </li>
+        </ol>
+      </nav>
     </header>
 
     <main class="main" role="main">
-      <div data-layout="boxed">
-        <!-- Indicateur d'étapes -->
-        <nav
-          class="steps-nav"
-          aria-label="Étapes de configuration"
-          role="navigation"
-        >
-          <ol class="steps-list" data-layout="cluster" data-justify="center">
-            <li class="step is-active">
-              <button
-                type="button"
-                class="step-button"
-                data-step="1"
-                aria-current="step"
-              >
-                <span class="step-number">1</span>
-                <span class="step-label">Sources</span>
-              </button>
-            </li>
-            <li class="step">
-              <button type="button" class="step-button" data-step="2">
-                <span class="step-number">2</span>
-                <span class="step-label">Configuration</span>
-              </button>
-            </li>
-            <li class="step">
-              <button type="button" class="step-button" data-step="3">
-                <span class="step-number">3</span>
-                <span class="step-label">Génération</span>
-              </button>
-            </li>
-          </ol>
-        </nav>
+      <!-- Étape 1 : Sources -->
+      <section
+        class="step-section is-visible"
+        id="step-sources"
+        aria-labelledby="step-sources-title"
+      >
+        <div data-layout="stack" data-gap="l">
+          <header>
+            <h2 id="step-sources-title" class="step-title">Sources</h2>
+            <p class="step-description">
+              Variables primitives du thème et personnalisations
+            </p>
+          </header>
 
-        <!-- Étape 1 : Sources -->
-        <section
-          class="step-section is-visible"
-          id="step-sources"
-          aria-labelledby="step-sources-title"
-        >
-          <div data-layout="stack" data-gap="l">
-            <header>
-              <h2 id="step-sources-title" class="step-title">Sources</h2>
-              <p class="step-description">
-                Variables primitives du thème et personnalisations
+          <div class="container">
+            <!-- Affichage theme.css -->
+            <div class="source-display">
+              <h3 class="source-title">Variables primitives (theme.css)</h3>
+              <pre
+                class="source-code"
+                aria-label="Contenu du fichier theme.css"
+              ><code id="theme-preview"><!-- Sera rempli par JS --></code></pre>
+            </div>
+
+            <!-- Variables personnalisées -->
+            <div class="custom-vars">
+              <label for="custom-vars-input" class="custom-vars-label">
+                Variables de couleurs personnalisées (optionnel)
+              </label>
+              <p class="custom-vars-hint" id="custom-vars-hint">
+                Ajoutez vos propres variables de couleurs au format OKLCH.
+                Exemple :
+                <code>--color-raspberry-500: oklch(64.5% 0.2 352);</code>
               </p>
-            </header>
-
-            <div data-layout="stack" data-gap="m">
-              <!-- Affichage theme.css -->
-              <div class="source-display">
-                <h3 class="source-title">Variables primitives (theme.css)</h3>
-                <pre
-                  class="source-code"
-                  aria-label="Contenu du fichier theme.css"
-                ><code id="theme-preview"><!-- Sera rempli par JS --></code></pre>
-              </div>
-
-              <!-- Variables personnalisées -->
-              <div class="custom-vars">
-                <label for="custom-vars-input" class="custom-vars-label">
-                  Variables de couleurs personnalisées (optionnel)
-                </label>
-                <p class="custom-vars-hint" id="custom-vars-hint">
-                  Ajoutez vos propres variables de couleurs au format échelle
-                  complète (50, 100, 200... 900). Exemple :
-                  <code>--color-raspberry-500: oklch(64.5% 0.2 352);</code>
-                </p>
-                <textarea
-                  id="custom-vars-input"
-                  class="custom-vars-input"
-                  aria-describedby="custom-vars-hint"
-                  rows="10"
-                ></textarea>
-              </div>
+              <textarea
+                id="custom-vars-input"
+                class="custom-vars-input"
+                aria-describedby="custom-vars-hint"
+                rows="10"
+              ></textarea>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Étape 2 : Configuration -->
-        <section
-          class="step-section"
-          id="step-config"
-          aria-labelledby="step-config-title"
-          hidden
-        >
-          <div data-layout="stack" data-gap="l">
-            <header>
-              <h2 id="step-config-title" class="step-title">Configuration</h2>
-              <p class="step-description">
-                Personnalisez vos tokens sémantiques
-              </p>
-            </header>
+      <!-- Étape 2 : Configuration -->
+      <section
+        class="step-section"
+        id="step-config"
+        aria-labelledby="step-config-title"
+        hidden
+      >
+        <div data-layout="stack" data-gap="l">
+          <header>
+            <h2 id="step-config-title" class="step-title">Configuration</h2>
+            <p class="step-description">Personnalisez vos tokens sémantiques</p>
+          </header>
 
-            <form
-              class="config-form"
-              data-layout="stack"
-              data-gap="l"
-              role="form"
-            >
-              <!-- Couleur primaire -->
-              <fieldset class="config-fieldset">
-                <legend class="config-legend">Couleur primaire</legend>
-                <div class="color-choices" data-layout="cluster" data-gap="s">
-                  <label class="color-choice">
-                    <input
-                      type="radio"
-                      name="primary-color"
-                      value="blue"
-                      checked
-                    />
-                    <span
-                      class="color-swatch"
-                      style="background: var(--color-blue-500)"
-                    ></span>
-                    <span class="color-name">Bleu</span>
-                  </label>
-                  <label class="color-choice">
-                    <input type="radio" name="primary-color" value="red" />
-                    <span
-                      class="color-swatch"
-                      style="background: var(--color-red-500)"
-                    ></span>
-                    <span class="color-name">Rouge</span>
-                  </label>
-                  <label class="color-choice">
-                    <input type="radio" name="primary-color" value="green" />
-                    <span
-                      class="color-swatch"
-                      style="background: var(--color-green-500)"
-                    ></span>
-                    <span class="color-name">Vert</span>
-                  </label>
-                  <label class="color-choice">
-                    <input type="radio" name="primary-color" value="orange" />
-                    <span
-                      class="color-swatch"
-                      style="background: var(--color-orange-500)"
-                    ></span>
-                    <span class="color-name">Orange</span>
-                  </label>
-                </div>
-              </fieldset>
+          <form
+            class="config-form"
+            data-layout="stack"
+            data-gap="l"
+            role="form"
+          >
+            <!-- Couleur primaire -->
+            <fieldset class="config-fieldset">
+              <legend class="config-legend">Couleur primaire</legend>
+              <div class="color-choices" data-layout="cluster" data-gap="s">
+                <label class="color-choice">
+                  <input
+                    type="radio"
+                    name="primary-color"
+                    value="blue"
+                    checked
+                  />
+                  <span
+                    class="color-swatch"
+                    style="background: var(--color-blue-500)"
+                  ></span>
+                  <span class="color-name">Bleu</span>
+                </label>
+                <label class="color-choice">
+                  <input type="radio" name="primary-color" value="red" />
+                  <span
+                    class="color-swatch"
+                    style="background: var(--color-red-500)"
+                  ></span>
+                  <span class="color-name">Rouge</span>
+                </label>
+                <label class="color-choice">
+                  <input type="radio" name="primary-color" value="green" />
+                  <span
+                    class="color-swatch"
+                    style="background: var(--color-green-500)"
+                  ></span>
+                  <span class="color-name">Vert</span>
+                </label>
+                <label class="color-choice">
+                  <input type="radio" name="primary-color" value="orange" />
+                  <span
+                    class="color-swatch"
+                    style="background: var(--color-orange-500)"
+                  ></span>
+                  <span class="color-name">Orange</span>
+                </label>
+              </div>
+            </fieldset>
 
-              <!-- Mode thème -->
-              <fieldset class="config-fieldset">
-                <legend class="config-legend">Mode thème</legend>
-                <div data-layout="stack" data-gap="s">
-                  <label class="config-radio">
-                    <input
-                      type="radio"
-                      name="theme-mode"
-                      value="both"
-                      checked
-                    />
-                    <span>Light et dark (avec <code>light-dark()</code>)</span>
-                  </label>
-                  <label class="config-radio">
-                    <input type="radio" name="theme-mode" value="light" />
-                    <span>Light uniquement</span>
-                  </label>
-                  <label class="config-radio">
-                    <input type="radio" name="theme-mode" value="dark" />
-                    <span>Dark uniquement</span>
-                  </label>
-                </div>
-              </fieldset>
+            <!-- Mode thème -->
+            <fieldset class="config-fieldset">
+              <legend class="config-legend">Mode thème</legend>
+              <div data-layout="stack" data-gap="s">
+                <label class="config-radio">
+                  <input type="radio" name="theme-mode" value="both" checked />
+                  <span>Light et dark (avec <code>light-dark()</code>)</span>
+                </label>
+                <label class="config-radio">
+                  <input type="radio" name="theme-mode" value="light" />
+                  <span>Light uniquement</span>
+                </label>
+                <label class="config-radio">
+                  <input type="radio" name="theme-mode" value="dark" />
+                  <span>Dark uniquement</span>
+                </label>
+              </div>
+            </fieldset>
 
-              <!-- Typographie responsive -->
-              <fieldset class="config-fieldset">
-                <legend class="config-legend">Typographie</legend>
-                <div data-layout="stack" data-gap="s">
-                  <label class="config-radio">
-                    <input
-                      type="radio"
-                      name="typo-responsive"
-                      value="true"
-                      checked
-                    />
-                    <span
-                      >Tailles de texte responsive (avec
-                      <code>clamp()</code>)</span
-                    >
-                  </label>
-                  <label class="config-radio">
-                    <input type="radio" name="typo-responsive" value="false" />
-                    <span>Tailles de texte fixes</span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <!-- Espacements responsive -->
-              <fieldset class="config-fieldset">
-                <legend class="config-legend">Espacements</legend>
-                <div data-layout="stack" data-gap="s">
-                  <label class="config-radio">
-                    <input
-                      type="radio"
-                      name="spacing-responsive"
-                      value="true"
-                      checked
-                    />
-                    <span
-                      >Espacements responsive (avec <code>clamp()</code>)</span
-                    >
-                  </label>
-                  <label class="config-radio">
-                    <input
-                      type="radio"
-                      name="spacing-responsive"
-                      value="false"
-                    />
-                    <span>Espacements fixes</span>
-                  </label>
-                </div>
-              </fieldset>
-            </form>
-          </div>
-        </section>
-
-        <!-- Étape 3 : Génération -->
-        <section
-          class="step-section"
-          id="step-generate"
-          aria-labelledby="step-generate-title"
-          hidden
-        >
-          <div data-layout="stack" data-gap="l">
-            <header>
-              <h2 id="step-generate-title" class="step-title">Génération</h2>
-              <p class="step-description">
-                Votre fichier theme-tokens.css personnalisé
-              </p>
-            </header>
-
-            <div data-layout="stack" data-gap="m">
-              <!-- Code généré -->
-              <div class="generated-output">
-                <div class="output-header" data-layout="repel">
-                  <h3 class="output-title">theme-tokens.css</h3>
-                  <div
-                    class="output-actions"
-                    data-layout="cluster"
-                    data-gap="s"
+            <!-- Typographie responsive -->
+            <fieldset class="config-fieldset">
+              <legend class="config-legend">Typographie</legend>
+              <div data-layout="stack" data-gap="s">
+                <label class="config-radio">
+                  <input
+                    type="radio"
+                    name="typo-responsive"
+                    value="true"
+                    checked
+                  />
+                  <span
+                    >Tailles de texte responsive (avec
+                    <code>clamp()</code>)</span
                   >
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      id="btn-copy"
+                </label>
+                <label class="config-radio">
+                  <input type="radio" name="typo-responsive" value="false" />
+                  <span>Tailles de texte fixes</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <!-- Espacements responsive -->
+            <fieldset class="config-fieldset">
+              <legend class="config-legend">Espacements</legend>
+              <div data-layout="stack" data-gap="s">
+                <label class="config-radio">
+                  <input
+                    type="radio"
+                    name="spacing-responsive"
+                    value="true"
+                    checked
+                  />
+                  <span
+                    >Espacements responsive (avec <code>clamp()</code>)</span
+                  >
+                </label>
+                <label class="config-radio">
+                  <input type="radio" name="spacing-responsive" value="false" />
+                  <span>Espacements fixes</span>
+                </label>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </section>
+
+      <!-- Étape 3 : Génération -->
+      <section
+        class="step-section"
+        id="step-generate"
+        aria-labelledby="step-generate-title"
+        hidden
+      >
+        <div data-layout="stack" data-gap="l">
+          <header>
+            <h2 id="step-generate-title" class="step-title">Génération</h2>
+            <p class="step-description">Vos fichiers CSS personnalisés</p>
+          </header>
+
+          <div class="generated-output">
+            <!-- theme.css -->
+            <div class="output-file">
+              <div class="output-header" data-layout="repel">
+                <h3 class="output-title">theme.css</h3>
+                <div class="output-actions" data-layout="cluster" data-gap="s">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btn-download-theme"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      aria-hidden="true"
                     >
-                      <span aria-hidden="true">📋</span>
-                      Copier
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      id="btn-download"
-                    >
-                      <span aria-hidden="true">⬇️</span>
-                      Télécharger
-                    </button>
-                  </div>
+                      <path
+                        d="M8 11L4 7h2.5V1h3v6H12L8 11zM2 13v2h12v-2H2z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    Télécharger
+                  </button>
                 </div>
+              </div>
+              <div class="code-wrapper">
+                <button
+                  type="button"
+                  class="btn-copy-overlay"
+                  id="btn-copy-theme"
+                  aria-label="Copier le code"
+                >
+                  Copier
+                </button>
                 <pre
                   class="generated-code"
-                ><code id="generated-css"><!-- Sera rempli par JS --></code></pre>
+                ><code id="generated-theme"><!-- Sera rempli par JS --></code></pre>
+              </div>
+            </div>
+
+            <!-- theme-tokens.css -->
+            <div class="output-file">
+              <div class="output-header" data-layout="repel">
+                <h3 class="output-title">theme-tokens.css</h3>
+                <div class="output-actions" data-layout="cluster" data-gap="s">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btn-download-tokens"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M8 11L4 7h2.5V1h3v6H12L8 11zM2 13v2h12v-2H2z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    Télécharger
+                  </button>
+                </div>
+              </div>
+              <div class="code-wrapper">
+                <button
+                  type="button"
+                  class="btn-copy-overlay"
+                  id="btn-copy-tokens"
+                  aria-label="Copier le code"
+                >
+                  Copier
+                </button>
+                <pre
+                  class="generated-code"
+                ><code id="generated-tokens"><!-- Sera rempli par JS --></code></pre>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Navigation -->
-        <nav
-          class="step-actions"
-          data-layout="repel"
-          aria-label="Navigation entre les étapes"
-          role="navigation"
-        >
-          <button
-            type="button"
-            class="btn btn-secondary"
-            id="btn-prev"
-            disabled
-          >
-            Précédent
-          </button>
-          <button type="button" class="btn btn-primary" id="btn-next">
-            Suivant
-          </button>
-        </nav>
-      </div>
+      <!-- Navigation -->
+      <nav
+        class="step-actions"
+        data-layout="repel"
+        aria-label="Navigation entre les étapes"
+        role="navigation"
+      >
+        <button type="button" class="btn btn-secondary" id="btn-prev" disabled>
+          Précédent
+        </button>
+        <button type="button" class="btn btn-primary" id="btn-next">
+          Suivant
+        </button>
+      </nav>
     </main>
 
     <footer class="footer" role="contentinfo">
-      <div data-layout="boxed">
-        <p class="footer-text">
-          Made with <span aria-label="amour">❤️</span> by
-          <a href="https://www.alsacreations.fr" class="footer-link"
-            >Alsacréations</a
-          >
-        </p>
-      </div>
+      <p class="footer-text">
+        Made with <span aria-label="amour">❤️</span> by
+        <a href="https://www.alsacreations.fr" class="footer-link"
+          >Alsacréations</a
+        >
+      </p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>

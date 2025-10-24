@@ -23,11 +23,14 @@ const elements = {
   sections: document.querySelectorAll(".step-section"),
   btnPrev: document.getElementById("btn-prev"),
   btnNext: document.getElementById("btn-next"),
-  btnCopy: document.getElementById("btn-copy"),
-  btnDownload: document.getElementById("btn-download"),
+  btnCopyTheme: document.getElementById("btn-copy-theme"),
+  btnDownloadTheme: document.getElementById("btn-download-theme"),
+  btnCopyTokens: document.getElementById("btn-copy-tokens"),
+  btnDownloadTokens: document.getElementById("btn-download-tokens"),
   themePreview: document.getElementById("theme-preview"),
   customVarsInput: document.getElementById("custom-vars-input"),
-  generatedCss: document.getElementById("generated-css"),
+  generatedTheme: document.getElementById("generated-theme"),
+  generatedTokens: document.getElementById("generated-tokens"),
 };
 
 /**
@@ -301,9 +304,9 @@ function attachEventListeners() {
       if (targetStep !== state.currentStep) {
         state.currentStep = targetStep;
 
-        // Générer le CSS si on arrive à l'étape 3
+        // Générer les fichiers CSS si on arrive à l'étape 3
         if (state.currentStep === 3) {
-          generateCSS();
+          generateAllFiles();
         }
 
         updateUI();
@@ -348,9 +351,21 @@ function attachEventListeners() {
     updateColorChoices();
   });
 
-  // Actions de génération
-  elements.btnCopy.addEventListener("click", copyToClipboard);
-  elements.btnDownload.addEventListener("click", downloadFile);
+  // Actions de génération - theme.css
+  elements.btnCopyTheme.addEventListener("click", () =>
+    copyToClipboard(elements.generatedTheme)
+  );
+  elements.btnDownloadTheme.addEventListener("click", () =>
+    downloadSingleFile("theme.css", elements.generatedTheme.textContent)
+  );
+
+  // Actions de génération - theme-tokens.css
+  elements.btnCopyTokens.addEventListener("click", () =>
+    copyToClipboard(elements.generatedTokens)
+  );
+  elements.btnDownloadTokens.addEventListener("click", () =>
+    downloadSingleFile("theme-tokens.css", elements.generatedTokens.textContent)
+  );
 }
 
 /**
@@ -370,9 +385,9 @@ function nextStep() {
   if (state.currentStep < 3) {
     state.currentStep++;
 
-    // Générer le CSS si on arrive à l'étape 3
+    // Générer les fichiers CSS si on arrive à l'étape 3
     if (state.currentStep === 3) {
-      generateCSS();
+      generateAllFiles();
     }
 
     updateUI();
@@ -425,9 +440,9 @@ function updateUI() {
 }
 
 /**
- * Génère le CSS selon la configuration
+ * Génère le fichier theme-tokens.css selon la configuration
  */
-function generateCSS() {
+function generateTokensCSS() {
   const {
     primaryColor,
     themeMode,
@@ -441,7 +456,7 @@ function generateCSS() {
 
   // Générer l'en-tête
   let css = `/* ----------------------------------
- * Primary par Alsacréations
+ * Theme-tokens par Alsacréations
  * Nécessite les variables CSS primaires (theme.css)
  * Généré par le script de génération de tokens
  * Configuration :
@@ -456,12 +471,12 @@ function generateCSS() {
  * ----------------------------------
  */
 
-:root {
-  /* Color Tokens */\n`;
+:root {\n`;
 
   // Ajouter color-scheme si mode both
   if (themeMode === "both") {
-    css += `  color-scheme: light dark;
+    css += `  /* Color Scheme */
+  color-scheme: light dark;
 
   &[data-theme="light"] {
     color-scheme: light;
@@ -475,56 +490,107 @@ function generateCSS() {
   }
 
   // Couleurs primaires
-  css += `  --primary: ${primaryValue};
+  css += `  /* Couleur primaire */
+  --primary: ${primaryValue};
   --on-primary: var(--color-white);\n`;
 
   // Générer les tokens de couleur selon le mode
   if (themeMode === "both") {
-    css += `  --accent: light-dark(var(--primary), var(--color-${primaryColor}-300));
+    css += `
+  /* Couleur d'accent */
+  --accent: light-dark(var(--primary), var(--color-${primaryColor}-300));
   --accent-invert: light-dark(var(--color-${primaryColor}-300), var(--primary));
+
+  /* Surface du document */
   --surface: light-dark(var(--color-white), var(--color-gray-900));
   --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));
+
+  /* Niveaux de profondeur */
   --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));
   --layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));
   --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
+
+  /* Interactions */
   --link: light-dark(var(--primary), var(--color-${primaryColor}-300));
   --link-hover: light-dark(var(--color-${primaryColor}-700), var(--primary));
+
+  /* Couleur de sélection */
   --selection: light-dark(var(--color-${primaryColor}-300), var(--color-${primaryColor}-500));
+}
+
+*::selection {
+  background: var(--selection);
+}
+
+:root {
+  /* États */
   --warning: light-dark(var(--color-orange-500), var(--color-orange-300));
   --error: light-dark(var(--color-red-500), var(--color-red-300));
   --success: light-dark(var(--color-green-500), var(--color-green-300));
   --info: light-dark(var(--color-blue-500), var(--color-blue-300));\n`;
   } else if (themeMode === "light") {
-    css += `  --accent: var(--primary);
+    css += `
+  /* Couleur d'accent */
+  --accent: var(--color-${primaryColor}-700);
+  --accent-invert: var(--color-${primaryColor}-300);
+
+  /* Surface du document */
   --surface: var(--color-white);
   --on-surface: var(--color-gray-900);
-  --on-surface-secondary: var(--color-gray-600);
+
+  /* Niveaux de profondeur */
   --layer-1: var(--color-gray-50);
   --layer-2: var(--color-gray-100);
   --layer-3: var(--color-gray-200);
+
+  /* Interactions */
   --link: var(--primary);
   --link-hover: var(--color-${primaryColor}-700);
+
+  /* Couleur de sélection */
   --selection: var(--color-${primaryColor}-300);
-  --border-light: var(--color-gray-200);
-  --border-medium: var(--color-gray-400);
+}
+
+*::selection {
+  background: var(--selection);
+}
+
+:root {
+  /* États */
   --warning: var(--color-orange-500);
   --error: var(--color-red-500);
   --success: var(--color-green-500);
   --info: var(--color-blue-500);\n`;
   } else {
     // dark
-    css += `  --accent: var(--color-${primaryColor}-300);
+    css += `
+  /* Couleur d'accent */
+  --accent: var(--color-${primaryColor}-300);
+  --accent-invert: var(--color-${primaryColor}-700);
+
+  /* Surface du document */
   --surface: var(--color-gray-900);
   --on-surface: var(--color-gray-100);
-  --on-surface-secondary: var(--color-gray-400);
+
+  /* Niveaux de profondeur */
   --layer-1: var(--color-gray-800);
   --layer-2: var(--color-gray-700);
   --layer-3: var(--color-gray-600);
+
+  /* Interactions */
   --link: var(--color-${primaryColor}-300);
   --link-hover: var(--primary);
+
+  /* Couleur de sélection */
   --selection: var(--color-${primaryColor}-500);
-  --border-light: var(--color-gray-700);
-  --border-medium: var(--color-gray-600);
+}
+
+*::selection {
+  background: var(--selection);
+}
+
+:root {
+  /* États */
   --warning: var(--color-orange-300);
   --error: var(--color-red-300);
   --success: var(--color-green-300);
@@ -534,12 +600,11 @@ function generateCSS() {
   // Ajouter les bordures pour le mode both
   if (themeMode === "both") {
     css += `  --border-light: light-dark(var(--color-gray-200), var(--color-gray-700));
-  --border-medium: light-dark(var(--color-gray-400), var(--color-gray-600));
-  --on-surface-secondary: light-dark(var(--color-gray-600), var(--color-gray-400));\n`;
+  --border-medium: light-dark(var(--color-gray-300), var(--color-gray-600));\n`;
   }
 
   // Typographie
-  css += `\n  /* Typo Tokens */\n`;
+  css += `\n  /* Tailles de police */\n`;
   if (typoResponsive) {
     css += `  --text-s: var(--text-14);
   --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));
@@ -559,7 +624,7 @@ function generateCSS() {
   }
 
   // Espacements
-  css += `\n  /* Spacing Tokens */\n`;
+  css += `\n  /* Espacements */\n`;
   if (spacingResponsive) {
     css += `  --gap-xs: var(--spacing-4);
   --gap-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));
@@ -585,15 +650,15 @@ function generateCSS() {
   }
 
   // Form controls
-  css += `\n  /* Forms Tokens */\n`;
+  css += `\n  /* Formulaires */\n`;
   if (themeMode === "both") {
-    css += `  --form-control-background: light-dark(var(--color-slate-200), var(--color-slate-700));
+    css += `  --form-control-background: light-dark(var(--color-gray-200), var(--color-gray-700));
   --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));\n`;
   } else if (themeMode === "light") {
-    css += `  --form-control-background: var(--color-slate-200);
+    css += `  --form-control-background: var(--color-gray-200);
   --on-form-control: var(--color-gray-900);\n`;
   } else {
-    css += `  --form-control-background: var(--color-slate-700);
+    css += `  --form-control-background: var(--color-gray-700);
   --on-form-control: var(--color-gray-100);\n`;
   }
 
@@ -605,12 +670,7 @@ function generateCSS() {
   --checkable-size: 1.25em;
 }\n`;
 
-  // Afficher le résultat avec coloration syntaxique
-  elements.generatedCss.innerHTML = Prism.highlight(
-    css,
-    Prism.languages.css,
-    "css"
-  );
+  return css;
 }
 
 /**
@@ -676,40 +736,49 @@ function generateThemeCSS() {
 }
 
 /**
+ * Génère et affiche tous les fichiers CSS
+ */
+function generateAllFiles() {
+  const themeCSS = generateThemeCSS();
+  const tokensCSS = generateTokensCSS();
+
+  // Afficher theme.css avec coloration syntaxique
+  elements.generatedTheme.innerHTML = Prism.highlight(
+    themeCSS,
+    Prism.languages.css,
+    "css"
+  );
+
+  // Afficher theme-tokens.css avec coloration syntaxique
+  elements.generatedTokens.innerHTML = Prism.highlight(
+    tokensCSS,
+    Prism.languages.css,
+    "css"
+  );
+}
+
+/**
  * Copie le CSS dans le presse-papier
  */
-async function copyToClipboard() {
+async function copyToClipboard(element) {
   try {
-    await navigator.clipboard.writeText(elements.generatedCss.textContent);
+    await navigator.clipboard.writeText(element.textContent);
 
-    // Feedback visuel
-    const originalText = elements.btnCopy.innerHTML;
-    elements.btnCopy.innerHTML = '<span aria-hidden="true">✅</span> Copié !';
-    elements.btnCopy.disabled = true;
+    // Feedback visuel - Trouver le bouton overlay
+    const button = element
+      .closest(".output-file")
+      .querySelector(".btn-copy-overlay");
+    const originalText = button.innerHTML;
+    button.innerHTML = '<span aria-hidden="true">✅</span>';
+    button.disabled = true;
 
     setTimeout(() => {
-      elements.btnCopy.innerHTML = originalText;
-      elements.btnCopy.disabled = false;
+      button.innerHTML = originalText;
+      button.disabled = false;
     }, 2000);
   } catch (error) {
     console.error("Erreur lors de la copie:", error);
     alert("Erreur lors de la copie dans le presse-papier");
-  }
-}
-
-/**
- * Télécharge le(s) fichier(s) CSS
- */
-function downloadFile() {
-  const { customVars } = state.config;
-  const hasCustomVars = customVars.trim() !== "";
-
-  if (hasCustomVars) {
-    // Télécharger les deux fichiers
-    downloadBothFiles();
-  } else {
-    // Télécharger uniquement theme-tokens.css
-    downloadSingleFile("theme-tokens.css", elements.generatedCss.textContent);
   }
 }
 
@@ -726,22 +795,6 @@ function downloadSingleFile(filename, content) {
   link.click();
 
   URL.revokeObjectURL(url);
-}
-
-/**
- * Télécharge theme.css et theme-tokens.css ensemble
- */
-function downloadBothFiles() {
-  const themeContent = generateThemeCSS();
-  const tokensContent = elements.generatedCss.textContent;
-
-  // Télécharger theme.css
-  downloadSingleFile("theme.css", themeContent);
-
-  // Télécharger theme-tokens.css après un court délai
-  setTimeout(() => {
-    downloadSingleFile("theme-tokens.css", tokensContent);
-  }, 100);
 }
 
 // Lancer l'application au chargement de la page

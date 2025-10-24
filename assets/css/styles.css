@@ -10,9 +10,16 @@
 }
 
 /* Layout général */
-.header {
-  padding-block: var(--spacing-l);
+body {
+  padding: var(--spacing-m);
   background: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-base);
+  line-height: 1.5;
+}
+
+.header {
+  padding-bottom: var(--spacing-m);
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -20,7 +27,7 @@
   margin: 0;
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-bold);
-  color: var(--primary);
+  color: var(--accent);
   line-height: 1.2;
 }
 
@@ -32,13 +39,11 @@
 }
 
 .main {
-  padding-block: var(--spacing-xl);
-  min-height: 70vh;
+  padding-block: var(--spacing-l);
 }
 
 .footer {
   padding-block: var(--spacing-m);
-  background: var(--layer-1);
   border-top: 1px solid var(--border-light);
 }
 
@@ -50,10 +55,6 @@
 }
 
 /* Navigation par étapes */
-.steps-nav {
-  margin-bottom: var(--spacing-xl);
-}
-
 .step {
   display: flex;
   flex-direction: column;
@@ -65,6 +66,10 @@
   &.is-active {
     opacity: 1;
   }
+}
+
+.step-button {
+  border-radius: var(--radius-full);
 }
 
 .step-number {
@@ -278,6 +283,36 @@
   color: var(--on-surface);
 }
 
+.code-wrapper {
+  position: relative;
+}
+
+.btn-copy-overlay {
+  position: absolute;
+  top: var(--spacing-s);
+  right: var(--spacing-s);
+  padding: var(--spacing-xs) var(--spacing-s);
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-s);
+  color: var(--on-surface);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  z-index: 1;
+
+  &:hover {
+    opacity: 1;
+    background: var(--layer-2);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
 .generated-code {
   margin: 0;
   padding: var(--spacing-m);
@@ -296,6 +331,16 @@
 /* Actions de navigation */
 .step-actions {
   margin-top: var(--spacing-xl);
-  padding-top: var(--spacing-l);
-  border-top: 1px solid var(--border-light);
+}
+
+/* Grilles */
+.container,
+.config-form,
+.generated-output {
+  display: grid;
+  gap: var(--gap-l);
+
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

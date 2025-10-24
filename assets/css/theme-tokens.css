@@ -33,6 +33,7 @@
   --error: light-dark(var(--color-red-500), var(--color-red-300));
   --success: light-dark(var(--color-green-500), var(--color-green-300));
   --info: light-dark(var(--color-blue-500), var(--color-blue-300));
+  --border-light: var(--color-gray-600);
 
   /* Typo Tokens */
   --text-s: var(--text-14);

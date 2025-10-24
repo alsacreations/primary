@@ -74,8 +74,8 @@
 
   /* Forms Tokens */
   --form-control-background: light-dark(
-    var(--color-slate-200),
-    var(--color-slate-700)
+    var(--color-gray-200),
+    var(--color-gray-700)
   );
   --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));
   --form-control-spacing: var(--spacing-12) var(--spacing-16);

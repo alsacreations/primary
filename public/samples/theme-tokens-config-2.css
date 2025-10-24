@@ -2,9 +2,9 @@
  * Primary par Alsacréations
  * Nécessite les variables CSS primaires (theme.css)
  * Généré par le script de génération de tokens
- * Configuration 1 :
+ * Configuration 2 :
  * - Couleur primaire : "--color-blue-500"
- * - Theme light et dark
+ * - Theme light uniquement
  * - Typographie responsive
  * - Espacements responsive
  * ----------------------------------
@@ -12,32 +12,22 @@
 
 :root {
   /* Color Tokens */
-  color-scheme: light dark;
-
-  &[data-theme="light"] {
-    color-scheme: light;
-  }
-
-  &[data-theme="dark"] {
-    color-scheme: dark;
-  }
-
   --primary: var(--color-blue-500);
   --on-primary: var(--color-white);
-  --accent: light-dark(var(--primary), var(--color-blue-300));
-  --accent-invert: light-dark(var(--color-blue-300), var(--primary));
-  --surface: light-dark(var(--color-white), var(--color-gray-900));
-  --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));
-  --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));
-  --layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));
-  --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
-  --link: light-dark(var(--primary), var(--color-blue-300));
-  --link-hover: light-dark(var(--color-blue-700), var(--primary));
-  --selection: light-dark(var(--color-blue-300), var(--color-blue-500));
-  --warning: light-dark(var(--color-orange-500), var(--color-orange-300));
-  --error: light-dark(var(--color-red-500), var(--color-red-300));
-  --success: light-dark(var(--color-green-500), var(--color-green-300));
-  --info: light-dark(var(--color-blue-500), var(--color-blue-300));
+  --accent: var(--color-blue-500);
+  --accent-invert: var(--color-blue-300);
+  --surface: var(--color-white);
+  --on-surface: var(--color-gray-900);
+  --layer-1: var(--color-gray-50);
+  --layer-2: var(--color-gray-100);
+  --layer-3: var(--color-gray-200);
+  --link: var(--primary);
+  --link-hover: var(--color-blue-700);
+  --selection: var(--color-blue-300);
+  --warning: var(--color-orange-500);
+  --error: var(--color-red-500);
+  --success: var(--color-green-500);
+  --info: var(--color-blue-500);
 
   /* Typo Tokens */
   --text-s: var(--text-14);
@@ -73,11 +63,8 @@
   );
 
   /* Forms Tokens */
-  --form-control-background: light-dark(
-    var(--color-slate-200),
-    var(--color-slate-700)
-  );
-  --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));
+  --form-control-background: var(--color-gray-200);
+  --on-form-control: var(--color-gray-900);
   --form-control-spacing: var(--spacing-12) var(--spacing-16);
   --form-control-border-width: 1px;
   --form-control-border-color: var(--color-gray-400);

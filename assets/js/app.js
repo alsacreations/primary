@@ -456,9 +456,8 @@ function generateTokensCSS() {
 
   // Générer l'en-tête
   let css = `/* ----------------------------------
- * Theme-tokens par Alsacréations
- * Nécessite les variables CSS primaires (theme.css)
- * Généré par le script de génération de tokens
+ * Theme-tokens, généré par primary.alsacreations.com
+ * Surcouche de theme.css
  * Configuration :
  * - Couleur primaire : ${primaryColor}
  * - Theme : ${themeMode === "both" ? "light et dark" : themeMode}
@@ -516,13 +515,7 @@ function generateTokensCSS() {
 
   /* Couleur de sélection */
   --selection: light-dark(var(--color-${primaryColor}-300), var(--color-${primaryColor}-500));
-}
 
-*::selection {
-  background: var(--selection);
-}
-
-:root {
   /* États */
   --warning: light-dark(var(--color-orange-500), var(--color-orange-300));
   --error: light-dark(var(--color-red-500), var(--color-red-300));
@@ -549,13 +542,7 @@ function generateTokensCSS() {
 
   /* Couleur de sélection */
   --selection: var(--color-${primaryColor}-300);
-}
 
-*::selection {
-  background: var(--selection);
-}
-
-:root {
   /* États */
   --warning: var(--color-orange-500);
   --error: var(--color-red-500);
@@ -583,13 +570,7 @@ function generateTokensCSS() {
 
   /* Couleur de sélection */
   --selection: var(--color-${primaryColor}-500);
-}
 
-*::selection {
-  background: var(--selection);
-}
-
-:root {
   /* États */
   --warning: var(--color-orange-300);
   --error: var(--color-red-300);
@@ -668,6 +649,10 @@ function generateTokensCSS() {
   --form-control-border-radius: var(--radius-md);
   --checkables-border-color: var(--color-gray-400);
   --checkable-size: 1.25em;
+}
+
+*::selection {
+  background: var(--selection);
 }\n`;
 
   return css;

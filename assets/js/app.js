@@ -79,7 +79,12 @@ function updateThemePreview() {
     }
   }
 
-  elements.themePreview.textContent = preview;
+  // Appliquer la coloration syntaxique Prism
+  elements.themePreview.innerHTML = Prism.highlight(
+    preview,
+    Prism.languages.css,
+    "css"
+  );
 }
 
 /**
@@ -600,8 +605,12 @@ function generateCSS() {
   --checkable-size: 1.25em;
 }\n`;
 
-  // Afficher le résultat
-  elements.generatedCss.textContent = css;
+  // Afficher le résultat avec coloration syntaxique
+  elements.generatedCss.innerHTML = Prism.highlight(
+    css,
+    Prism.languages.css,
+    "css"
+  );
 }
 
 /**

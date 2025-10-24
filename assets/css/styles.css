@@ -69,6 +69,7 @@ body {
 }
 
 .step-button {
+  gap: var(--gap-s);
   border-radius: var(--radius-full);
 }
 
@@ -78,7 +79,7 @@ body {
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  background: var(--layer-2);
+  background: var(--layer-3);
   border: 2px solid var(--border-medium);
   border-radius: var(--radius-full);
   font-weight: var(--font-weight-bold);

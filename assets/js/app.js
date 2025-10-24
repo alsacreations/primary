@@ -52,11 +52,34 @@ async function loadThemeFile() {
     const response = await fetch("assets/css/theme.css");
     const content = await response.text();
     state.themeContent = content; // Sauvegarder le contenu original
-    elements.themePreview.textContent = content;
+    updateThemePreview();
   } catch (error) {
     console.error("Erreur lors du chargement de theme.css:", error);
     elements.themePreview.textContent = "/* Erreur de chargement */";
   }
+}
+
+/**
+ * Met à jour l'affichage du theme.css avec les variables personnalisées
+ */
+function updateThemePreview() {
+  const { customVars } = state.config;
+  let preview = state.themeContent;
+
+  if (customVars.trim()) {
+    // Trouver la dernière fermeture du :root pour insérer les variables custom
+    const lastBraceIndex = preview.lastIndexOf("}");
+
+    if (lastBraceIndex !== -1) {
+      const customSection = `\n  /* Custom Color Variables */\n  ${customVars.trim()}\n`;
+      preview =
+        preview.slice(0, lastBraceIndex) +
+        customSection +
+        preview.slice(lastBraceIndex);
+    }
+  }
+
+  elements.themePreview.textContent = preview;
 }
 
 /**
@@ -73,6 +96,148 @@ function parseColorVariables(cssText) {
   }
 
   return Array.from(colors);
+}
+
+/**
+ * Parse toutes les variantes de couleur (nom et valeur)
+ * @returns Map<colorName, Map<variant, value>>
+ */
+function parseColorVariants(cssText) {
+  const colorsMap = new Map();
+  const colorRegex = /--color-(\w+)-(\d+|fade|bright):\s*([^;]+);/g;
+  let match;
+
+  while ((match = colorRegex.exec(cssText)) !== null) {
+    const [, colorName, variant, value] = match;
+
+    if (!colorsMap.has(colorName)) {
+      colorsMap.set(colorName, new Map());
+    }
+
+    colorsMap.get(colorName).set(variant, value.trim());
+  }
+
+  return colorsMap;
+}
+
+/**
+ * Génère les variantes manquantes d'une couleur par interpolation
+ * @param {Map<string, string>} variants - Variantes existantes (variant -> value)
+ * @returns {Map<string, string>} - Toutes les variantes (existantes + générées)
+ */
+function generateMissingVariants(variants) {
+  const required = ["100", "300", "500", "700"];
+  const result = new Map(variants);
+
+  // Si toutes les variantes requises existent déjà, retourner tel quel
+  const hasAll = required.every((v) => variants.has(v));
+  if (hasAll) return result;
+
+  // Convertir les variantes existantes en tableaux triés
+  const existing = Array.from(variants.entries())
+    .filter(([k]) => /^\d+$/.test(k))
+    .map(([k, v]) => [parseInt(k), v])
+    .sort((a, b) => a[0] - b[0]);
+
+  if (existing.length === 0) return result;
+
+  // Fonction d'interpolation entre deux valeurs OKLCH
+  const interpolate = (val1, val2, ratio) => {
+    // Parser les valeurs OKLCH: oklch(L% C H)
+    const parseOKLCH = (str) => {
+      const match = str.match(
+        /oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)/
+      );
+      if (!match) return null;
+      return {
+        l: parseFloat(match[1]),
+        c: parseFloat(match[2]),
+        h: parseFloat(match[3]),
+        alpha: match[4] || "",
+      };
+    };
+
+    const c1 = parseOKLCH(val1);
+    const c2 = parseOKLCH(val2);
+
+    if (!c1 || !c2) return val1;
+
+    const l = c1.l + (c2.l - c1.l) * ratio;
+    const c = c1.c + (c2.c - c1.c) * ratio;
+    const h = c1.h + (c2.h - c1.h) * ratio;
+
+    return `oklch(${l.toFixed(2)}% ${c.toFixed(2)} ${h.toFixed(2)})`;
+  };
+
+  // Générer les variantes manquantes
+  required.forEach((target) => {
+    const targetNum = parseInt(target);
+
+    if (!result.has(target)) {
+      // Trouver les variantes encadrantes
+      let lower = null;
+      let upper = null;
+
+      for (let i = 0; i < existing.length; i++) {
+        if (existing[i][0] < targetNum) {
+          lower = existing[i];
+        }
+        if (existing[i][0] > targetNum && !upper) {
+          upper = existing[i];
+        }
+      }
+
+      let interpolatedValue;
+
+      if (lower && upper) {
+        // Interpolation entre deux valeurs
+        const ratio = (targetNum - lower[0]) / (upper[0] - lower[0]);
+        interpolatedValue = interpolate(lower[1], upper[1], ratio);
+      } else {
+        // Extrapolation basée sur une échelle standard de luminosité
+        // Échelle de référence : 100=98%, 300=84%, 500=64%, 700=44%
+        const lightnessScale = {
+          100: 98,
+          300: 84,
+          500: 64,
+          700: 44,
+        };
+
+        // Prendre la valeur de référence (la plus proche disponible)
+        const refVariant = existing[0];
+        const refNum = refVariant[0];
+        const refValue = refVariant[1];
+
+        const parsed = refValue.match(
+          /oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)/
+        );
+
+        if (parsed) {
+          const refLightness = parseFloat(parsed[1]);
+          const chroma = parsed[2];
+          const hue = parsed[3];
+          const alpha = parsed[4] ? ` / ${parsed[4]}` : "";
+
+          // Calculer le décalage de luminosité par rapport à la référence
+          const refStandardL = lightnessScale[refNum] || 64;
+          const offset = refLightness - refStandardL;
+
+          // Appliquer l'échelle standard avec le décalage
+          const targetL = lightnessScale[targetNum] + offset;
+
+          interpolatedValue = `oklch(${targetL.toFixed(
+            2
+          )}% ${chroma} ${hue}${alpha})`;
+        }
+      }
+
+      if (interpolatedValue) {
+        result.set(target, interpolatedValue);
+      }
+    }
+  });
+
+  return result;
 }
 
 /**
@@ -172,6 +337,8 @@ function attachEventListeners() {
 
   elements.customVarsInput.addEventListener("input", (e) => {
     state.config.customVars = e.target.value;
+    // Mettre à jour l'affichage de theme.css avec les variables personnalisées
+    updateThemePreview();
     // Mettre à jour les choix de couleurs quand l'utilisateur ajoute des variables
     updateColorChoices();
   });
@@ -438,26 +605,61 @@ function generateCSS() {
 }
 
 /**
- * Génère le contenu de theme.css avec les variables personnalisées
+ * Génère le contenu de theme.css avec les variables personnalisées et générées
  */
 function generateThemeCSS() {
-  const { customVars } = state.config;
+  const { customVars, primaryColor } = state.config;
+  let themeCSS = state.themeContent;
 
-  if (!customVars.trim()) {
-    return state.themeContent; // Retourner le contenu original si pas de variables custom
+  // Parser les couleurs disponibles
+  const allColors = state.themeContent + "\n" + customVars;
+  const colorsMap = parseColorVariants(allColors);
+
+  // Générer les variantes manquantes pour la couleur primaire
+  let generatedVariants = "";
+  if (colorsMap.has(primaryColor)) {
+    const variants = colorsMap.get(primaryColor);
+    const requiredVariants = ["100", "300", "500", "700"];
+    const missing = requiredVariants.filter((v) => !variants.has(v));
+
+    if (missing.length > 0) {
+      const completed = generateMissingVariants(variants);
+      const generated = [];
+
+      missing.forEach((variant) => {
+        if (completed.has(variant)) {
+          generated.push(
+            `  --color-${primaryColor}-${variant}: ${completed.get(variant)};`
+          );
+        }
+      });
+
+      if (generated.length > 0) {
+        generatedVariants = `\n  /* Variantes générées automatiquement pour --color-${primaryColor} */\n${generated.join(
+          "\n"
+        )}\n`;
+      }
+    }
   }
 
-  // Ajouter les variables personnalisées à la fin du :root existant
-  let themeCSS = state.themeContent;
+  // Construire la section complète à ajouter
+  let additionalContent = "";
+
+  if (customVars.trim()) {
+    additionalContent += `\n  /* Custom Color Variables (ajoutées par Primary) */\n  ${customVars.trim()}\n`;
+  }
+
+  if (generatedVariants) {
+    additionalContent += generatedVariants;
+  }
 
   // Trouver la dernière occurrence de la fermeture du :root
   const lastBraceIndex = themeCSS.lastIndexOf("}");
 
-  if (lastBraceIndex !== -1) {
-    const customSection = `\n  /* Custom Color Variables (ajoutées par Primary) */\n  ${customVars.trim()}\n`;
+  if (lastBraceIndex !== -1 && additionalContent) {
     themeCSS =
       themeCSS.slice(0, lastBraceIndex) +
-      customSection +
+      additionalContent +
       themeCSS.slice(lastBraceIndex);
   }
 

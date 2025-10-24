@@ -155,15 +155,19 @@ function attachEventListeners() {
   });
 
   document
-    .querySelector('input[name="typo-responsive"]')
-    .addEventListener("change", (e) => {
-      state.config.typoResponsive = e.target.checked;
+    .querySelectorAll('input[name="typo-responsive"]')
+    .forEach((input) => {
+      input.addEventListener("change", (e) => {
+        state.config.typoResponsive = e.target.value === "true";
+      });
     });
 
   document
-    .querySelector('input[name="spacing-responsive"]')
-    .addEventListener("change", (e) => {
-      state.config.spacingResponsive = e.target.checked;
+    .querySelectorAll('input[name="spacing-responsive"]')
+    .forEach((input) => {
+      input.addEventListener("change", (e) => {
+        state.config.spacingResponsive = e.target.value === "true";
+      });
     });
 
   elements.customVarsInput.addEventListener("input", (e) => {

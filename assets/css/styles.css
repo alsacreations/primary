@@ -1,19 +1,22 @@
 /* ----------------------------------
  * Styles applicatifs Primary
- * Les éléments natifs (button, input, textarea, etc.)
- * sont déjà stylés via natives.css
- * Les focus-visible et listes sont gérés par reset.css
  * ----------------------------------
  */
 
+/* Modificateurs Layouts */
+
+[data-layout*="boxed"] {
+  --boxed-max: 96rem;
+}
+
 /* Layout général */
-.app-header {
+.header {
   padding-block: var(--spacing-l);
   background: var(--surface);
   border-bottom: 1px solid var(--border-light);
 }
 
-.app-title {
+.title {
   margin: 0;
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-bold);
@@ -21,19 +24,19 @@
   line-height: 1.2;
 }
 
-.app-subtitle {
+.subtitle {
   margin: 0;
   margin-top: var(--spacing-xs);
   font-size: var(--text-l);
   color: var(--on-surface-secondary);
 }
 
-.app-main {
+.main {
   padding-block: var(--spacing-xl);
   min-height: 70vh;
 }
 
-.app-footer {
+.footer {
   padding-block: var(--spacing-m);
   background: var(--layer-1);
   border-top: 1px solid var(--border-light);

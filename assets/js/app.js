@@ -24,9 +24,8 @@ const elements = {
   btnPrev: document.getElementById("btn-prev"),
   btnNext: document.getElementById("btn-next"),
   btnCopyTheme: document.getElementById("btn-copy-theme"),
-  btnDownloadTheme: document.getElementById("btn-download-theme"),
   btnCopyTokens: document.getElementById("btn-copy-tokens"),
-  btnDownloadTokens: document.getElementById("btn-download-tokens"),
+  btnDownloadAll: document.getElementById("btn-download-all"),
   themePreview: document.getElementById("theme-preview"),
   customVarsInput: document.getElementById("custom-vars-input"),
   generatedTheme: document.getElementById("generated-theme"),
@@ -351,21 +350,16 @@ function attachEventListeners() {
     updateColorChoices();
   });
 
-  // Actions de génération - theme.css
+  // Actions de copie
   elements.btnCopyTheme.addEventListener("click", () =>
     copyToClipboard(elements.generatedTheme)
   );
-  elements.btnDownloadTheme.addEventListener("click", () =>
-    downloadSingleFile("theme.css", elements.generatedTheme.textContent)
-  );
-
-  // Actions de génération - theme-tokens.css
   elements.btnCopyTokens.addEventListener("click", () =>
     copyToClipboard(elements.generatedTokens)
   );
-  elements.btnDownloadTokens.addEventListener("click", () =>
-    downloadSingleFile("theme-tokens.css", elements.generatedTokens.textContent)
-  );
+
+  // Action de téléchargement unique
+  elements.btnDownloadAll.addEventListener("click", downloadAllFiles);
 }
 
 /**
@@ -740,6 +734,17 @@ function generateAllFiles() {
     Prism.languages.css,
     "css"
   );
+
+  // Appliquer la coloration syntaxique à l'exemple app.css
+  const appCssExample = document.getElementById("app-css-example");
+  if (appCssExample) {
+    const appCssContent = appCssExample.textContent;
+    appCssExample.innerHTML = Prism.highlight(
+      appCssContent,
+      Prism.languages.css,
+      "css"
+    );
+  }
 }
 
 /**
@@ -749,9 +754,9 @@ async function copyToClipboard(element) {
   try {
     await navigator.clipboard.writeText(element.textContent);
 
-    // Feedback visuel - Trouver le bouton overlay
+    // Feedback visuel - Trouver le bouton overlay dans le details parent
     const button = element
-      .closest(".output-file")
+      .closest("details")
       .querySelector(".btn-copy-overlay");
     const originalText = button.innerHTML;
     button.innerHTML = '<span aria-hidden="true">✅</span>';
@@ -765,6 +770,22 @@ async function copyToClipboard(element) {
     console.error("Erreur lors de la copie:", error);
     alert("Erreur lors de la copie dans le presse-papier");
   }
+}
+
+/**
+ * Télécharge tous les fichiers CSS générés
+ */
+function downloadAllFiles() {
+  const themeCSS = elements.generatedTheme.textContent;
+  const tokensCSS = elements.generatedTokens.textContent;
+
+  // Télécharger theme.css
+  downloadSingleFile("theme.css", themeCSS);
+
+  // Télécharger theme-tokens.css avec un léger délai
+  setTimeout(() => {
+    downloadSingleFile("theme-tokens.css", tokensCSS);
+  }, 100);
 }
 
 /**

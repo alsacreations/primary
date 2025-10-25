@@ -85,7 +85,7 @@
                 Variables de couleurs personnalisées (optionnel)
               </label>
               <p class="custom-vars-hint" id="custom-vars-hint">
-                Ajoutez vos propres variables de couleurs au format OKLCH.
+                Ajoutez vos propres variables de couleurs au format OKLCH.<br />
                 Exemple :
                 <code>--color-raspberry-500: oklch(64.5% 0.2 352);</code>
               </p>
@@ -238,91 +238,119 @@
         hidden
       >
         <div data-layout="stack" data-gap="l">
-          <header>
-            <h2 id="step-generate-title" class="step-title">Génération</h2>
-            <p class="step-description">Vos fichiers CSS personnalisés</p>
-          </header>
-
           <div class="generated-output">
-            <!-- theme.css -->
-            <div class="output-file">
-              <div class="output-header" data-layout="repel">
-                <h3 class="output-title">theme.css</h3>
-                <div class="output-actions" data-layout="cluster" data-gap="s">
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    id="btn-download-theme"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M8 11L4 7h2.5V1h3v6H12L8 11zM2 13v2h12v-2H2z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    Télécharger
-                  </button>
-                </div>
+            <!-- Colonne de gauche : Informations -->
+            <div data-layout="stack" data-gap="m">
+              <div>
+                <h2 id="step-generate-title" class="step-title">Et voilà !</h2>
+                <p class="info-description">
+                  Voici tous vos fichiers CSS personnalisés pour votre projet
+                </p>
               </div>
-              <div class="code-wrapper">
-                <button
-                  type="button"
-                  class="btn-copy-overlay"
-                  id="btn-copy-theme"
-                  aria-label="Copier le code"
-                >
-                  Copier
-                </button>
+
+              <div>
+                <h4 class="config-legend">Architecture recommandée</h4>
+                <pre class="architecture-preview"><code>css/
+├── reset.css         # Reset
+├── fonts.css         # @font-face
+├── layouts.css       # Styles des Layouts (Bretzel)
+├── natives.css       # Styles des éléments natifs (KNACSS)
+├── theme.css         # Variables primitives
+├── theme-tokens.css  # Tokens sémantiques
+├── styles.css        # Styles de base (body, typo, liens, etc.)
+└── app.css           # Point d'entrée principal</code></pre>
+              </div>
+
+              <div>
+                <h4 class="config-legend">Composition de app.css</h4>
                 <pre
                   class="generated-code"
-                ><code id="generated-theme"><!-- Sera rempli par JS --></code></pre>
+                ><code id="app-css-example">/* css/app.css */
+/* L'ordre des layers définit la priorité des styles */
+/* Chaque layer écrase le précédent si conflit */
+@layer config, base, components, utilities;
+
+/* Config (reset, polices, themes, layouts) */
+@import "reset.css" layer(config);
+@import "theme.css" layer(config);
+@import "theme-tokens.css" layer(config);
+@import "layouts.css" layer(config);
+@import "natives.css" layer(config);
+
+/* Base */
+@import "styles.css" layer(base);
+
+/* Components */
+/* Ici un @import dans le layer(components) */
+
+/* Utilities */
+/* Ici un @import dans le layer(utilities) */</code></pre>
               </div>
             </div>
 
-            <!-- theme-tokens.css -->
-            <div class="output-file">
-              <div class="output-header" data-layout="repel">
-                <h3 class="output-title">theme-tokens.css</h3>
-                <div class="output-actions" data-layout="cluster" data-gap="s">
+            <!-- Colonne de droite : Fichiers -->
+            <div data-layout="stack" data-gap="m">
+              <!-- theme.css -->
+              <details>
+                <summary>
+                  <strong>theme.css</strong>
+                </summary>
+                <div class="code-wrapper">
                   <button
                     type="button"
-                    class="btn btn-primary"
-                    id="btn-download-tokens"
+                    class="btn-copy-overlay"
+                    id="btn-copy-theme"
+                    aria-label="Copier le code de theme.css"
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M8 11L4 7h2.5V1h3v6H12L8 11zM2 13v2h12v-2H2z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    Télécharger
+                    Copier
                   </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-theme"><!-- Sera rempli par JS --></code></pre>
                 </div>
-              </div>
-              <div class="code-wrapper">
+              </details>
+
+              <!-- theme-tokens.css -->
+              <details>
+                <summary>
+                  <strong>theme-tokens.css</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-tokens"
+                    aria-label="Copier le code de theme-tokens.css"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-tokens"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
+
+              <!-- Bouton de téléchargement unique -->
+              <div data-layout="stack" data-gap="s">
                 <button
                   type="button"
-                  class="btn-copy-overlay"
-                  id="btn-copy-tokens"
-                  aria-label="Copier le code"
+                  class="btn btn-primary"
+                  id="btn-download-all"
                 >
-                  Copier
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M8 11L4 7h2.5V1h3v6H12L8 11zM2 13v2h12v-2H2z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Tout télécharger
                 </button>
-                <pre
-                  class="generated-code"
-                ><code id="generated-tokens"><!-- Sera rempli par JS --></code></pre>
               </div>
             </div>
           </div>

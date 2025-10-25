@@ -267,21 +267,42 @@ body {
 
 /* Génération */
 .generated-output {
+  display: grid;
+  gap: var(--gap-l);
+  align-content: start;
+  align-items: start;
+
+  @media (width >= 48rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.info-title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.info-description {
+  margin: 0;
+  margin-top: var(--spacing-xs);
+  font-size: var(--text-m);
+  color: var(--on-surface);
+}
+
+.architecture-preview {
+  margin: 0;
   padding: var(--spacing-m);
   background: var(--layer-1);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-}
-
-.output-header {
-  margin-bottom: var(--spacing-m);
-}
-
-.output-title {
-  margin: 0;
-  font-size: var(--text-l);
-  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-s);
+  line-height: 1.6;
   color: var(--on-surface);
+  overflow-x: auto;
 }
 
 .code-wrapper {
@@ -336,12 +357,26 @@ body {
 
 /* Grilles */
 .container,
-.config-form,
-.generated-output {
+.config-form {
   display: grid;
   gap: var(--gap-l);
 
   @media (width >= 48rem) {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Listes de définition */
+dl {
+  margin: 0;
+
+  dt {
+    font-weight: var(--font-weight-semibold);
+    color: var(--on-surface);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--on-surface);
   }
 }

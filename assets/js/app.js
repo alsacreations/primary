@@ -1,5 +1,5 @@
 /**
- * Primary - Générateur de tokens CSS
+ * Primary - Configurateur CSS pour projets Alsacréations
  * Application principale
  */
 

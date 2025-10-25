@@ -1,3 +1,3 @@
 # primary
 
-générateur de tokens CSS pour les projets Alsacréations
+Configurateur CSS pour projets Alsacréations

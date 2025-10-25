@@ -11,9 +11,15 @@ const state = {
     themeMode: "both",
     typoResponsive: true,
     spacingResponsive: true,
+    fontFamily: "system",
     customVars: "",
   },
   themeContent: "", // Contenu original de theme.css
+  resetContent: "", // Contenu de reset.css
+  layoutsContent: "", // Contenu de layouts.css
+  nativesContent: "", // Contenu de natives.css
+  stylesSystemContent: "", // Contenu de styles.css (système)
+  stylesPoppinsContent: "", // Contenu de styles-2.css (Poppins)
 };
 
 // Éléments DOM
@@ -23,21 +29,35 @@ const elements = {
   sections: document.querySelectorAll(".step-section"),
   btnPrev: document.getElementById("btn-prev"),
   btnNext: document.getElementById("btn-next"),
+  btnCopyApp: document.getElementById("btn-copy-app"),
+  btnCopyReset: document.getElementById("btn-copy-reset"),
+  btnCopyLayouts: document.getElementById("btn-copy-layouts"),
+  btnCopyNatives: document.getElementById("btn-copy-natives"),
   btnCopyTheme: document.getElementById("btn-copy-theme"),
   btnCopyTokens: document.getElementById("btn-copy-tokens"),
+  btnCopyStyles: document.getElementById("btn-copy-styles"),
   btnDownloadAll: document.getElementById("btn-download-all"),
   themePreview: document.getElementById("theme-preview"),
   customVarsInput: document.getElementById("custom-vars-input"),
+  generatedApp: document.getElementById("generated-app"),
+  generatedReset: document.getElementById("generated-reset"),
+  generatedLayouts: document.getElementById("generated-layouts"),
+  generatedNatives: document.getElementById("generated-natives"),
   generatedTheme: document.getElementById("generated-theme"),
   generatedTokens: document.getElementById("generated-tokens"),
+  generatedStyles: document.getElementById("generated-styles"),
 };
 
 /**
  * Initialisation de l'application
  */
 async function init() {
-  // Charger le contenu de theme.css
+  // Charger les contenus des fichiers
   await loadThemeFile();
+  await loadResetFile();
+  await loadLayoutsFile();
+  await loadNativesFile();
+  await loadStylesFiles();
 
   // Attacher les événements
   attachEventListeners();
@@ -58,6 +78,66 @@ async function loadThemeFile() {
   } catch (error) {
     console.error("Erreur lors du chargement de theme.css:", error);
     elements.themePreview.textContent = "/* Erreur de chargement */";
+  }
+}
+
+/**
+ * Charge le contenu du fichier reset.css depuis le CDN
+ */
+async function loadResetFile() {
+  try {
+    const response = await fetch(
+      "https://reset.alsacreations.com/public/reset.css"
+    );
+    state.resetContent = await response.text();
+  } catch (error) {
+    console.error("Erreur lors du chargement de reset.css:", error);
+    state.resetContent = "/* Erreur lors du chargement de reset.css */";
+  }
+}
+
+/**
+ * Charge le contenu du fichier layouts.css depuis GitHub
+ */
+async function loadLayoutsFile() {
+  try {
+    const response = await fetch(
+      "https://raw.githubusercontent.com/alsacreations/bretzel/main/public/layouts.css"
+    );
+    state.layoutsContent = await response.text();
+  } catch (error) {
+    console.error("Erreur lors du chargement de layouts.css:", error);
+    state.layoutsContent = "/* Erreur lors du chargement de layouts.css */";
+  }
+}
+
+/**
+ * Charge le contenu du fichier natives.css depuis KNACSS
+ */
+async function loadNativesFile() {
+  try {
+    const response = await fetch("https://knacss.com/css/natives.css");
+    state.nativesContent = await response.text();
+  } catch (error) {
+    console.error("Erreur lors du chargement de natives.css:", error);
+    state.nativesContent = "/* Erreur lors du chargement de natives.css */";
+  }
+}
+
+/**
+ * Charge les contenus des fichiers styles.css
+ */
+async function loadStylesFiles() {
+  try {
+    // Charger styles.css (système)
+    const responseSystem = await fetch("public/samples/styles.css");
+    state.stylesSystemContent = await responseSystem.text();
+
+    // Charger styles-2.css (Poppins)
+    const responsePoppins = await fetch("public/samples/styles-2.css");
+    state.stylesPoppinsContent = await responsePoppins.text();
+  } catch (error) {
+    console.error("Erreur lors du chargement des fichiers styles:", error);
   }
 }
 
@@ -342,6 +422,12 @@ function attachEventListeners() {
       });
     });
 
+  document.querySelectorAll('input[name="font-family"]').forEach((input) => {
+    input.addEventListener("change", (e) => {
+      state.config.fontFamily = e.target.value;
+    });
+  });
+
   elements.customVarsInput.addEventListener("input", (e) => {
     state.config.customVars = e.target.value;
     // Mettre à jour l'affichage de theme.css avec les variables personnalisées
@@ -351,11 +437,26 @@ function attachEventListeners() {
   });
 
   // Actions de copie
+  elements.btnCopyApp.addEventListener("click", () =>
+    copyToClipboard(elements.generatedApp)
+  );
+  elements.btnCopyReset.addEventListener("click", () =>
+    copyToClipboard(elements.generatedReset)
+  );
+  elements.btnCopyLayouts.addEventListener("click", () =>
+    copyToClipboard(elements.generatedLayouts)
+  );
+  elements.btnCopyNatives.addEventListener("click", () =>
+    copyToClipboard(elements.generatedNatives)
+  );
   elements.btnCopyTheme.addEventListener("click", () =>
     copyToClipboard(elements.generatedTheme)
   );
   elements.btnCopyTokens.addEventListener("click", () =>
     copyToClipboard(elements.generatedTokens)
+  );
+  elements.btnCopyStyles.addEventListener("click", () =>
+    copyToClipboard(elements.generatedStyles)
   );
 
   // Action de téléchargement unique
@@ -715,11 +816,80 @@ function generateThemeCSS() {
 }
 
 /**
+ * Génère le contenu de styles.css selon la configuration
+ */
+function generateStylesCSS() {
+  const { fontFamily } = state.config;
+
+  // Choisir le bon fichier selon la configuration
+  return fontFamily === "poppins"
+    ? state.stylesPoppinsContent
+    : state.stylesSystemContent;
+}
+
+/**
+ * Génère le contenu de app.css
+ */
+function generateAppCSS() {
+  return `/* css/app.css */
+/* L'ordre des layers définit la priorité des styles */
+/* Chaque layer écrase le précédent si conflit */
+@layer config, base, components, utilities;
+
+/* Config (reset, polices, themes, layouts) */
+@import "reset.css" layer(config);
+@import "theme.css" layer(config);
+@import "theme-tokens.css" layer(config);
+@import "layouts.css" layer(config);
+@import "natives.css" layer(config);
+
+/* Base */
+@import "styles.css" layer(base);
+
+/* Components */
+/* Ici un @import dans le layer(components) */
+
+/* Utilities */
+/* Ici un @import dans le layer(utilities) */
+`;
+}
+
+/**
  * Génère et affiche tous les fichiers CSS
  */
 function generateAllFiles() {
+  const appCSS = generateAppCSS();
   const themeCSS = generateThemeCSS();
   const tokensCSS = generateTokensCSS();
+  const stylesCSS = generateStylesCSS();
+
+  // Afficher app.css avec coloration syntaxique
+  elements.generatedApp.innerHTML = Prism.highlight(
+    appCSS,
+    Prism.languages.css,
+    "css"
+  );
+
+  // Afficher reset.css avec coloration syntaxique
+  elements.generatedReset.innerHTML = Prism.highlight(
+    state.resetContent,
+    Prism.languages.css,
+    "css"
+  );
+
+  // Afficher layouts.css avec coloration syntaxique
+  elements.generatedLayouts.innerHTML = Prism.highlight(
+    state.layoutsContent,
+    Prism.languages.css,
+    "css"
+  );
+
+  // Afficher natives.css avec coloration syntaxique
+  elements.generatedNatives.innerHTML = Prism.highlight(
+    state.nativesContent,
+    Prism.languages.css,
+    "css"
+  );
 
   // Afficher theme.css avec coloration syntaxique
   elements.generatedTheme.innerHTML = Prism.highlight(
@@ -731,6 +901,13 @@ function generateAllFiles() {
   // Afficher theme-tokens.css avec coloration syntaxique
   elements.generatedTokens.innerHTML = Prism.highlight(
     tokensCSS,
+    Prism.languages.css,
+    "css"
+  );
+
+  // Afficher styles.css avec coloration syntaxique
+  elements.generatedStyles.innerHTML = Prism.highlight(
+    stylesCSS,
     Prism.languages.css,
     "css"
   );
@@ -775,17 +952,57 @@ async function copyToClipboard(element) {
 /**
  * Télécharge tous les fichiers CSS générés
  */
-function downloadAllFiles() {
+async function downloadAllFiles() {
+  const appCSS = elements.generatedApp.textContent;
+  const resetCSS = elements.generatedReset.textContent;
+  const layoutsCSS = elements.generatedLayouts.textContent;
+  const nativesCSS = elements.generatedNatives.textContent;
   const themeCSS = elements.generatedTheme.textContent;
   const tokensCSS = elements.generatedTokens.textContent;
+  const stylesCSS = elements.generatedStyles.textContent;
+  const { fontFamily } = state.config;
 
-  // Télécharger theme.css
-  downloadSingleFile("theme.css", themeCSS);
+  // Créer une archive ZIP
+  const zip = new JSZip();
 
-  // Télécharger theme-tokens.css avec un léger délai
-  setTimeout(() => {
-    downloadSingleFile("theme-tokens.css", tokensCSS);
-  }, 100);
+  // Ajouter les fichiers CSS dans un dossier css/
+  zip.file("css/app.css", appCSS);
+  zip.file("css/reset.css", resetCSS);
+  zip.file("css/layouts.css", layoutsCSS);
+  zip.file("css/natives.css", nativesCSS);
+  zip.file("css/theme.css", themeCSS);
+  zip.file("css/theme-tokens.css", tokensCSS);
+  zip.file("css/styles.css", stylesCSS);
+
+  // Si police Poppins sélectionnée, ajouter le fichier de police dans css/fonts/
+  if (fontFamily === "poppins") {
+    try {
+      // Télécharger le fichier de police
+      const fontResponse = await fetch(
+        "public/samples/Poppins-Variable-opti.woff2"
+      );
+      const fontBlob = await fontResponse.blob();
+      zip.file("css/fonts/Poppins-Variable-opti.woff2", fontBlob);
+    } catch (error) {
+      console.error("Erreur lors du chargement de la police:", error);
+    }
+  }
+
+  // Générer et télécharger l'archive
+  try {
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "primary-css.zip";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Erreur lors de la génération du ZIP:", error);
+    alert("Erreur lors de la création de l'archive");
+  }
 }
 
 /**

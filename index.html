@@ -226,6 +226,26 @@
                 </label>
               </div>
             </fieldset>
+
+            <!-- Famille de police -->
+            <fieldset class="config-fieldset">
+              <legend class="config-legend">Famille de police</legend>
+              <div data-layout="stack" data-gap="s">
+                <label class="config-radio">
+                  <input
+                    type="radio"
+                    name="font-family"
+                    value="system"
+                    checked
+                  />
+                  <span>Police système</span>
+                </label>
+                <label class="config-radio">
+                  <input type="radio" name="font-family" value="poppins" />
+                  <span>Police personnalisée (Poppins)</span>
+                </label>
+              </div>
+            </fieldset>
           </form>
         </div>
       </section>
@@ -290,6 +310,46 @@
 
             <!-- Colonne de droite : Fichiers -->
             <div data-layout="stack" data-gap="m">
+              <!-- app.css -->
+              <details>
+                <summary>
+                  <strong>app.css</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-app"
+                    aria-label="Copier le code de app.css"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-app"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
+
+              <!-- reset.css -->
+              <details>
+                <summary>
+                  <strong>reset.css</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-reset"
+                    aria-label="Copier le code de reset.css"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-reset"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
+
               <!-- theme.css -->
               <details>
                 <summary>
@@ -327,6 +387,66 @@
                   <pre
                     class="generated-code"
                   ><code id="generated-tokens"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
+
+              <!-- layouts.css -->
+              <details>
+                <summary>
+                  <strong>layouts.css</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-layouts"
+                    aria-label="Copier le code de layouts.css"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-layouts"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
+
+              <!-- natives.css -->
+              <details>
+                <summary>
+                  <strong>natives.css</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-natives"
+                    aria-label="Copier le code de natives.css"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-natives"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
+
+              <!-- styles.css -->
+              <details>
+                <summary>
+                  <strong>styles.css</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-styles"
+                    aria-label="Copier le code de styles.css"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-styles"><!-- Sera rempli par JS --></code></pre>
                 </div>
               </details>
 
@@ -384,6 +504,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="assets/js/app.js" type="module"></script>
   </body>
 </html>

@@ -86,8 +86,9 @@ async function loadThemeFile() {
  */
 async function loadResetFile() {
   try {
+    const timestamp = Date.now();
     const response = await fetch(
-      "https://reset.alsacreations.com/public/reset.css"
+      `https://reset.alsacreations.com/public/reset.css?v=${timestamp}`
     );
     state.resetContent = await response.text();
   } catch (error) {
@@ -101,8 +102,9 @@ async function loadResetFile() {
  */
 async function loadLayoutsFile() {
   try {
+    const timestamp = Date.now();
     const response = await fetch(
-      "https://raw.githubusercontent.com/alsacreations/bretzel/main/public/layouts.css"
+      `https://raw.githubusercontent.com/alsacreations/bretzel/main/public/layouts.css?v=${timestamp}`
     );
     state.layoutsContent = await response.text();
   } catch (error) {
@@ -116,7 +118,10 @@ async function loadLayoutsFile() {
  */
 async function loadNativesFile() {
   try {
-    const response = await fetch("https://knacss.com/css/natives.css");
+    const timestamp = Date.now();
+    const response = await fetch(
+      `https://knacss.com/css/natives.css?v=${timestamp}`
+    );
     state.nativesContent = await response.text();
   } catch (error) {
     console.error("Erreur lors du chargement de natives.css:", error);

@@ -148,28 +148,60 @@ Consultez la [documentation Bretzel](https://bretzel.alsacreations.com/) pour to
 
 ```css
 --primary, --on-primary
+--accent, --accent-invert
 --surface, --on-surface
---background, --on-background
+--layer-1, --layer-2, --layer-3
+--link, --link-hover
+--selection
 --success, --warning, --error, --info
---border-light, --border-medium, --border-strong
+--border-light, --border-medium
 ```
 
 ### Tokens de typographie
 
 ```css
---text-xs, --text-s, --text-m, --text-l, --text-xl, --text-2xl, --text-3xl
+--text-s, --text-m, --text-l, --text-xl, --text-2xl, --text-3xl, --text-4xl
 ```
 
 ### Tokens d'espacements
 
 ```css
---spacing-xs, --spacing-s, --spacing-m, --spacing-l, --spacing-xl, --spacing-2xl
+--gap-xs, --gap-s, --gap-m, --gap-l, --gap-xl
+--spacing-xs, --spacing-s, --spacing-m, --spacing-l, --spacing-xl
 ```
 
-### Tokens de rayons
+### Tokens de formulaires
 
 ```css
---radius-s, --radius-m, --radius-l, --radius-full
+--form-control-background, --on-form-control
+--form-control-spacing
+--form-control-border-width, --form-control-border-color, --form-control-border-radius
+--checkables-border-color, --checkable-size
+```
+
+### Variables primitives (theme.css)
+
+```css
+/* Espacements */
+--spacing-0, --spacing-1, --spacing-2, --spacing-4, --spacing-8, --spacing-12,
+--spacing-16, --spacing-20, --spacing-24, --spacing-32, --spacing-40, --spacing-48,
+--spacing-56, --spacing-64, --spacing-80, --spacing-128, --spacing-160
+
+/* Tailles de police */
+--text-10, --text-11, --text-12, --text-13, --text-14, --text-15, --text-16,
+--text-17, --text-18, --text-20, --text-24, --text-30, --text-32, --text-36,
+--text-40, --text-48, --text-60, --text-80
+
+/* Border radius */
+--radius-none, --radius-sm, --radius-md, --radius-lg, --radius-xl, --radius-2xl, --radius-full
+
+/* Couleurs */
+--color-gray-50 à --color-gray-900
+--color-white, --color-black
+--color-red-100, --color-red-300, --color-red-500, --color-red-700, --color-red-900
+--color-green-100, --color-green-300, --color-green-500, --color-green-700, --color-green-900
+--color-orange-100, --color-orange-300, --color-orange-500, --color-orange-700, --color-orange-900
+--color-blue-100, --color-blue-300, --color-blue-500, --color-blue-700, --color-blue-900
 ```
 
 ## ❓ Questions fréquentes

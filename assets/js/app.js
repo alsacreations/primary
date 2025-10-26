@@ -970,16 +970,43 @@ async function downloadAllFiles() {
   // Créer une archive ZIP
   const zip = new JSZip();
 
-  // Ajouter les fichiers CSS dans un dossier css/
-  zip.file("css/app.css", appCSS);
-  zip.file("css/reset.css", resetCSS);
-  zip.file("css/layouts.css", layoutsCSS);
-  zip.file("css/natives.css", nativesCSS);
-  zip.file("css/theme.css", themeCSS);
-  zip.file("css/theme-tokens.css", tokensCSS);
-  zip.file("css/styles.css", stylesCSS);
+  // Ajouter les fichiers CSS dans assets/css/
+  zip.file("assets/css/app.css", appCSS);
+  zip.file("assets/css/reset.css", resetCSS);
+  zip.file("assets/css/layouts.css", layoutsCSS);
+  zip.file("assets/css/natives.css", nativesCSS);
+  zip.file("assets/css/theme.css", themeCSS);
+  zip.file("assets/css/theme-tokens.css", tokensCSS);
+  zip.file("assets/css/styles.css", stylesCSS);
 
-  // Si police Poppins sélectionnée, ajouter le fichier de police dans css/fonts/
+  // Ajouter le fichier index.html à la racine
+  try {
+    const indexResponse = await fetch("public/samples/index.html");
+    const indexContent = await indexResponse.text();
+    zip.file("index.html", indexContent);
+  } catch (error) {
+    console.error("Erreur lors du chargement de index.html:", error);
+  }
+
+  // Ajouter le fichier alsacreations.svg dans img/
+  try {
+    const svgResponse = await fetch("public/samples/alsacreations.svg");
+    const svgBlob = await svgResponse.blob();
+    zip.file("img/alsacreations.svg", svgBlob);
+  } catch (error) {
+    console.error("Erreur lors du chargement de alsacreations.svg:", error);
+  }
+
+  // Ajouter le fichier favicon.svg dans img/
+  try {
+    const faviconResponse = await fetch("public/samples/favicon.svg");
+    const faviconBlob = await faviconResponse.blob();
+    zip.file("img/favicon.svg", faviconBlob);
+  } catch (error) {
+    console.error("Erreur lors du chargement de favicon.svg:", error);
+  }
+
+  // Si police Poppins sélectionnée, ajouter le fichier de police dans assets/css/fonts/
   if (fontFamily === "poppins") {
     try {
       // Télécharger le fichier de police
@@ -987,7 +1014,7 @@ async function downloadAllFiles() {
         "public/samples/Poppins-Variable-opti.woff2"
       );
       const fontBlob = await fontResponse.blob();
-      zip.file("css/fonts/Poppins-Variable-opti.woff2", fontBlob);
+      zip.file("assets/css/fonts/Poppins-Variable-opti.woff2", fontBlob);
     } catch (error) {
       console.error("Erreur lors du chargement de la police:", error);
     }

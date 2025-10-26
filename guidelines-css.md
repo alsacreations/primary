@@ -101,7 +101,7 @@ assets/
 /* Chaque layer écrase le précédent si conflit */
 @layer config, base, components, utilities;
 
-/* Config (reset, polices, themes, layouts) */
+/* Config */
 @import "/css/config/reset.css" layer(config);
 @import "/css/theme/theme.css" layer(config);
 @import "/css/theme/theme-tokens.css" layer(config);

@@ -841,7 +841,7 @@ function generateAppCSS() {
 /* Chaque layer écrase le précédent si conflit */
 @layer config, base, components, utilities;
 
-/* Config (reset, polices, themes, layouts) */
+/* Config */
 @import "reset.css" layer(config);
 @import "theme.css" layer(config);
 @import "theme-tokens.css" layer(config);

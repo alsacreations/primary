@@ -80,19 +80,15 @@ Pour les fonctionnalités non natives (concaténation, mixins, custom media)&#82
 ### Structure des fichiers
 
 ```bash
-css/
-├── config/
+assets/
+├── css/
 │   ├── reset.css         # Reset
-│   ├── fonts.css         # @font-face
 │   ├── layouts.css       # Styles des Layouts (Bretzel)
 │   ├── natives.css       # Styles des éléments natifs (KNACSS)
 │   └── base.css          # Styles de base (body, typo, liens, etc.)
-├── theme/
 │   ├── theme.css         # Variables primitives
 │   ├── theme-tokens.css  # Tokens sémantiques
-├── components/
-├── utilities/
-└── app.css               # Point d'entrée principal
+│   └── app.css               # Point d'entrée principal
 ```
 
 ### Ordre d'importation
@@ -107,7 +103,6 @@ css/
 
 /* Config (reset, polices, themes, layouts) */
 @import "/css/config/reset.css" layer(config);
-/* @import "/css/config/fonts.css" layer(config); */
 @import "/css/theme/theme.css" layer(config);
 @import "/css/theme/theme-tokens.css" layer(config);
 @import "/css/config/layouts.css" layer(config);
@@ -365,9 +360,21 @@ Les tokens assignent des rôles fonctionnels aux primitives, créant une couche 
   --gap-l: clamp(var(--spacing-24), 0.8864rem + 2.7273vw, var(--spacing-48));
   --gap-xl: clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80));
   --spacing-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));
-  --spacing-m: clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32));
-  --spacing-l: clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48));
-  --spacing-xl: clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80));
+  --spacing-m: clamp(
+    var(--spacing-16),
+    0.5909rem + 1.8182vw,
+    var(--spacing-32)
+  );
+  --spacing-l: clamp(
+    var(--spacing-24),
+    0.8864rem + 2.2727vw,
+    var(--spacing-48)
+  );
+  --spacing-xl: clamp(
+    var(--spacing-32),
+    0.7727rem + 5.4545vw,
+    var(--spacing-80)
+  );
 }
 ```
 
@@ -398,12 +405,12 @@ Les tokens assignent des rôles fonctionnels aux primitives, créant une couche 
 
 > 🎯 **Règle** : Privilégier les styles utilitaires des Layouts "Bretzel" pour la plupart des dispositions "simples" et responsive. N'utiliser Grid Layout ou Flexbox que pour des affichages complexes ou spécifiques.
 
-| Priorité        | Méthode     | Cas d'usage principaux |
-| --------------- | ----------- | ---------------------- |
-| Priorité 1      | Bretzel Layouts | Layout simple responsive        |
-| Priorité 2      | Grid Layout | Layout spécifique        |
-| Priorité 3      | Flexbox     | Layout spécifique          |
-| Cas spécifiques | Position    | Overlays               |
+| Priorité        | Méthode         | Cas d'usage principaux   |
+| --------------- | --------------- | ------------------------ |
+| Priorité 1      | Bretzel Layouts | Layout simple responsive |
+| Priorité 2      | Grid Layout     | Layout spécifique        |
+| Priorité 3      | Flexbox         | Layout spécifique        |
+| Cas spécifiques | Position        | Overlays                 |
 
 ### Bretzel Layouts
 
@@ -416,17 +423,17 @@ Les tokens assignent des rôles fonctionnels aux primitives, créant une couche 
 
 > 💡 Utiliser ce tableau comme aide rapide : si un pattern correspond à une ligne, employer `data-layout="…"`, avant d’écrire un nouveau `display: grid` ou `display: flex`.
 
-| Pattern concret | Quand l’utiliser | Layout | Attributs spécifiques | Exceptions |
-| ----------------------------- | ---------------------------------------- | --------------- | --------------------------------------------------------------- | ------------------------ |
-| Empilement vertical de blocs (formulaire, liste, sections) | Empiler ≥2 éléments avec espacement régulier | <b>stack</b><br>`data-layout="stack"` | aucun | Un seul enfant ou besoin d’un alignement non couvert |
-| Groupe d’actions / tags / boutons qui peut wrap | Rangée fluide d’items, retour à la ligne possible | <b>cluster</b><br>`data-layout="cluster"` | aucun | Distribution très spécifique par ligne |
-| Grille fluide de cartes responsive | Cartes dont le nombre de colonnes varie selon largeur | <b>autogrid</b><br>`data-layout="autogrid"` | aucun | Besoin de zones ou placements manuels complexes |
-| Passage 1 colonne → plusieurs (features) | Même ensemble qui s’étale après un seuil | <b>switcher</b><br>`data-layout="switcher"` | aucun | Ratios très hétérogènes impossibles à standardiser |
-| Deux panneaux côte à côte (texte + image) | Toujours 2 colonnes sur viewport large | <b>duo</b><br>`data-layout="duo"` | `data-split="1-1,1-2,1-3,auto-1, …"`<br>`data-split="reverse"` | Ratio spécifique, multi-breakpoints |
-| Barre avec un bloc extrême gauche et un bloc extrême droite | Séparer deux groupes principaux sur l’axe horizontal | <b>repel</b><br>`data-layout="repel"` | aucun | Plus de 2 groupes principaux à répartir |
-| Liste horizontale scrollable (logos, témoignages) | Scroll horizontal + alignement/snap cohérents | <b>reel</b><br>`data-layout="reel"` | `data-scroll="start,end,center"`,<br>`data-scrollbar="hidden"` | Carrousel avancé (pagination, autoplay…) |
-| Contenu centré largeur max (article, section) | Encapsuler du contenu avec largeur bornée | <b>boxed</b><br>`data-layout="boxed"` | `data-boxed="small"` | Cas isolé unique non réutilisé |
-| Gabarit global page (sections full + sections centrées) | Page avec alternance pleine largeur / contenu contenu | <b>liquid</b><br>`data-layout="liquid"` | Enfants spéciaux `data-layout="splash"`, <br>`data-layout="splash-start"`, <br>`data-layout="splash-end"` | Mise en page expérimentale hors scope |
+| Pattern concret                                             | Quand l’utiliser                                      | Layout                                      | Attributs spécifiques                                                                                     | Exceptions                                           |
+| ----------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Empilement vertical de blocs (formulaire, liste, sections)  | Empiler ≥2 éléments avec espacement régulier          | <b>stack</b><br>`data-layout="stack"`       | aucun                                                                                                     | Un seul enfant ou besoin d’un alignement non couvert |
+| Groupe d’actions / tags / boutons qui peut wrap             | Rangée fluide d’items, retour à la ligne possible     | <b>cluster</b><br>`data-layout="cluster"`   | aucun                                                                                                     | Distribution très spécifique par ligne               |
+| Grille fluide de cartes responsive                          | Cartes dont le nombre de colonnes varie selon largeur | <b>autogrid</b><br>`data-layout="autogrid"` | aucun                                                                                                     | Besoin de zones ou placements manuels complexes      |
+| Passage 1 colonne → plusieurs (features)                    | Même ensemble qui s’étale après un seuil              | <b>switcher</b><br>`data-layout="switcher"` | aucun                                                                                                     | Ratios très hétérogènes impossibles à standardiser   |
+| Deux panneaux côte à côte (texte + image)                   | Toujours 2 colonnes sur viewport large                | <b>duo</b><br>`data-layout="duo"`           | `data-split="1-1,1-2,1-3,auto-1, …"`<br>`data-split="reverse"`                                            | Ratio spécifique, multi-breakpoints                  |
+| Barre avec un bloc extrême gauche et un bloc extrême droite | Séparer deux groupes principaux sur l’axe horizontal  | <b>repel</b><br>`data-layout="repel"`       | aucun                                                                                                     | Plus de 2 groupes principaux à répartir              |
+| Liste horizontale scrollable (logos, témoignages)           | Scroll horizontal + alignement/snap cohérents         | <b>reel</b><br>`data-layout="reel"`         | `data-scroll="start,end,center"`,<br>`data-scrollbar="hidden"`                                            | Carrousel avancé (pagination, autoplay…)             |
+| Contenu centré largeur max (article, section)               | Encapsuler du contenu avec largeur bornée             | <b>boxed</b><br>`data-layout="boxed"`       | `data-boxed="small"`                                                                                      | Cas isolé unique non réutilisé                       |
+| Gabarit global page (sections full + sections centrées)     | Page avec alternance pleine largeur / contenu contenu | <b>liquid</b><br>`data-layout="liquid"`     | Enfants spéciaux `data-layout="splash"`, <br>`data-layout="splash-start"`, <br>`data-layout="splash-end"` | Mise en page expérimentale hors scope                |
 
 #### Heuristiques de détection
 
@@ -442,7 +449,7 @@ Les tokens assignent des rôles fonctionnels aux primitives, créant une couche 
 - `data-justify="start|end|center|space"`
 - `data-align="start|end|center|stretch"`
 
-> 📚  **Documentation**&#8239;: [Layouts Bretzel](https://bretzel.alsacreations.com/), [Liquid](https://liquid.alsacreations.com/), [Feuille de style globale](https://github.com/alsacreations/bretzel/blob/main/public/layouts.css).
+> 📚 **Documentation**&#8239;: [Layouts Bretzel](https://bretzel.alsacreations.com/), [Liquid](https://liquid.alsacreations.com/), [Feuille de style globale](https://github.com/alsacreations/bretzel/blob/main/public/layouts.css).
 
 ### Grid Layout
 
@@ -661,7 +668,13 @@ svg * {
 ### Preload des polices critiques
 
 ```html
-<link rel="preload" href="/fonts/inter-regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+<link
+  rel="preload"
+  href="/fonts/inter-regular.woff2"
+  as="font"
+  type="font/woff2"
+  crossorigin="anonymous"
+/>
 ```
 
 ### Variable Fonts
@@ -673,7 +686,8 @@ Comme pour les fontes classiques, le format `.woff2` ainsi que l'hébergement de
 ```css
 @font-face {
   font-family: "Inter Variable";
-  src: url("inter-variable.woff2") format("woff2") tech("variations"), url("inter-variable.woff2") format("woff2-variations");
+  src: url("inter-variable.woff2") format("woff2") tech("variations"), url("inter-variable.woff2")
+      format("woff2-variations");
   font-weight: 100 900;
   font-display: swap;
 }

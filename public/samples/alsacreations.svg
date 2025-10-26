@@ -19,15 +19,13 @@
       }
     }
 
-    [data-theme="dark"] {
-      & .logo-alsacreations-pepins-outer,
-      & .logo-alsacreations-alsa,
-      & .logo-alsacreations-creations {
-        fill: #ffffff;
-      }
-      & .logo-alsacreations-pepins-inner {
-        fill: #000000;
-      }
+    [data-theme="dark"] .logo-alsacreations-pepins-outer,
+    [data-theme="dark"] .logo-alsacreations-alsa,
+    [data-theme="dark"] .logo-alsacreations-creations {
+      fill: #ffffff;
+    }
+    [data-theme="dark"] .logo-alsacreations-pepins-inner {
+      fill: #000000;
     }
   </style>
   <title id="logo-alsacreations-title">Alsacreations</title>

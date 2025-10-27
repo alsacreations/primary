@@ -469,18 +469,30 @@ function updateColorChoices() {
   // Helper: génère le markup des swatches multiples selon les variantes présentes
   const swatchMarkup = (color) => {
     const variantsOrder = ["100", "300", "500", "700"];
-    const variantsAvailable = variantsOrder.filter((v) =>
-      colorsMap.has(color) ? colorsMap.get(color).has(v) : false
-    );
 
-    // Si aucune variante connue, tenter le fallback 500 en assumant qu'elle existe
-    if (variantsAvailable.length === 0) {
-      if (colorsMap.has(color)) {
-        const keys = Array.from(colorsMap.get(color).keys());
-        if (keys.length > 0) variantsAvailable.push(keys[0]);
-        else variantsAvailable.push("500");
-      } else {
-        variantsAvailable.push("500");
+    // Cas particulier pour le placeholder 'raspberry' : afficher les
+    // variantes connues du placeholder (100/300/500/700) pour que le
+    // swatch soit multi-segment à l'étape 2 même si le runtime n'a pas
+    // de variables --color-raspberry-... définies.
+    let variantsAvailable = [];
+    if (color === "raspberry" && !colorsMap.has("raspberry")) {
+      variantsAvailable = variantsOrder.filter(
+        (v) => typeof PLACEHOLDER_RASPBERRY[v] !== "undefined"
+      );
+    } else {
+      variantsAvailable = variantsOrder.filter((v) =>
+        colorsMap.has(color) ? colorsMap.get(color).has(v) : false
+      );
+
+      // Si aucune variante connue, tenter le fallback 500 en assumant qu'elle existe
+      if (variantsAvailable.length === 0) {
+        if (colorsMap.has(color)) {
+          const keys = Array.from(colorsMap.get(color).keys());
+          if (keys.length > 0) variantsAvailable.push(keys[0]);
+          else variantsAvailable.push("500");
+        } else {
+          variantsAvailable.push("500");
+        }
       }
     }
 

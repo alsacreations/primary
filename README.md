@@ -193,7 +193,7 @@ Consultez la [documentation Bretzel](https://bretzel.alsacreations.com/) pour to
 --text-40, --text-48, --text-60, --text-80
 
 /* Border radius */
---radius-none, --radius-sm, --radius-md, --radius-lg, --radius-xl, --radius-2xl, --radius-full
+--radius-none, --radius-s, --radius-m, --radius-l, --radius-xl, --radius-2xl, --radius-full
 
 /* Couleurs */
 --color-gray-50 à --color-gray-900

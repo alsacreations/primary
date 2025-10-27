@@ -203,7 +203,7 @@ body {
   padding: var(--spacing-m);
   background: var(--layer-1);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-m);
 }
 
 .source-title {
@@ -219,7 +219,7 @@ body {
   padding: var(--spacing-m);
   background: var(--surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-s);
   font-family: var(--font-mono);
   font-size: var(--text-s);
   line-height: 1.6;
@@ -250,7 +250,7 @@ body {
   padding: var(--spacing-m);
   background: var(--layer-1);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-m);
 }
 
 .config-legend {
@@ -269,7 +269,7 @@ body {
   padding: var(--spacing-s);
   background: var(--surface);
   border: 2px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-m);
   cursor: pointer;
   transition: border-color 0.2s ease;
 
@@ -300,7 +300,7 @@ body {
   width: 3rem;
   height: 3rem;
   border: 2px solid var(--border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-m);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -319,7 +319,7 @@ body {
   padding: var(--spacing-s);
   background: var(--surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-s);
   cursor: pointer;
   transition: background-color 0.2s ease;
 
@@ -365,7 +365,7 @@ body {
   padding: var(--spacing-m);
   background: var(--layer-1);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-s);
   font-family: var(--font-mono);
   font-size: var(--text-s);
   line-height: 1.6;
@@ -384,7 +384,7 @@ body {
   padding: var(--spacing-xs) var(--spacing-s);
   background: var(--surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-s);
   font-size: var(--text-s);
   color: var(--on-surface);
   cursor: pointer;
@@ -408,7 +408,7 @@ body {
   padding: var(--spacing-m);
   background: var(--surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-s);
   font-family: var(--font-mono);
   font-size: var(--text-s);
   line-height: 1.6;

@@ -293,7 +293,7 @@ Les primitives sont les valeurs de base issues de l'UI Kit, immuables et partag√
 | - Familles      | `--font-*`        | `--font-poppins: 'Poppins';` | Familles de police     |
 | - Graisses      | `--font-weight-*` | `--font-weight-bold: 700;`   | √âpaisseurs             |
 | - Hauteurs      | `--leading-*`     | `--leading-28: 1.75rem;`     | Interlignes            |
-| **Arrondis**    | `--radius-*`      | `--radius-lg: 0.5rem;`       | Border-radius          |
+| **Arrondis**    | `--radius-*`      | `--radius-l: 0.5rem;`        | Border-radius          |
 | **Ombres**      | `--shadow-*`      | `--shadow-md: 0 4px 6px...;` | Box-shadows            |
 | **Z-index**     | `--z-*`           | `--z-modal: 1000;`           | Niveaux d'empilement   |
 

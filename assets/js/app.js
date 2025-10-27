@@ -158,7 +158,14 @@ function updateThemePreview() {
     const lastBraceIndex = preview.lastIndexOf("}");
 
     if (lastBraceIndex !== -1) {
-      const customSection = `\n  /* Couleurs projet personnalisées */\n  ${customVars.trim()}\n`;
+      // Ajouter l'indentation à chaque ligne des variables personnalisées
+      const indentedCustomVars = customVars
+        .trim()
+        .split(/\r?\n/) // Gérer les retours chariot Windows et Unix
+        .map((line) => `  ${line.trim()}`)
+        .filter((line) => line.trim().length > 2) // Ignorer les lignes vides
+        .join("\n");
+      const customSection = `\n  /* Couleurs projet personnalisées */\n${indentedCustomVars}\n`;
       preview =
         preview.slice(0, lastBraceIndex) +
         customSection +
@@ -803,8 +810,9 @@ function generateThemeCSS() {
     // Ajouter l'indentation à chaque ligne des variables personnalisées
     const indentedCustomVars = customVars
       .trim()
-      .split("\n")
-      .map((line) => `  ${line}`)
+      .split(/\r?\n/) // Gérer les retours chariot Windows et Unix
+      .map((line) => `  ${line.trim()}`)
+      .filter((line) => line.trim().length > 2) // Ignorer les lignes vides (juste "  ")
       .join("\n");
     additionalContent += `\n  /* Couleurs projet personnalisées */\n${indentedCustomVars}\n`;
   }

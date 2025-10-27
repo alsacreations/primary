@@ -158,7 +158,7 @@ function updateThemePreview() {
     const lastBraceIndex = preview.lastIndexOf("}");
 
     if (lastBraceIndex !== -1) {
-      const customSection = `\n  /* Custom Color Variables */\n  ${customVars.trim()}\n`;
+      const customSection = `\n  /* Couleurs projet personnalisées */\n  ${customVars.trim()}\n`;
       preview =
         preview.slice(0, lastBraceIndex) +
         customSection +
@@ -800,7 +800,13 @@ function generateThemeCSS() {
   let additionalContent = "";
 
   if (customVars.trim()) {
-    additionalContent += `\n  /* Custom Color Variables (ajoutées par Primary) */\n  ${customVars.trim()}\n`;
+    // Ajouter l'indentation à chaque ligne des variables personnalisées
+    const indentedCustomVars = customVars
+      .trim()
+      .split("\n")
+      .map((line) => `  ${line}`)
+      .join("\n");
+    additionalContent += `\n  /* Couleurs projet personnalisées */\n${indentedCustomVars}\n`;
   }
 
   if (generatedVariants) {

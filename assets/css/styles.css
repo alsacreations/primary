@@ -304,6 +304,22 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Variante multi-seg (affiche plusieurs teintes côte-à-côte) */
+.color-swatch.multi {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0.25rem;
+}
+
+.color-swatch.multi .swatch-seg {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: calc(var(--radius-s));
+  border: 1px solid var(--border-light);
+  box-shadow: none;
+}
+
 .color-name {
   font-size: var(--text-s);
   font-weight: var(--font-weight-medium);

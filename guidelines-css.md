@@ -322,8 +322,8 @@ Les tokens assignent des rôles fonctionnels aux primitives, créant une couche 
   --layer-3: var(--color-gray-300);
 
   /* Interactions */
-  --link: var(--color-blue-600);
-  --link-hover: var(--color-blue-700);
+  --link: var(--color-info-600);
+  --link-hover: var(--color-info-700);
 
   /* Bordures */
   --border-light: var(--color-gray-200);
@@ -331,10 +331,10 @@ Les tokens assignent des rôles fonctionnels aux primitives, créant une couche 
   --border-dark: var(--color-gray-600);
 
   /* États */
-  --error: var(--color-red-500);
-  --success: var(--color-green-500);
-  --warning: var(--color-orange-500);
-  --info: var(--color-blue-500);
+  --error: var(--color-error-500);
+  --success: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --info: var(--color-info-500);
 
   /* Sélection */
   --selection: var(--color-primary-alpha-20);
@@ -521,7 +521,7 @@ La fonction `light-dark()` est parfaitement adaptée pour gérer dynamiquement l
   /* Variables adaptatives */
   --surface: light-dark(#ffffff, #1a1a1a);
   --on-surface: light-dark(#000000, #ffffff);
-  --primary: light-dark(var(--color-blue-600), var(--color-blue-400));
+  --primary: light-dark(var(--color-info-600), var(--color-info-400));
 }
 ```
 

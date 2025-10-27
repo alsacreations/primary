@@ -3,7 +3,7 @@
  * Nécessite les variables CSS primaires (theme.css)
  * Généré par le script de génération de tokens
  * Configuration 3 :
- * - Couleur primaire : "--color-blue-500"
+ * - Couleur primaire : "--color-info-500"
  * - Theme dark uniquement
  * - Typographie fixe
  * - Espacements fixes
@@ -14,22 +14,22 @@
   /* Color Tokens */
   color-scheme: dark;
 
-  --primary: var(--color-blue-500);
+  --primary: var(--color-raspberry-500);
   --on-primary: var(--color-white);
-  --accent: var(--color-blue-300);
-  --accent-invert: var(--color-blue-300);
+  --accent: var(--color-raspberry-300);
+  --accent-invert: var(--color-raspberry-300);
   --surface: var(--color-gray-900);
   --on-surface: var(--color-gray-100);
   --layer-1: var(--color-gray-800);
   --layer-2: var(--color-gray-700);
   --layer-3: var(--color-gray-600);
-  --link: var(--color-blue-300);
+  --link: var(--color-raspberry-300);
   --link-hover: var(--primary);
-  --selection: var(--color-blue-500);
-  --warning: var(--color-orange-300);
-  --error: var(--color-red-300);
-  --success: var(--color-green-300);
-  --info: var(--color-blue-300);
+  --selection: var(--color-raspberry-500);
+  --warning: var(--color-warning-300);
+  --error: var(--color-error-300);
+  --success: var(--color-success-300);
+  --info: var(--color-info-300);
 
   /* Typo Tokens */
   --text-s: var(--text-14);

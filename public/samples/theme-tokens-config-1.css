@@ -3,7 +3,7 @@
  * Nécessite les variables CSS primaires (theme.css)
  * Généré par le script de génération de tokens
  * Configuration 1 :
- * - Couleur primaire : "--color-blue-500"
+ * - Couleur primaire : "--color-info-500"
  * - Theme light et dark
  * - Typographie responsive
  * - Espacements responsive
@@ -22,22 +22,25 @@
     color-scheme: dark;
   }
 
-  --primary: var(--color-blue-500);
+  --primary: var(--color-raspberry-500);
   --on-primary: var(--color-white);
-  --accent: light-dark(var(--primary), var(--color-blue-300));
-  --accent-invert: light-dark(var(--color-blue-300), var(--primary));
+  --accent: light-dark(var(--primary), var(--color-raspberry-300));
+  --accent-invert: light-dark(var(--color-raspberry-300), var(--primary));
   --surface: light-dark(var(--color-white), var(--color-gray-900));
   --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));
   --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));
   --layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));
   --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
-  --link: light-dark(var(--primary), var(--color-blue-300));
-  --link-hover: light-dark(var(--color-blue-700), var(--primary));
-  --selection: light-dark(var(--color-blue-300), var(--color-blue-500));
-  --warning: light-dark(var(--color-orange-500), var(--color-orange-300));
-  --error: light-dark(var(--color-red-500), var(--color-red-300));
-  --success: light-dark(var(--color-green-500), var(--color-green-300));
-  --info: light-dark(var(--color-blue-500), var(--color-blue-300));
+  --link: light-dark(var(--primary), var(--color-raspberry-300));
+  --link-hover: light-dark(var(--color-raspberry-700), var(--primary));
+  --selection: light-dark(
+    var(--color-raspberry-300),
+    var(--color-raspberry-500)
+  );
+  --warning: light-dark(var(--color-warning-500), var(--color-warning-300));
+  --error: light-dark(var(--color-error-500), var(--color-error-300));
+  --success: light-dark(var(--color-success-500), var(--color-success-300));
+  --info: light-dark(var(--color-info-500), var(--color-info-300));
 
   /* Typo Tokens */
   --text-s: var(--text-14);

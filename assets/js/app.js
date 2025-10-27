@@ -7,13 +7,14 @@
 const state = {
   currentStep: 1,
   config: {
-    primaryColor: "blue",
+    primaryColor: "raspberry",
     themeMode: "both",
     typoResponsive: true,
     spacingResponsive: true,
     fontFamily: "system",
     customVars: "",
   },
+  appliedCustomVars: new Set(),
   themeContent: "", // Contenu original de theme.css
   resetContent: "", // Contenu de reset.css
   layoutsContent: "", // Contenu de layouts.css
@@ -21,6 +22,24 @@ const state = {
   stylesSystemContent: "", // Contenu de styles.css (système)
   stylesPoppinsContent: "", // Contenu de styles-2.css (Poppins)
 };
+
+// Placeholder 'raspberry' utilisé uniquement pour la génération et l'affichage
+// quand l'app n'a pas de couleur projet fournie. Ne doit pas être utilisé
+// comme variable runtime globale pour le style de l'application.
+const PLACEHOLDER_RASPBERRY = {
+  100: "oklch(98% 0.03 352)",
+  200: "oklch(94.5% 0.12 352)",
+  300: "oklch(84.5% 0.2 352)",
+  400: "oklch(72.8281% 0.1971 352.001)",
+  500: "oklch(64.5% 0.2 352)",
+  600: "oklch(54.5% 0.2 352)",
+  700: "oklch(44.5% 0.2 352)",
+};
+
+// Palette présentes uniquement pour le runtime de l'application (ne doivent
+// pas apparaître dans l'interface de configuration). Par ex. 'ocean' sert
+// le style de l'app mais ne doit pas être exposée comme couleur projet.
+const RUNTIME_ONLY_COLORS = new Set(["ocean"]);
 
 // Éléments DOM
 const elements = {
@@ -61,6 +80,11 @@ async function init() {
 
   // Attacher les événements
   attachEventListeners();
+
+  // Générer les choix de couleurs initialement (affiche 'raspberry' par défaut)
+  updateColorChoices();
+  // Appliquer les variables personnalisées éventuelles déjà présentes
+  applyCustomVarsToDocument();
 
   // Mettre à jour l'interface
   updateUI();
@@ -153,6 +177,47 @@ function updateThemePreview() {
   const { customVars } = state.config;
   let preview = state.themeContent;
 
+  // Ne pas afficher les primitives réservées au runtime dans l'aperçu
+  // (interface). Cela garde ces définitions dans le CSS réel, mais les
+  // masque de la vue Sources pour éviter qu'elles soient confondues avec
+  // des variables projet modifiables.
+  if (RUNTIME_ONLY_COLORS.size > 0) {
+    const names = Array.from(RUNTIME_ONLY_COLORS).join("|");
+    const rx = new RegExp(`\\n?\\s*--color-(?:${names})-[^;]+;?`, "g");
+    preview = preview.replace(rx, "");
+    // Supprimer aussi les imports de palettes runtime-only (ex: @import "palettes/ocean.css";)
+    const importRx = new RegExp(
+      `@import\\s+["']?[^"';]*palettes\\/(?:${names})\\.css["']?;?`,
+      "g"
+    );
+    preview = preview.replace(importRx, "");
+    // nettoyer les sauts de ligne restants
+    preview = preview.replace(/\n{3,}/g, "\n\n");
+  }
+
+  // Si aucune variable personnalisée fournie par l'utilisateur, injecter
+  // visuellement le placeholder 'raspberry' dans l'aperçu afin que l'on
+  // voie les définitions par défaut du projet. Cela n'écrit rien sur le
+  // disque — c'est purement pour l'affichage dans l'UI.
+  const hasCustom = customVars.trim().length > 0;
+  if (!hasCustom) {
+    const hasRasp = /--color-raspberry-/.test(state.themeContent);
+    if (!hasRasp) {
+      const raspLines = Object.entries(PLACEHOLDER_RASPBERRY)
+        .map(([variant, value]) => `  --color-raspberry-${variant}: ${value};`)
+        .join("\n");
+      const raspBlock = `\n  /* Couleur projet placeholder : raspberry */\n${raspLines}\n`;
+
+      const lastBrace = preview.lastIndexOf("}");
+      if (lastBrace !== -1) {
+        preview =
+          preview.slice(0, lastBrace) + raspBlock + preview.slice(lastBrace);
+      } else {
+        preview += raspBlock;
+      }
+    }
+  }
+
   if (customVars.trim()) {
     // Trouver la dernière fermeture du :root pour insérer les variables custom
     const lastBraceIndex = preview.lastIndexOf("}");
@@ -179,6 +244,44 @@ function updateThemePreview() {
     Prism.languages.css,
     "css"
   );
+}
+
+/**
+ * Applique les variables CSS personnalisées saisies par l'utilisateur
+ * directement sur le :root du document afin que les swatches et le rendu
+ * instantané utilisent ces valeurs.
+ */
+function applyCustomVarsToDocument() {
+  const custom = state.config.customVars || "";
+
+  // Extraire toutes les définitions via parseColorVariants (réutilise le parser existant)
+  const varsMap = parseColorVariants(custom);
+
+  // Construire l'ensemble de clés à appliquer actuellement
+  const newKeys = new Set();
+  varsMap.forEach((variants, colorName) => {
+    variants.forEach((value, variant) => {
+      const key = `--color-${colorName}-${variant}`;
+      newKeys.add(key);
+      // Appliquer la valeur (value est déjà trimée et sans point-virgule)
+      try {
+        document.documentElement.style.setProperty(key, value);
+      } catch (e) {
+        // defensive: ignore invalid values
+        console.warn(`Impossible d'appliquer ${key}: ${value}`, e);
+      }
+    });
+  });
+
+  // Supprimer les anciennes clés qui ne sont plus présentes
+  state.appliedCustomVars.forEach((existingKey) => {
+    if (!newKeys.has(existingKey)) {
+      document.documentElement.style.removeProperty(existingKey);
+    }
+  });
+
+  // Mettre à jour le set tracé
+  state.appliedCustomVars = newKeys;
 }
 
 /**
@@ -346,11 +449,65 @@ function updateColorChoices() {
   const customColors = parseColorVariables(state.config.customVars);
   const colorChoicesContainer = document.querySelector(".color-choices");
 
-  // Couleurs par défaut
-  const defaultColors = ["blue", "red", "green", "orange"];
-  const allColors = [...defaultColors, ...customColors];
+  // Construire la map des variantes disponibles en combinant le theme et
+  // les variables personnalisées (pour pouvoir afficher les teintes 100/300/500/700)
+  const combined = state.themeContent + "\n" + state.config.customVars;
+  const colorsMap = parseColorVariants(combined);
+
+  // Si l'utilisateur a ajouté des couleurs personnalisées, utiliser uniquement
+  // celles-ci. Sinon, afficher le placeholder 'raspberry'.
+  const allColors = customColors.length > 0 ? [...customColors] : ["raspberry"];
+
+  // Si l'utilisateur a ajouté des couleurs et que la couleur primaire est
+  // encore 'raspberry', basculer automatiquement sur la première couleur
+  // personnalisée pour éviter de référencer une variable inexistante.
+  if (customColors.length > 0 && state.config.primaryColor === "raspberry") {
+    state.config.primaryColor = customColors[0];
+  }
 
   // Régénérer les choix
+  // Helper: génère le markup des swatches multiples selon les variantes présentes
+  const swatchMarkup = (color) => {
+    const variantsOrder = ["100", "300", "500", "700"];
+    const variantsAvailable = variantsOrder.filter((v) =>
+      colorsMap.has(color) ? colorsMap.get(color).has(v) : false
+    );
+
+    // Si aucune variante connue, tenter le fallback 500 en assumant qu'elle existe
+    if (variantsAvailable.length === 0) {
+      if (colorsMap.has(color)) {
+        const keys = Array.from(colorsMap.get(color).keys());
+        if (keys.length > 0) variantsAvailable.push(keys[0]);
+        else variantsAvailable.push("500");
+      } else {
+        variantsAvailable.push("500");
+      }
+    }
+
+    // Helper pour obtenir la valeur CSS de la variante (placeholder ou var())
+    const getVariantValue = (c, v) => {
+      if (c === "raspberry" && PLACEHOLDER_RASPBERRY[v]) {
+        return PLACEHOLDER_RASPBERRY[v];
+      }
+      return `var(--color-${c}-${v})`;
+    };
+
+    // Si plusieurs variantes, afficher une rangée de segments, sinon afficher un grand swatch
+    if (variantsAvailable.length > 1) {
+      const segments = variantsAvailable
+        .map((v) => {
+          const val = getVariantValue(color, v);
+          return `<span class="swatch-seg" style="background: ${val};" aria-hidden="true"></span>`;
+        })
+        .join("");
+      return `<span class="color-swatch multi" aria-hidden="true">${segments}</span>`;
+    }
+
+    // Single variant
+    const singleVal = getVariantValue(color, variantsAvailable[0]);
+    return `<span class="color-swatch" style="background: ${singleVal};" aria-hidden="true"></span>`;
+  };
+
   colorChoicesContainer.innerHTML = allColors
     .map((color, index) => {
       const isChecked =
@@ -361,7 +518,7 @@ function updateColorChoices() {
         <input type="radio" name="primary-color" value="${color}" ${
         isChecked ? "checked" : ""
       } />
-        <span class="color-swatch" style="background: var(--color-${color}-500)"></span>
+        ${swatchMarkup(color)}
         <span class="color-name">${
           color.charAt(0).toUpperCase() + color.slice(1)
         }</span>
@@ -446,6 +603,9 @@ function attachEventListeners() {
     updateThemePreview();
     // Mettre à jour les choix de couleurs quand l'utilisateur ajoute des variables
     updateColorChoices();
+    // Appliquer les variables personnalisées au document pour que les swatches
+    // et le rendu instantané utilisent ces valeurs.
+    applyCustomVarsToDocument();
   });
 
   // Actions de copie
@@ -624,10 +784,10 @@ function generateTokensCSS() {
   --selection: light-dark(var(--color-${primaryColor}-300), var(--color-${primaryColor}-500));
 
   /* États */
-  --warning: light-dark(var(--color-orange-500), var(--color-orange-300));
-  --error: light-dark(var(--color-red-500), var(--color-red-300));
-  --success: light-dark(var(--color-green-500), var(--color-green-300));
-  --info: light-dark(var(--color-blue-500), var(--color-blue-300));\n`;
+  --warning: light-dark(var(--color-warning-500), var(--color-warning-300));
+  --error: light-dark(var(--color-error-500), var(--color-error-300));
+  --success: light-dark(var(--color-success-500), var(--color-success-300));
+  --info: light-dark(var(--color-info-500), var(--color-info-300));\n`;
   } else if (themeMode === "light") {
     css += `
   /* Couleur d'accent */
@@ -651,10 +811,10 @@ function generateTokensCSS() {
   --selection: var(--color-${primaryColor}-300);
 
   /* États */
-  --warning: var(--color-orange-500);
-  --error: var(--color-red-500);
-  --success: var(--color-green-500);
-  --info: var(--color-blue-500);\n`;
+  --warning: var(--color-warning-500);
+  --error: var(--color-error-500);
+  --success: var(--color-success-500);
+  --info: var(--color-info-500);\n`;
   } else {
     // dark
     css += `
@@ -679,10 +839,10 @@ function generateTokensCSS() {
   --selection: var(--color-${primaryColor}-500);
 
   /* États */
-  --warning: var(--color-orange-300);
-  --error: var(--color-red-300);
-  --success: var(--color-green-300);
-  --info: var(--color-blue-300);\n`;
+  --warning: var(--color-warning-300);
+  --error: var(--color-error-300);
+  --success: var(--color-success-300);
+  --info: var(--color-info-300);\n`;
   }
 
   // Ajouter les bordures pour le mode both
@@ -821,6 +981,22 @@ function generateThemeCSS() {
     additionalContent += generatedVariants;
   }
 
+  // Si la couleur primaire demandée est 'raspberry' et qu'elle n'existe pas
+  // dans le theme (par ex. runtime dépourvu de raspberry), injecter les
+  // définitions placeholder depuis la constante JS afin que le fichier
+  // généré contienne bien les variables nécessaires.
+  if (primaryColor === "raspberry") {
+    const hasRaspberry = colorsMap.has("raspberry");
+    const customList = parseColorVariables(customVars);
+    if (!hasRaspberry && customList.length === 0) {
+      let raspBlock = `\n  /* Placeholder 'raspberry' injecté par le générateur */\n`;
+      Object.keys(PLACEHOLDER_RASPBERRY).forEach((variant) => {
+        raspBlock += `  --color-raspberry-${variant}: ${PLACEHOLDER_RASPBERRY[variant]};\n`;
+      });
+      additionalContent += raspBlock;
+    }
+  }
+
   // Trouver la dernière occurrence de la fermeture du :root
   const lastBraceIndex = themeCSS.lastIndexOf("}");
 
@@ -829,6 +1005,58 @@ function generateThemeCSS() {
       themeCSS.slice(0, lastBraceIndex) +
       additionalContent +
       themeCSS.slice(lastBraceIndex);
+  }
+
+  // Si l'utilisateur a ajouté des couleurs personnalisées, retirer le
+  // placeholder 'raspberry' des définitions dans le theme généré afin que
+  // la variable ne figure plus dans le fichier de sortie.
+  const customColorsList = parseColorVariables(customVars);
+  if (customColorsList.length > 0) {
+    // Supprimer toute occurrence de définitions --color-raspberry-* dans
+    // le contenu généré, quel que soit le format (ligne, indentation, etc.).
+    themeCSS = themeCSS.replace(/--color-raspberry-[\w-]*:\s*[^;]+;?/g, "");
+    // Nettoyer les retours à la ligne multiples éventuels et espaces résiduels
+    themeCSS = themeCSS.replace(/\n{3,}/g, "\n\n").replace(/\n\s+\n/g, "\n\n");
+  }
+
+  // Filtrer les couleurs réservées au runtime (ex: 'ocean') de la sortie
+  // générée pour que les exports restent propres et n'exposent pas les
+  // primitives internes de l'application.
+  if (
+    typeof RUNTIME_ONLY_COLORS !== "undefined" &&
+    RUNTIME_ONLY_COLORS.size > 0
+  ) {
+    const names = Array.from(RUNTIME_ONLY_COLORS)
+      .map((n) => n.replace(/[-\\/\\^$*+?.()|[\]{}]/g, "\\$&"))
+      .join("|");
+
+    // Supprimer les lignes de définition de variables --color-<name>-*
+    const varRx = new RegExp(`--color-(?:${names})-[\\w-]*:\\s*[^;]+;?`, "g");
+    themeCSS = themeCSS.replace(varRx, "");
+
+    // Supprimer les @import qui importent des palettes runtime (palettes/<name>.css)
+    // Le pattern précédent ciblait l'import inline mais pouvait laisser des
+    // traces si la ligne contenait des modificateurs (ex: layer(config)) ou
+    // d'autres tokens ; supprimer maintenant n'importe quelle ligne qui
+    // référence palettes/<name>.css pour être sûr qu'aucune importation
+    // runtime ne fuite dans les fichiers exportés.
+    const importRx = new RegExp(
+      `@import\\s+["']?[^"';]*palettes\\/(?:${names})\\.css["']?;?`,
+      "gi"
+    );
+    themeCSS = themeCSS.replace(importRx, "");
+
+    // Suppression de secours : toute ligne (quelle que soit sa forme)
+    // contenant palettes/<name>.css est retirée (prise en compte des
+    // variantes comme `@import "palettes/ocean.css" layer(config);`).
+    const lineFallback = new RegExp(
+      `^.*palettes\\/(?:${names})\\.css.*$\\n?`,
+      "gmi"
+    );
+    themeCSS = themeCSS.replace(lineFallback, "");
+
+    // Nettoyer les retours à la ligne multiples et espaces résiduels
+    themeCSS = themeCSS.replace(/\n{3,}/g, "\n\n").replace(/\n\s+\n/g, "\n\n");
   }
 
   return themeCSS;

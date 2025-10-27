@@ -3,7 +3,7 @@
  * Nécessite les variables CSS primaires (theme.css)
  * Généré par le script de génération de tokens
  * Configuration 2 :
- * - Couleur primaire : "--color-blue-500"
+ * - Couleur primaire : "--color-info-500"
  * - Theme light uniquement
  * - Typographie responsive
  * - Espacements responsive
@@ -12,22 +12,22 @@
 
 :root {
   /* Color Tokens */
-  --primary: var(--color-blue-500);
+  --primary: var(--color-raspberry-500);
   --on-primary: var(--color-white);
-  --accent: var(--color-blue-500);
-  --accent-invert: var(--color-blue-300);
+  --accent: var(--color-raspberry-500);
+  --accent-invert: var(--color-raspberry-300);
   --surface: var(--color-white);
   --on-surface: var(--color-gray-900);
   --layer-1: var(--color-gray-50);
   --layer-2: var(--color-gray-100);
   --layer-3: var(--color-gray-200);
   --link: var(--primary);
-  --link-hover: var(--color-blue-700);
-  --selection: var(--color-blue-300);
-  --warning: var(--color-orange-500);
-  --error: var(--color-red-500);
-  --success: var(--color-green-500);
-  --info: var(--color-blue-500);
+  --link-hover: var(--color-raspberry-700);
+  --selection: var(--color-raspberry-300);
+  --warning: var(--color-warning-500);
+  --error: var(--color-error-500);
+  --success: var(--color-success-500);
+  --info: var(--color-info-500);
 
   /* Typo Tokens */
   --text-s: var(--text-14);

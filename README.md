@@ -23,7 +23,7 @@ Rendez-vous sur : [**primary.alsacreations.com**](https://primary.alsacreations.
 
 Personnalisez votre thème selon vos besoins :
 
-- **Couleur primaire** : Choisissez parmi les couleurs disponibles (blue, red, green, orange)
+- **Couleur primaire** : Choisissez parmi les couleurs disponibles (info, error, success, warning, raspberry)
 - **Mode thème** :
   - Light uniquement
   - Dark uniquement
@@ -198,10 +198,11 @@ Consultez la [documentation Bretzel](https://bretzel.alsacreations.com/) pour to
 /* Couleurs */
 --color-gray-50 à --color-gray-900
 --color-white, --color-black
---color-red-100, --color-red-300, --color-red-500, --color-red-700, --color-red-900
---color-green-100, --color-green-300, --color-green-500, --color-green-700, --color-green-900
---color-orange-100, --color-orange-300, --color-orange-500, --color-orange-700, --color-orange-900
---color-blue-100, --color-blue-300, --color-blue-500, --color-blue-700, --color-blue-900
+--color-error-100, --color-error-300, --color-error-500, --color-error-700, --color-error-900
+--color-success-100, --color-success-300, --color-success-500, --color-success-700, --color-success-900
+--color-warning-100, --color-warning-300, --color-warning-500, --color-warning-700, --color-warning-900
+--color-info-100, --color-info-300, --color-info-500, --color-info-700, --color-info-900
+--color-raspberry-100, --color-raspberry-300, --color-raspberry-500, --color-raspberry-700, --color-raspberry-900
 ```
 
 ## ❓ Questions fréquentes

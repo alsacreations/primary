@@ -131,7 +131,7 @@ assets/css/
 ```css
 :root {
   /* Couleurs */
-  --color-blue-500: oklch(51.33% 0.18 256.37);
+  --color-info-500: oklch(51.33% 0.18 256.37);
   --color-gray-900: oklch(14.5% 0 0);
 
   /* Espacements */
@@ -151,7 +151,7 @@ assets/css/
 ```css
 :root {
   /* Couleurs sémantiques */
-  --primary: var(--color-blue-500);
+  --primary: var(--color-info-500);
   --on-primary: var(--color-white);
   --surface: light-dark(var(--color-white), var(--color-gray-900));
   --on-surface: light-dark(var(--color-gray-900), var(--color-white));
@@ -514,7 +514,7 @@ element.classList.toggle("is-visible");
   /* Color Tokens */
   color-scheme: light dark;
 
-  --primary: var(--color-blue-500);
+  --primary: var(--color-info-500);
   --on-primary: var(--color-white);
   --surface: light-dark(var(--color-white), var(--color-gray-900));
   /* ... */

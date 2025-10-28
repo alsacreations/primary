@@ -106,7 +106,7 @@ import { loadAllFiles } from "./files.js";
 /**
  * Télécharge tous les fichiers CSS
  */
-export function downloadAllFiles() {
+export async function downloadAllFiles() {
   const zip = new JSZip();
 
   // Générer tous les fichiers en utilisant les fonctions du module generators
@@ -115,22 +115,76 @@ export function downloadAllFiles() {
   const tokensCSS = generateTokensCSS();
   const stylesCSS = generateStylesCSS();
 
-  // Ajouter les fichiers au ZIP
-  zip.file("app.css", appCSS);
-  zip.file("reset.css", state.resetContent);
-  zip.file("theme.css", themeCSS);
-  zip.file("theme-tokens.css", tokensCSS);
-  zip.file("layouts.css", state.layoutsContent);
-  zip.file("natives.css", state.nativesContent);
-  zip.file("styles.css", stylesCSS);
+  // Ajouter les fichiers CSS au ZIP sous assets/css/ pour conserver la
+  // structure attendue par le kit.
+  zip.file("assets/css/app.css", appCSS);
+  zip.file("assets/css/reset.css", state.resetContent);
+  zip.file("assets/css/theme.css", themeCSS);
+  zip.file("assets/css/theme-tokens.css", tokensCSS);
+  zip.file("assets/css/layouts.css", state.layoutsContent);
+  zip.file("assets/css/natives.css", state.nativesContent);
+  zip.file("assets/css/styles.css", stylesCSS);
+
+  // Télécharger et ajouter les assets non-CSS (index, images, police) de façon
+  // synchrone afin qu'ils soient bien inclus avant la génération du ZIP.
+  try {
+    const indexResp = await fetch("public/samples/index.html");
+    if (indexResp.ok) {
+      const indexContent = await indexResp.text();
+      zip.file("index.html", indexContent);
+    }
+  } catch (err) {
+    console.warn("index.html sample absent pour le ZIP:", err);
+  }
+
+  try {
+    const svgResp = await fetch("public/samples/alsacreations.svg");
+    if (svgResp.ok) {
+      const svgBlob = await svgResp.blob();
+      zip.file("img/alsacreations.svg", svgBlob);
+    }
+  } catch (err) {
+    console.warn("alsacreations.svg non inclus:", err);
+  }
+
+  try {
+    const favResp = await fetch("public/samples/favicon.svg");
+    if (favResp.ok) {
+      const favBlob = await favResp.blob();
+      zip.file("img/favicon.svg", favBlob);
+    }
+  } catch (err) {
+    console.warn("favicon.svg non inclus:", err);
+  }
+
+  try {
+    const fontFamily = state.config && state.config.fontFamily;
+    if (fontFamily === "poppins") {
+      const fontResp = await fetch(
+        "public/samples/Poppins-Variable-opti.woff2"
+      );
+      if (fontResp.ok) {
+        const fontBlob = await fontResp.blob();
+        zip.file("assets/css/fonts/Poppins-Variable-opti.woff2", fontBlob);
+      }
+    }
+  } catch (err) {
+    console.warn("Police Poppins non incluse dans le ZIP:", err);
+  }
 
   // Générer et télécharger le ZIP
-  zip.generateAsync({ type: "blob" }).then((content) => {
+  try {
+    const content = await zip.generateAsync({ type: "blob" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(content);
     link.download = "primary-css-kit.zip";
     link.click();
-  });
+    // cleanup
+    setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+  } catch (err) {
+    console.error("Erreur lors de la génération du ZIP:", err);
+    alert("Erreur lors de la création de l'archive");
+  }
 }
 
 /**
@@ -157,6 +211,13 @@ export async function setupEventListeners() {
       if (targetStep >= 1 && targetStep <= 3) {
         state.currentStep = targetStep;
 
+        // Synchroniser la configuration depuis le DOM avant toute génération
+        try {
+          syncConfigFromDOM();
+        } catch (err) {
+          /* noop */
+        }
+
         // Générer les fichiers CSS si on arrive à l'étape 3
         if (state.currentStep === 3) {
           generateAllFiles();
@@ -176,6 +237,37 @@ export async function setupEventListeners() {
   }
 
   // Étape 2 - Configuration
+  // Helper: synchronise les valeurs du DOM dans state.config
+  function syncConfigFromDOM() {
+    try {
+      const primary = document.querySelector(
+        'input[name="primary-color"]:checked'
+      );
+      if (primary) state.config.primaryColor = primary.value;
+
+      const theme = document.querySelector('input[name="theme-mode"]:checked');
+      if (theme) state.config.themeMode = theme.value;
+
+      const typo = document.querySelector(
+        'input[name="typo-responsive"]:checked'
+      );
+      if (typo) state.config.typoResponsive = typo.value === "true";
+
+      const spacing = document.querySelector(
+        'input[name="spacing-responsive"]:checked'
+      );
+      if (spacing) state.config.spacingResponsive = spacing.value === "true";
+
+      const font = document.querySelector('input[name="font-family"]:checked');
+      if (font) state.config.fontFamily = font.value;
+
+      const custom = document.getElementById("custom-vars-input");
+      if (custom) state.config.customVars = custom.value || "";
+    } catch (e) {
+      // defensive noop
+    }
+  }
+
   if (elements.primaryColorSelect) {
     // Support both legacy <select> and the new .color-choices container
     if (elements.primaryColorSelect.tagName === "SELECT") {
@@ -186,6 +278,8 @@ export async function setupEventListeners() {
         } catch (err) {
           /* noop */
         }
+        // If already on generation step, refresh generated files
+        if (state.currentStep === 3) generateAllFiles();
       });
     } else {
       // Event delegation for radio inputs rendered inside the container
@@ -199,6 +293,12 @@ export async function setupEventListeners() {
           } catch (err) {
             /* noop */
           }
+          try {
+            syncConfigFromDOM();
+          } catch (err) {
+            /* noop */
+          }
+          if (state.currentStep === 3) generateAllFiles();
         }
       });
 
@@ -213,19 +313,31 @@ export async function setupEventListeners() {
           } catch (err) {
             /* noop */
           }
+          if (state.currentStep === 3) generateAllFiles();
         }
       });
     }
   }
+  // Theme mode radios (light / dark / both)
+  if (elements.themeModeInputs && elements.themeModeInputs.length) {
+    elements.themeModeInputs.forEach((input) => {
+      input.addEventListener("change", (e) => {
+        state.config.themeMode = e.target.value;
+        if (state.currentStep === 3) generateAllFiles();
+      });
+    });
+  }
   if (elements.typoResponsiveInput) {
     elements.typoResponsiveInput.addEventListener("change", (e) => {
       state.config.typoResponsive = e.target.checked;
+      if (state.currentStep === 3) generateAllFiles();
     });
   }
 
   if (elements.spacingResponsiveInput) {
     elements.spacingResponsiveInput.addEventListener("change", (e) => {
       state.config.spacingResponsive = e.target.checked;
+      if (state.currentStep === 3) generateAllFiles();
     });
   }
 

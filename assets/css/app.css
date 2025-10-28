@@ -1,13 +1,20 @@
-/* Cascade Layers
-  config : reset + tokens + theme
-  base   : styles applicatifs
-  On utilise la forme @import url(...) layer(nom); au niveau racine. */
+/* css/app.css */
+/* L'ordre des layers définit la priorité des styles */
+/* Chaque layer écrase le précédent si conflit */
+@layer config, base, components, utilities;
 
-@layer config, base; /* déclaration d'ordre explicite */
-
+/* Config */
 @import "reset.css" layer(config);
 @import "theme.css" layer(config);
 @import "theme-tokens.css" layer(config);
 @import "layouts.css" layer(config);
 @import "natives.css" layer(config);
+
+/* Base */
 @import "styles.css" layer(base);
+
+/* Components */
+/* Ici un @import dans le layer(components) */
+
+/* Utilities */
+/* Ici un @import dans le layer(utilities) */

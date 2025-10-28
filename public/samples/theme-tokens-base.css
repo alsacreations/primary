@@ -1,0 +1,79 @@
+/* ----------------------------------
+ * Theme-tokens, généré par primary.alsacreations.com
+ * Surcouche de theme.css
+ * Configuration :
+ * - Couleur primaire : red
+ * - Theme : light et dark
+ * - Typographie responsive : oui
+ * - Espacements responsive : oui
+ * ----------------------------------
+ */
+
+/* Couleur primaire */
+--primary: ;
+--on-primary: ;
+
+/* Couleur d'accent */
+--accent: ;
+--accent-invert: ;
+
+/* Surface du document */
+--surface: ;
+--on-surface: ;
+
+/* Niveaux de profondeur */
+--layer-1: ;
+--layer-2: ;
+--layer-3: ;
+
+/* Interactions */
+--link: ;
+--link-hover: ;
+
+/* Couleur de sélection */
+--selection: ;
+
+/* États */
+--warning: ;
+--error: ;
+--success: ;
+--info: ;
+
+/* Bordures */
+--border-light: ;
+--border-medium: ;
+
+/* Tailles de police */
+--text-s: ;
+--text-m: ;
+--text-l: ;
+--text-xl: ;
+--text-2xl: ;
+--text-3xl: ;
+--text-4xl: ;
+
+/* Espacements */
+--gap-xs: ;
+--gap-s: ;
+--gap-m: ;
+--gap-l: ;
+--gap-xl: ;
+--spacing-xs: ;
+--spacing-s: ;
+--spacing-m: ;
+--spacing-l: ;
+--spacing-xl: ;
+
+/* Formulaires */
+--form-control-background: ;
+--on-form-control: ;
+--form-control-spacing: ;
+--form-control-border-width: ;
+--form-control-border-color: ;
+--form-control-border-radius: ;
+--checkables-border-color: ;
+--checkable-size: ;
+
+*::selection {
+  background: var(--selection);
+}

@@ -80,6 +80,88 @@ export function updateThemePreview() {
 }
 
 /**
+ * Synchronise la configuration depuis le DOM vers `state.config`.
+ * Appelée automatiquement avant toute génération pour éviter les
+ * problèmes de valeurs stale quand les listeners n'ont pas encore
+ * propagé l'état.
+ */
+function syncConfigFromDOM() {
+  try {
+    // Primary color (select or radio container)
+    const primaryContainer = elements.primaryColorSelect;
+    if (primaryContainer) {
+      if (primaryContainer.tagName === "SELECT") {
+        state.config.primaryColor = primaryContainer.value;
+      } else {
+        const checked = primaryContainer.querySelector(
+          'input[name="primary-color"]:checked'
+        );
+        if (checked) state.config.primaryColor = checked.value;
+      }
+    }
+
+    // Theme mode radios
+    if (elements.themeModeInputs && elements.themeModeInputs.length) {
+      const checked = Array.from(elements.themeModeInputs).find(
+        (i) => i.checked
+      );
+      if (checked) state.config.themeMode = checked.value;
+    }
+
+    // Typographie responsive (radios or single alias)
+    if (elements.typoResponsiveInputs && elements.typoResponsiveInputs.length) {
+      const checked = Array.from(elements.typoResponsiveInputs).find(
+        (i) => i.checked
+      );
+      if (checked) state.config.typoResponsive = checked.value === "true";
+    } else if (elements.typoResponsiveInput) {
+      // fallback: checkbox-like input
+      state.config.typoResponsive = !!elements.typoResponsiveInput.checked;
+    }
+
+    // Espacements responsive
+    if (
+      elements.spacingResponsiveInputs &&
+      elements.spacingResponsiveInputs.length
+    ) {
+      const checked = Array.from(elements.spacingResponsiveInputs).find(
+        (i) => i.checked
+      );
+      if (checked) state.config.spacingResponsive = checked.value === "true";
+    } else if (elements.spacingResponsiveInput) {
+      state.config.spacingResponsive =
+        !!elements.spacingResponsiveInput.checked;
+    }
+
+    // Font family
+    if (elements.fontFamilyInputs && elements.fontFamilyInputs.length) {
+      const checked = Array.from(elements.fontFamilyInputs).find(
+        (i) => i.checked
+      );
+      if (checked) state.config.fontFamily = checked.value;
+    }
+
+    // Variables personnalisées
+    if (elements.customVarsInput) {
+      state.config.customVars = elements.customVarsInput.value || "";
+    }
+
+    // Debug log to help diagnose cases where DOM changes are not
+    // reflected in the generated output.
+    if (typeof console !== "undefined" && console.debug) {
+      console.debug("[generator] syncConfigFromDOM ->", {
+        primaryColor: state.config.primaryColor,
+        themeMode: state.config.themeMode,
+        typoResponsive: state.config.typoResponsive,
+        spacingResponsive: state.config.spacingResponsive,
+      });
+    }
+  } catch (e) {
+    // noop defensive
+  }
+}
+
+/**
  * Met à jour les choix de couleurs disponibles
  */
 export function updateColorChoices() {
@@ -434,6 +516,21 @@ export function applyCustomVarsToDocument() {
  */
 export function generateAllFiles() {
   try {
+    // Ensure we always read the latest form values from the DOM
+    // before generating files. This avoids stale state when listeners
+    // are not yet attached or when generation is triggered externally.
+    try {
+      syncConfigFromDOM();
+    } catch (err) {
+      /* noop */
+    }
+
+    if (typeof console !== "undefined" && console.debug) {
+      console.debug(
+        "[generator] generateAllFiles state.config ->",
+        state.config
+      );
+    }
     const appCSS = generateAppCSS();
     const themeCSS = generateThemeCSS();
     const tokensCSS = generateTokensCSS();

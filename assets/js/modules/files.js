@@ -46,6 +46,13 @@ export async function loadLayoutsFile() {
 }
 
 /**
+ * Charge le fichier app.css (point d'entrée)
+ */
+export async function loadAppFile() {
+  await loadCSSFile("assets/css/app.css", "appContent");
+}
+
+/**
  * Charge le fichier natives.css
  */
 export async function loadNativesFile() {
@@ -57,23 +64,52 @@ export async function loadNativesFile() {
  */
 export async function loadStylesFiles() {
   try {
-    // Charger le fichier système
-    const systemResponse = await fetch("assets/css/styles.css");
-    if (!systemResponse.ok) {
-      throw new Error(
-        `Erreur HTTP ${systemResponse.status}: ${systemResponse.statusText}`
-      );
-    }
-    state.stylesSystemContent = await systemResponse.text();
+    // Charger d'abord les samples canoniques dans public/samples pour
+    // garantir une sortie byte-for-byte conforme aux fichiers de référence.
+    // Fallback : utiliser `assets/css/styles.css` si le sample système n'est
+    // pas disponible. Pour Poppins, fallback sur une liste réduite.
 
-    // Charger le fichier Poppins
-    const poppinsResponse = await fetch("public/samples/styles-2.css");
-    if (!poppinsResponse.ok) {
-      throw new Error(
-        `Erreur HTTP ${poppinsResponse.status}: ${poppinsResponse.statusText}`
-      );
+    // Système : privilégier public/samples/styles.css
+    const systemCandidates = [
+      "public/samples/styles.css",
+      "assets/css/styles.css",
+      "public/styles.css",
+      "styles.css",
+    ];
+    let systemText = "";
+    for (const p of systemCandidates) {
+      try {
+        const r = await fetch(p);
+        if (r.ok) {
+          systemText = await r.text();
+          break;
+        }
+      } catch (e) {
+        // ignore and try next
+      }
     }
-    state.stylesPoppinsContent = await poppinsResponse.text();
+    state.stylesSystemContent = systemText || "";
+
+    // Poppins : tenter le sample dédié
+    const poppinsCandidates = [
+      "public/samples/styles-poppins.css",
+      "public/samples/styles-2.css",
+      "assets/css/styles-poppins.css",
+      "styles-poppins.css",
+    ];
+    let poppinsText = "";
+    for (const p of poppinsCandidates) {
+      try {
+        const r = await fetch(p);
+        if (r.ok) {
+          poppinsText = await r.text();
+          break;
+        }
+      } catch (e) {
+        // ignore and try next
+      }
+    }
+    state.stylesPoppinsContent = poppinsText || "";
   } catch (error) {
     showGlobalError(`Erreur de chargement des styles: ${error.message}`);
     console.error("Erreur lors du chargement des styles:", error);
@@ -89,6 +125,7 @@ export async function loadAllFiles() {
     await Promise.all([
       loadThemeFile(),
       loadResetFile(),
+      loadAppFile(),
       loadLayoutsFile(),
       loadNativesFile(),
       loadStylesFiles(),

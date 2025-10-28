@@ -33,6 +33,11 @@ export const elements = {
   spacingResponsiveInputs: document.querySelectorAll(
     'input[name="spacing-responsive"]'
   ),
+  // Backwards-compatible single-element aliases (used by events.js)
+  typoResponsiveInput: document.querySelector('input[name="typo-responsive"]'),
+  spacingResponsiveInput: document.querySelector(
+    'input[name="spacing-responsive"]'
+  ),
   fontFamilyInputs: document.querySelectorAll('input[name="font-family"]'),
 
   // Étape 3 - Génération

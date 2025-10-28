@@ -23,6 +23,7 @@ export const state = {
   nativesContent: "", // Contenu de natives.css
   stylesSystemContent: "", // Contenu de styles.css (système)
   stylesPoppinsContent: "", // Contenu de styles-2.css (Poppins)
+  appContent: "", // Contenu de app.css (point d'entrée)
 };
 
 /**

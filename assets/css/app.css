@@ -5,9 +5,9 @@
 
 @layer config, base; /* déclaration d'ordre explicite */
 
-@import url("reset.css") layer(config);
-@import url("theme.css") layer(config);
-@import url("theme-tokens.css") layer(config);
-@import url("layouts.css") layer(config);
-@import url("natives.css") layer(config);
-@import url("styles.css") layer(base);
+@import "reset.css" layer(config);
+@import "theme.css" layer(config);
+@import "theme-tokens.css" layer(config);
+@import "layouts.css" layer(config);
+@import "natives.css" layer(config);
+@import "styles.css" layer(base);

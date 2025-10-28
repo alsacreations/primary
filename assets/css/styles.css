@@ -25,17 +25,17 @@ body {
 
 .title {
   margin: 0;
+  color: var(--accent);
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-bold);
-  color: var(--accent);
   line-height: 1.2;
 }
 
 .subtitle {
   margin: 0;
   margin-top: var(--spacing-xs);
-  font-size: var(--text-l);
   color: var(--on-surface-secondary);
+  font-size: var(--text-l);
 }
 
 .main {
@@ -127,12 +127,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap-xs);
-  opacity: 0.5;
   transition: opacity 0.3s ease;
+  opacity: 50%;
+  gap: var(--gap-xs);
 
   &.is-active {
-    opacity: 1;
+    opacity: 100%;
   }
 }
 
@@ -147,24 +147,24 @@ body {
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  background: var(--layer-3);
+  transition: all 0.3s ease;
   border: 2px solid var(--border-medium);
   border-radius: var(--radius-full);
-  font-weight: var(--font-weight-bold);
+  background: var(--layer-3);
   color: var(--on-surface);
-  transition: all 0.3s ease;
+  font-weight: var(--font-weight-bold);
 
   .step.is-active & {
-    background: var(--primary);
     border-color: var(--primary);
+    background: var(--primary);
     color: var(--on-primary);
   }
 }
 
 .step-label {
+  color: var(--on-surface-secondary);
   font-size: var(--text-s);
   font-weight: var(--font-weight-semibold);
-  color: var(--on-surface-secondary);
 
   .step.is-active & {
     color: var(--on-surface);
@@ -186,78 +186,77 @@ body {
 
 .step-title {
   margin: 0;
+  color: var(--on-surface);
   font-size: var(--text-2xl);
   font-weight: var(--font-weight-bold);
-  color: var(--on-surface);
 }
 
 .step-description {
   margin: 0;
   margin-top: var(--spacing-xs);
-  font-size: var(--text-m);
   color: var(--on-surface-secondary);
+  font-size: var(--text-m);
 }
 
 /* Sources */
 .source-display {
   padding: var(--spacing-m);
-  background: var(--layer-1);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-m);
+  background: var(--layer-1);
 }
 
 .source-title {
   margin: 0;
   margin-bottom: var(--spacing-m);
+  color: var(--on-surface);
   font-size: var(--text-l);
   font-weight: var(--font-weight-semibold);
-  color: var(--on-surface);
 }
 
 .source-code {
+  max-height: 20rem;
   margin: 0;
   padding: var(--spacing-m);
-  background: var(--surface);
+  overflow: auto;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--on-surface);
   font-family: var(--font-mono);
   font-size: var(--text-s);
   line-height: 1.6;
-  color: var(--on-surface);
-  overflow-x: auto;
-  max-height: 20rem;
-  overflow-y: auto;
 }
 
 .custom-vars-label {
   display: block;
   margin-bottom: var(--spacing-xs);
+  color: var(--on-surface);
   font-size: var(--text-m);
   font-weight: var(--font-weight-semibold);
-  color: var(--on-surface);
 }
 
 .custom-vars-hint {
   margin: 0;
   margin-bottom: var(--spacing-s);
-  font-size: var(--text-s);
   color: var(--on-surface-secondary);
+  font-size: var(--text-s);
 }
 
 /* Configuration */
 .config-fieldset {
   margin: 0;
   padding: var(--spacing-m);
-  background: var(--layer-1);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-m);
+  background: var(--layer-1);
 }
 
 .config-legend {
   padding-inline: var(--spacing-s);
+  color: var(--on-surface);
   font-size: var(--text-l);
   font-weight: var(--font-weight-semibold);
-  color: var(--on-surface);
 }
 
 /* Choix de couleurs */
@@ -265,13 +264,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap-xs);
   padding: var(--spacing-s);
-  background: var(--surface);
+  transition: border-color 0.2s ease;
   border: 2px solid transparent;
   border-radius: var(--radius-m);
+  background: var(--surface);
   cursor: pointer;
-  transition: border-color 0.2s ease;
+  gap: var(--gap-xs);
 
   &:hover {
     border-color: var(--border-medium);
@@ -287,12 +286,12 @@ body {
   position: absolute;
   width: 1px;
   height: 1px;
-  padding: 0;
   margin: -1px;
+  padding: 0;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
   border-width: 0;
+  white-space: nowrap;
 }
 
 .color-swatch {
@@ -301,7 +300,7 @@ body {
   height: 3rem;
   border: 2px solid var(--border-light);
   border-radius: var(--radius-m);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
 }
 
 /* Variante multi-seg (affiche plusieurs teintes côte-à-côte) */
@@ -315,15 +314,15 @@ body {
 .color-swatch.multi .swatch-seg {
   flex: 1 1 0;
   min-width: 0;
-  border-radius: calc(var(--radius-s));
   border: 1px solid var(--border-light);
+  border-radius: calc(var(--radius-s));
   box-shadow: none;
 }
 
 .color-name {
+  color: var(--on-surface);
   font-size: var(--text-s);
   font-weight: var(--font-weight-medium);
-  color: var(--on-surface);
 }
 
 /* Labels personnalisés pour radio/checkbox */
@@ -331,21 +330,21 @@ body {
 .config-checkbox {
   display: flex;
   align-items: center;
-  gap: var(--gap-s);
   padding: var(--spacing-s);
-  background: var(--surface);
+  transition: background-color 0.2s ease;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-s);
+  background: var(--surface);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  gap: var(--gap-s);
 
   &:hover {
     background: var(--layer-2);
   }
 
   &:has(input:checked) {
-    background: var(--layer-2);
     border-color: var(--primary);
+    background: var(--layer-2);
   }
 }
 
@@ -363,30 +362,30 @@ body {
 
 .info-title {
   margin: 0;
+  color: var(--primary);
   font-size: var(--text-2xl);
   font-weight: var(--font-weight-bold);
-  color: var(--primary);
   line-height: 1.2;
 }
 
 .info-description {
   margin: 0;
   margin-top: var(--spacing-xs);
-  font-size: var(--text-m);
   color: var(--on-surface);
+  font-size: var(--text-m);
 }
 
 .architecture-preview {
   margin: 0;
   padding: var(--spacing-m);
-  background: var(--layer-1);
+  overflow-x: auto;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-s);
+  background: var(--layer-1);
+  color: var(--on-surface);
   font-family: var(--font-mono);
   font-size: var(--text-s);
   line-height: 1.6;
-  color: var(--on-surface);
-  overflow-x: auto;
 }
 
 .code-wrapper {
@@ -395,43 +394,42 @@ body {
 
 .btn-copy-overlay {
   position: absolute;
+  z-index: 1;
   top: var(--spacing-s);
   right: var(--spacing-s);
   padding: var(--spacing-xs) var(--spacing-s);
-  background: var(--surface);
+  transition: opacity 0.2s ease, background-color 0.2s ease;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-s);
-  font-size: var(--text-s);
+  opacity: 70%;
+  background: var(--surface);
   color: var(--on-surface);
+  font-size: var(--text-s);
   cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
-  z-index: 1;
 
   &:hover {
-    opacity: 1;
+    opacity: 100%;
     background: var(--layer-2);
   }
 
   &:disabled {
+    opacity: 50%;
     cursor: not-allowed;
-    opacity: 0.5;
   }
 }
 
 .generated-code {
+  max-height: 30rem;
   margin: 0;
   padding: var(--spacing-m);
-  background: var(--surface);
+  overflow: auto;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--on-surface);
   font-family: var(--font-mono);
   font-size: var(--text-s);
   line-height: 1.6;
-  color: var(--on-surface);
-  overflow-x: auto;
-  max-height: 30rem;
-  overflow-y: auto;
 }
 
 /* Actions de navigation */
@@ -455,8 +453,8 @@ dl {
   margin: 0;
 
   dt {
-    font-weight: var(--font-weight-semibold);
     color: var(--on-surface);
+    font-weight: var(--font-weight-semibold);
   }
 
   dd {
@@ -472,10 +470,10 @@ dl {
 .global-error {
   margin: var(--gap-m) 0;
   padding: var(--gap-m);
-  background: var(--error, oklch(50.54% 0.19 27.52));
-  color: var(--on-error, oklch(100% 0 0));
   border: 1px solid var(--error, oklch(35.54% 0.19 27.52));
   border-radius: var(--radius-m);
+  background: var(--error, oklch(50.54% 0.19 27.52));
+  color: var(--on-error, oklch(100% 0 0));
   font-size: var(--text-s);
 }
 

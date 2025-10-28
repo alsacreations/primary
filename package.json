@@ -10,6 +10,7 @@
     "build": "echo 'No build step required - static files only'"
   },
   "devDependencies": {
+    "@axe-core/cli": "^4.11.0",
     "http-server": "^14.1.1",
     "stylelint": "^16.0.0",
     "stylelint-config-html": "^1.1.0",

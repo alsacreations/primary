@@ -1,7 +1,27 @@
-/* ----------------------------------
- * Styles applicatifs Primary
- * ----------------------------------
- */
+/* Indicateurs de focus visibles pour l'accessibilité */
+.btn:focus-visible,
+.btn-copy-overlay:focus-visible,
+.step-button:focus-visible,
+.color-choice:focus-visible,
+input[type="radio"]:focus-visible + .color-swatch,
+input[type="radio"]:focus-visible + span,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Focus spécifique pour les inputs radio masqués */
+input[type="radio"]:focus-visible + .color-swatch {
+  box-shadow: 0 0 0 3px var(--primary);
+}
+
+input[type="radio"]:focus-visible + span {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 
 /* Modificateurs Layouts */
 

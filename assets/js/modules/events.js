@@ -17,6 +17,7 @@ import {
   applyCustomVarsToDocument,
   generateAllFiles,
 } from "./ui.js";
+import { refreshColorSelection } from "./ui.js";
 
 /**
  * Navigue vers l'étape précédente
@@ -100,6 +101,7 @@ import {
   generateTokensCSS,
   generateStylesCSS,
 } from "./generators.js";
+import { loadAllFiles } from "./files.js";
 
 /**
  * Télécharge tous les fichiers CSS
@@ -134,7 +136,18 @@ export function downloadAllFiles() {
 /**
  * Configure tous les événements
  */
-export function setupEventListeners() {
+export async function setupEventListeners() {
+  // Charger les fichiers dans le state du module avant d'attacher
+  // les listeners afin d'éviter que la génération ne lise des
+  // contenus vides si l'utilisateur passe rapidement à l'étape 3.
+  try {
+    await loadAllFiles();
+  } catch (err) {
+    // Les erreurs de chargement sont déjà affichées par loadAllFiles
+    // mais on poursuit l'initialisation pour garder l'app réactive.
+    console.warn("loadAllFiles a échoué dans setupEventListeners:", err);
+  }
+
   // Navigation des étapes
   elements.stepButtons.forEach((button) => {
     button.addEventListener("click", (e) => {
@@ -164,17 +177,46 @@ export function setupEventListeners() {
 
   // Étape 2 - Configuration
   if (elements.primaryColorSelect) {
-    elements.primaryColorSelect.addEventListener("change", (e) => {
-      state.config.primaryColor = e.target.value;
-    });
+    // Support both legacy <select> and the new .color-choices container
+    if (elements.primaryColorSelect.tagName === "SELECT") {
+      elements.primaryColorSelect.addEventListener("change", (e) => {
+        state.config.primaryColor = e.target.value;
+        try {
+          refreshColorSelection();
+        } catch (err) {
+          /* noop */
+        }
+      });
+    } else {
+      // Event delegation for radio inputs rendered inside the container
+      elements.primaryColorSelect.addEventListener("change", (e) => {
+        const input =
+          e.target.closest && e.target.closest('input[name="primary-color"]');
+        if (input) {
+          state.config.primaryColor = input.value;
+          try {
+            refreshColorSelection();
+          } catch (err) {
+            /* noop */
+          }
+        }
+      });
+
+      // Also handle clicks on labels (some browsers may not trigger change)
+      elements.primaryColorSelect.addEventListener("click", (e) => {
+        const input =
+          e.target.closest && e.target.closest('input[name="primary-color"]');
+        if (input) {
+          state.config.primaryColor = input.value;
+          try {
+            refreshColorSelection();
+          } catch (err) {
+            /* noop */
+          }
+        }
+      });
+    }
   }
-
-  elements.themeModeInputs.forEach((input) => {
-    input.addEventListener("change", (e) => {
-      state.config.themeMode = e.target.value;
-    });
-  });
-
   if (elements.typoResponsiveInput) {
     elements.typoResponsiveInput.addEventListener("change", (e) => {
       state.config.typoResponsive = e.target.checked;
@@ -197,7 +239,24 @@ export function setupEventListeners() {
   if (elements.customVarsInput) {
     elements.customVarsInput.addEventListener("input", (e) => {
       const value = e.target.value;
-      state.config.customVars = value;
+
+      // Si l'application principale a exposé une API globale pour
+      // appliquer les variables (mode progressif de migration), l'utiliser
+      // afin d'éviter les problèmes de double-état entre app.js et
+      // modules/state.js. Sinon, tomber back sur le state du module.
+      if (typeof window.applyCustomVarsFromModules === "function") {
+        // Mettre à jour l'état principal via l'API exposée
+        window.applyCustomVarsFromModules(value);
+        // Synchroniser aussi l'état local du module afin que les générateurs
+        // qui lisent `modules/state.js` voient la même valeur.
+        try {
+          state.config.customVars = value;
+        } catch (err) {
+          // noop
+        }
+      } else {
+        state.config.customVars = value;
+      }
 
       // Valider la syntaxe CSS
       const validation = validateCustomVars(value);

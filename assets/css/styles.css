@@ -302,6 +302,20 @@ body {
   }
 }
 
+/* Classe utilitaire pour indiquer explicitement qu'un choix est sélectionné.
+   Utile pour les navigateurs sans support complet de :has() ou pour marquer
+   la sélection via JS lors de migrations progressives. */
+.color-choice.is-selected {
+  border-color: var(--primary);
+  background: var(--layer-2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.color-choice .color-swatch.custom {
+  /* Indiquer un léger liseré pour les couleurs personnalisées */
+  border: 1px dashed var(--border-medium);
+}
+
 .color-choice input[type="radio"] {
   position: absolute;
   width: 1px;

@@ -18,13 +18,21 @@ export const elements = {
 
   // Étape 1 - Sources
   themePreview: document.getElementById("theme-preview"),
-  customVarsInput: document.getElementById("custom-vars"),
+  // Aligné avec l'ID présent dans index.html
+  customVarsInput: document.getElementById("custom-vars-input"),
 
   // Étape 2 - Configuration
-  primaryColorSelect: document.getElementById("primary-color"),
+  // Le HTML n'utilise pas un <select> pour la couleur primaire mais
+  // un conteneur `.color-choices` ; on référence donc cet élément.
+  primaryColorSelect: document.querySelector(".color-choices"),
   themeModeInputs: document.querySelectorAll('input[name="theme-mode"]'),
-  typoResponsiveInput: document.getElementById("typo-responsive"),
-  spacingResponsiveInput: document.getElementById("spacing-responsive"),
+  // Les choix responsive sont des inputs radio nommés, on récupère la NodeList
+  typoResponsiveInputs: document.querySelectorAll(
+    'input[name="typo-responsive"]'
+  ),
+  spacingResponsiveInputs: document.querySelectorAll(
+    'input[name="spacing-responsive"]'
+  ),
   fontFamilyInputs: document.querySelectorAll('input[name="font-family"]'),
 
   // Étape 3 - Génération

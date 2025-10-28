@@ -10,6 +10,7 @@ import {
   generateThemeCSS,
   generateStylesCSS,
   generateAppCSS,
+  generateMissingVariants,
 } from "./generators.js";
 import { showGlobalError, hideGlobalError } from "./validation.js";
 
@@ -84,10 +85,87 @@ export function updateThemePreview() {
 export function updateColorChoices() {
   if (!elements.primaryColorSelect) return;
 
-  // Extraire les couleurs du CSS personnalisé
+  // If the primaryColor reference is a <select>, keep legacy behavior
+  if (elements.primaryColorSelect.tagName === "SELECT") {
+    // Backwards compatible: build <option> list
+    const customColors = new Map();
+    const customVars = state.config.customVars.trim();
+
+    if (customVars) {
+      const lines = customVars.split("\n");
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("--color-") && trimmed.includes(":")) {
+          const parts = trimmed.split(":");
+          if (parts.length >= 2) {
+            const varName = parts[0].trim();
+            const varValue = parts[1].trim().replace(";", "");
+            customColors.set(varName, varValue);
+          }
+        }
+      }
+    }
+
+    // Déduire les couleurs réellement présentes dans themeContent
+    const themeColors = [
+      "raspberry",
+      "blue",
+      "green",
+      "orange",
+      "purple",
+      "red",
+      "yellow",
+    ];
+    const themeColorsFound = new Set();
+    try {
+      const rx = /--color-([a-z0-9-]+)-(?:\d+|fade|bright)\s*:/gim;
+      let m;
+      while ((m = rx.exec(state.themeContent || ""))) {
+        themeColorsFound.add(m[1]);
+      }
+    } catch (e) {
+      /* noop */
+    }
+
+    // Regrouper les colors custom par base
+    const getBaseName = (varName) =>
+      varName.replace(/^--color-/, "").replace(/-(?:\d+|fade|bright)$/, "");
+    const customBases = new Set();
+    for (const [varName] of customColors) {
+      customBases.add(getBaseName(varName));
+    }
+
+    // Générer les options (préserver l'ordre des themeColors)
+    let options = "";
+    themeColors.forEach((color) => {
+      if (themeColorsFound.size === 0 || themeColorsFound.has(color)) {
+        const selected = state.config.primaryColor === color ? " selected" : "";
+        options += `<option value="${color}"${selected}>${color}</option>`;
+      }
+    });
+
+    if (customBases.size > 0) {
+      // Ne pas ajouter de label/optgroup visible pour les couleurs
+      // personnalisées — ajouter directement les options.
+      for (const baseName of customBases) {
+        if (themeColorsFound.has(baseName)) continue;
+        const selected =
+          state.config.primaryColor === baseName ? " selected" : "";
+        options += `<option value="${baseName}"${selected}>${baseName}</option>`;
+      }
+    }
+
+    elements.primaryColorSelect.innerHTML = options;
+    return;
+  }
+
+  // Otherwise assume it's a container (.color-choices) and render radio swatches
+  const container = elements.primaryColorSelect;
+  container.innerHTML = "";
+
+  // Collect custom colors from user input
   const customColors = new Map();
   const customVars = state.config.customVars.trim();
-
   if (customVars) {
     const lines = customVars.split("\n");
     for (const line of lines) {
@@ -103,10 +181,7 @@ export function updateColorChoices() {
     }
   }
 
-  // Générer les options de couleur
-  let options = "";
-
-  // Couleurs du thème (de theme.css)
+  // Déduire les couleurs présentes dans le thème (state.themeContent)
   const themeColors = [
     "raspberry",
     "blue",
@@ -116,24 +191,218 @@ export function updateColorChoices() {
     "red",
     "yellow",
   ];
-  themeColors.forEach((color) => {
-    const selected = state.config.primaryColor === color ? " selected" : "";
-    options += `<option value="${color}"${selected}>${color}</option>`;
-  });
-
-  // Couleurs personnalisées
-  if (customColors.size > 0) {
-    options += '<optgroup label="Couleurs personnalisées">';
-    for (const [varName, varValue] of customColors) {
-      const colorName = varName.replace("--color-", "").replace("-500", "");
-      const selected =
-        state.config.primaryColor === colorName ? " selected" : "";
-      options += `<option value="${colorName}"${selected}>${colorName} (personnalisé)</option>`;
+  const themeColorsFound = new Set();
+  try {
+    const rx = /--color-([a-z0-9-]+)-(?:\d+|fade|bright)\s*:/gim;
+    let m;
+    while ((m = rx.exec(state.themeContent || ""))) {
+      themeColorsFound.add(m[1]);
     }
-    options += "</optgroup>";
+  } catch (e) {
+    /* noop */
   }
 
-  elements.primaryColorSelect.innerHTML = options;
+  // Helper pour extraire le nom de base d'une variable (--color-<base>-<variant>)
+  const getBaseName = (varName) => {
+    return varName
+      .replace(/^--color-/, "")
+      .replace(/-(?:\d+|fade|bright)$/, "");
+  };
+
+  // Regrouper les couleurs personnalisées par nom de base
+  const customBases = new Map();
+  for (const [varName, varValue] of customColors.entries()) {
+    const base = getBaseName(varName);
+    if (!customBases.has(base)) customBases.set(base, []);
+    customBases.get(base).push({ varName, varValue });
+  }
+
+  const buildChoice = (name, labelText, isCustom = false) => {
+    const label = document.createElement("label");
+    label.className = "color-choice";
+    label.setAttribute("tabindex", "0");
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "primary-color";
+    input.value = name;
+    input.className = "visually-hidden";
+    if (state.config.primaryColor === name) input.checked = true;
+
+    // Construire un swatch multi-segment si plusieurs variantes existent
+    const variantsOrder = ["100", "300", "500", "700"];
+
+    const getVariantValue = (base, variant) => {
+      const key = `--color-${base}-${variant}`;
+      // 1) valeur fournie par customColors map (inline)
+      if (customColors && customColors.has(key)) return customColors.get(key);
+
+      // 2) chercher dans le themeContent
+      try {
+        const rx = new RegExp(`--color-${base}-${variant}:\\s*([^;]+);`, "i");
+        const m = (state.themeContent || "").match(rx);
+        if (m && m[1]) return m[1].trim();
+      } catch (e) {
+        /* noop */
+      }
+
+      // 2.5) Si la variante n'existe pas explicitement mais il existe au moins
+      // une autre variante pour cette base, tenter de générer les variantes
+      // manquantes à la volée via generateMissingVariants.
+      try {
+        // Collecter variantes présentes (numériques) depuis customColors et themeContent
+        const present = new Map();
+        // customColors
+        if (customColors) {
+          for (const [k, v] of customColors.entries()) {
+            const m = k.match(new RegExp(`^--color-${base}-(\\d+)$`));
+            if (m) present.set(m[1], v);
+          }
+        }
+
+        // themeContent
+        const rxAll = new RegExp(`--color-${base}-(\\d+):\\s*([^;]+);`, "gim");
+        let mm;
+        const tc = state.themeContent || "";
+        while ((mm = rxAll.exec(tc))) {
+          present.set(mm[1], mm[2].trim());
+        }
+
+        if (present.size > 0) {
+          const completed = generateMissingVariants(present);
+          if (completed && completed.has(variant))
+            return completed.get(variant);
+        }
+      } catch (e) {
+        /* noop */
+      }
+
+      // 3) raspberry placeholder
+      if (
+        base === "raspberry" &&
+        typeof PLACEHOLDER_RASPBERRY !== "undefined"
+      ) {
+        if (PLACEHOLDER_RASPBERRY[variant])
+          return PLACEHOLDER_RASPBERRY[variant];
+      }
+
+      // 4) fallback to CSS variable reference
+      return `var(--color-${base}-${variant})`;
+    };
+
+    // Détecter si on a au moins deux variantes disponibles (pour afficher multi)
+    let foundCount = 0;
+    for (const v of variantsOrder) {
+      const val = getVariantValue(name, v);
+      if (val && !/^var\(/.test(val)) foundCount++;
+    }
+
+    let swatch;
+    if (foundCount >= 2) {
+      swatch = document.createElement("span");
+      swatch.className = "color-swatch multi" + (isCustom ? " custom" : "");
+      swatch.setAttribute("aria-hidden", "true");
+
+      for (const v of variantsOrder) {
+        const seg = document.createElement("span");
+        seg.className = "swatch-seg";
+        const value = getVariantValue(name, v);
+        seg.style.background = value;
+        seg.setAttribute("aria-hidden", "true");
+        swatch.appendChild(seg);
+      }
+    } else {
+      swatch = document.createElement("span");
+      swatch.className = "color-swatch" + (isCustom ? " custom" : "");
+      // valeur principale
+      const mainVal = getVariantValue(name, "500");
+      swatch.style.background = mainVal;
+    }
+
+    const spanName = document.createElement("span");
+    spanName.className = "color-name";
+    spanName.textContent = labelText;
+
+    label.appendChild(input);
+    label.appendChild(swatch);
+    label.appendChild(spanName);
+
+    return label;
+  };
+
+  // Append theme colors that actually exist in the themeContent (keeps ordering)
+  for (const color of themeColors) {
+    if (themeColorsFound.size === 0 || themeColorsFound.has(color)) {
+      const choice = buildChoice(color, color, false);
+      container.appendChild(choice);
+    }
+  }
+
+  // Append custom color bases that are not part of the theme (grouped)
+  if (customBases.size > 0) {
+    // Ne pas afficher de titre/legend visible pour les couleurs personnalisées
+    // (conserver uniquement les choix regroupés). On ajoute directement
+    // les choix personnalisés après les couleurs du thème.
+    for (const [baseName, variants] of customBases.entries()) {
+      // Skip if this base is already shown as a theme color
+      if (themeColorsFound.has(baseName)) continue;
+
+      const choice = buildChoice(baseName, `${baseName}`, true);
+      container.appendChild(choice);
+    }
+  }
+  // Synchroniser l'état visuel des choix
+  try {
+    // Si l'état courant ne correspond à aucune option visible, sélectionner
+    // la première option disponible afin d'éviter d'avoir aucune sélection.
+    const inputs = Array.from(
+      container.querySelectorAll('input[name="primary-color"]')
+    );
+    const hasMatching = inputs.some(
+      (inp) => inp.value === state.config.primaryColor || inp.checked
+    );
+    if (!hasMatching && inputs.length > 0) {
+      const first = inputs[0];
+      state.config.primaryColor = first.value;
+      first.checked = true;
+    }
+
+    refreshColorSelection();
+
+    // Mettre à jour l'aperçu du thème si la couleur a changé
+    try {
+      updateThemePreview();
+    } catch (e) {
+      /* noop */
+    }
+  } catch (err) {
+    // noop
+  }
+}
+
+/**
+ * Synchronise la classe visuelle `.is-selected` sur les éléments
+ * `.color-choice` en fonction de l'état courant (`state.config.primaryColor`).
+ * Utile lorsque la sélection change dynamiquement et qu'on veut s'assurer
+ * d'un rendu cohérent même si :has() n'est pas pris en charge.
+ */
+export function refreshColorSelection() {
+  const container = elements.primaryColorSelect;
+  if (!container) return;
+
+  // Si c'est un <select>, rien à faire
+  if (container.tagName === "SELECT") return;
+
+  const choices = container.querySelectorAll(".color-choice");
+  choices.forEach((choice) => {
+    const input = choice.querySelector('input[name="primary-color"]');
+    if (!input) return;
+    if (input.value === state.config.primaryColor || input.checked) {
+      choice.classList.add("is-selected");
+    } else {
+      choice.classList.remove("is-selected");
+    }
+  });
 }
 
 /**

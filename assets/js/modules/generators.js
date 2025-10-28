@@ -3,7 +3,7 @@
  * Fonctions de génération des différents fichiers CSS
  */
 
-import { state, PLACEHOLDER_RASPBERRY } from "./state.js";
+import { state, PLACEHOLDER_RASPBERRY, RUNTIME_ONLY_COLORS } from "./state.js";
 import { validateCustomVars } from "./validation.js";
 
 /**
@@ -26,21 +26,21 @@ export function generateMissingVariants(variants) {
   if (existing.length === 0) return result;
 
   // Fonction d'interpolation entre deux valeurs OKLCH
-  const interpolate = (val1, val2, ratio) => {
-    // Parser les valeurs OKLCH: oklch(L% C H)
-    const parseOKLCH = (str) => {
-      const match = str.match(
-        /oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)/
-      );
-      if (!match) return null;
-      return {
-        l: parseFloat(match[1]),
-        c: parseFloat(match[2]),
-        h: parseFloat(match[3]),
-        alpha: match[4] || "",
-      };
+  // Parser les valeurs OKLCH: oklch(L% C H)
+  function parseOKLCH(str) {
+    const match = str.match(
+      /oklch\(([-\d.]+)%?\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)/
+    );
+    if (!match) return null;
+    return {
+      l: parseFloat(match[1]),
+      c: parseFloat(match[2]),
+      h: parseFloat(match[3]),
+      alpha: match[4] || "",
     };
+  }
 
+  const interpolate = (val1, val2, ratio) => {
     const c1 = parseOKLCH(val1);
     const c2 = parseOKLCH(val2);
 
@@ -422,23 +422,176 @@ export function generateTokensCSS() {
 /**
  * Génère le CSS du thème avec les variables personnalisées
  */
-export function generateThemeCSS() {
-  let css = state.themeContent;
+// Helpers: parser minimal pour extraire variantes et variables personnalisées
+function parseColorVariants(cssText) {
+  const rx = /--color-([a-z0-9-]+)-(\d+):\s*([^;]+);/gim;
+  const map = new Map();
+  let m;
+  while ((m = rx.exec(cssText))) {
+    const name = m[1];
+    const variant = m[2];
+    const value = m[3].trim();
+    if (!map.has(name)) map.set(name, new Map());
+    map.get(name).set(variant, value);
+  }
+  return map;
+}
 
-  // Ajouter les variables personnalisées à la fin
-  if (state.config.customVars.trim()) {
-    css += "\n\n/* Variables personnalisées */\n";
-    css += ":root {\n";
-    css += state.config.customVars
-      .trim()
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line)
-      .join("\n  ");
-    css += "\n}\n";
+function parseColorVariables(cssText) {
+  if (!cssText || !cssText.trim()) return [];
+  const rx = /--color-([a-z0-9-]+)-\d+\s*:/gim;
+  const set = new Set();
+  let m;
+  while ((m = rx.exec(cssText))) {
+    set.add(m[1]);
+  }
+  return Array.from(set);
+}
+
+export function generateThemeCSS() {
+  // Prefer the runtime values from state, but fallback to reading the
+  // current UI values if available. This makes the generator resilient
+  // to the partial duplication of `state` between `app.js` and modules
+  // during the progressive migration.
+  let customVars = state.config.customVars;
+  let primaryColor = state.config.primaryColor;
+
+  try {
+    if (typeof document !== "undefined") {
+      const textarea = document.getElementById("custom-vars-input");
+      if (textarea && textarea.value && textarea.value.trim()) {
+        customVars = textarea.value;
+      }
+
+      // Try to read the selected primary color from the UI
+      const checked = document.querySelector(
+        'input[name="primary-color"]:checked'
+      );
+      if (checked && checked.value) {
+        primaryColor = checked.value;
+      }
+    }
+  } catch (err) {
+    // ignore - running in non-DOM environment
   }
 
-  return css;
+  let themeCSS = state.themeContent || "";
+
+  // Parser les couleurs disponibles
+  const allColors = themeCSS + "\n" + (customVars || "");
+  const colorsMap = parseColorVariants(allColors);
+
+  // Générer les variantes manquantes pour toutes les couleurs non runtime
+  // afin que l'aperçu (étape 1) et le fichier généré (étape 3) soient cohérents.
+  let generatedVariants = "";
+  const requiredVariants = ["100", "300", "500", "700"];
+
+  for (const [colorName, variants] of colorsMap.entries()) {
+    if (
+      typeof RUNTIME_ONLY_COLORS !== "undefined" &&
+      RUNTIME_ONLY_COLORS.has(colorName)
+    ) {
+      continue; // ne pas générer pour les palettes runtime-only
+    }
+
+    const missing = requiredVariants.filter((v) => !variants.has(v));
+    if (missing.length === 0) continue;
+
+    const completed = generateMissingVariants(variants);
+    const generated = [];
+    missing.forEach((variant) => {
+      if (completed.has(variant)) {
+        generated.push(
+          `  --color-${colorName}-${variant}: ${completed.get(variant)};`
+        );
+      }
+    });
+
+    if (generated.length > 0) {
+      generatedVariants += `\n  /* Variantes générées automatiquement pour --color-${colorName} */\n${generated.join(
+        "\n"
+      )}\n`;
+    }
+  }
+
+  // Construire la section supplémentaire à ajouter
+  let additionalContent = "";
+
+  if (customVars && customVars.trim()) {
+    const indentedCustomVars = customVars
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => `  ${line.trim()}`)
+      .filter((line) => line.trim().length > 2)
+      .join("\n");
+    additionalContent += `\n  /* Couleurs projet personnalisées */\n${indentedCustomVars}\n`;
+  }
+
+  if (generatedVariants) {
+    additionalContent += generatedVariants;
+  }
+
+  // Placeholder 'raspberry' injection si nécessaire
+  if (primaryColor === "raspberry") {
+    const hasRaspberry = colorsMap.has("raspberry");
+    const customList = parseColorVariables(customVars || "");
+    if (!hasRaspberry && customList.length === 0) {
+      let raspBlock = `\n  /* Placeholder 'raspberry' injecté par le générateur */\n`;
+      Object.keys(PLACEHOLDER_RASPBERRY).forEach((variant) => {
+        raspBlock += `  --color-raspberry-${variant}: ${PLACEHOLDER_RASPBERRY[variant]};\n`;
+      });
+      additionalContent += raspBlock;
+    }
+  }
+
+  // Insérer additionalContent avant la dernière fermeture de :root si présent
+  if (additionalContent) {
+    const lastBraceIndex = themeCSS.lastIndexOf("}");
+    if (lastBraceIndex !== -1) {
+      themeCSS =
+        themeCSS.slice(0, lastBraceIndex) +
+        additionalContent +
+        themeCSS.slice(lastBraceIndex);
+    } else {
+      themeCSS += additionalContent;
+    }
+  }
+
+  // Si l'utilisateur a ajouté des couleurs personnalisées, retirer le placeholder 'raspberry'
+  const customColorsList = parseColorVariables(customVars || "");
+  if (customColorsList.length > 0) {
+    themeCSS = themeCSS.replace(/--color-raspberry-[\w-]*:\s*[^;]+;?/g, "");
+    themeCSS = themeCSS.replace(/\n{3,}/g, "\n\n").replace(/\n\s+\n/g, "\n\n");
+  }
+
+  // Filtrer les couleurs runtime-only et les imports de palettes runtime
+  if (
+    typeof RUNTIME_ONLY_COLORS !== "undefined" &&
+    RUNTIME_ONLY_COLORS.size > 0
+  ) {
+    const names = Array.from(RUNTIME_ONLY_COLORS)
+      .map((n) => n.replace(/[-\\\/\\^$*+?.()|[\]{}]/g, "\\$&"))
+      .join("|");
+
+    const varRx = new RegExp(`--color-(?:${names})-[\\w-]*:\\s*[^;]+;?`, "g");
+    themeCSS = themeCSS.replace(varRx, "");
+
+    const importRx = new RegExp(
+      `@import\\s+[\"']?[^\"';]*palettes\\/(?:${names})\\.css[\"']?;?`,
+      "gi"
+    );
+    themeCSS = themeCSS.replace(importRx, "");
+
+    const lineFallback = new RegExp(
+      `^.*palettes\\/(?:${names})\\.css.*$\\n?`,
+      "gmi"
+    );
+    themeCSS = themeCSS.replace(lineFallback, "");
+
+    themeCSS = themeCSS.replace(/\n{3,}/g, "\n\n").replace(/\n\s+\n/g, "\n\n");
+  }
+
+  return themeCSS;
 }
 
 /**

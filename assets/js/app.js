@@ -3,43 +3,11 @@
  * Application principale
  */
 
-// État de l'application
-const state = {
-  currentStep: 1,
-  config: {
-    primaryColor: "raspberry",
-    themeMode: "both",
-    typoResponsive: true,
-    spacingResponsive: true,
-    fontFamily: "system",
-    customVars: "",
-  },
-  appliedCustomVars: new Set(),
-  themeContent: "", // Contenu original de theme.css
-  resetContent: "", // Contenu de reset.css
-  layoutsContent: "", // Contenu de layouts.css
-  nativesContent: "", // Contenu de natives.css
-  stylesSystemContent: "", // Contenu de styles.css (système)
-  stylesPoppinsContent: "", // Contenu de styles-2.css (Poppins)
-};
-
-// Placeholder 'raspberry' utilisé uniquement pour la génération et l'affichage
-// quand l'app n'a pas de couleur projet fournie. Ne doit pas être utilisé
-// comme variable runtime globale pour le style de l'application.
-const PLACEHOLDER_RASPBERRY = {
-  100: "oklch(98% 0.03 352)",
-  200: "oklch(94.5% 0.12 352)",
-  300: "oklch(84.5% 0.2 352)",
-  400: "oklch(72.8281% 0.1971 352.001)",
-  500: "oklch(64.5% 0.2 352)",
-  600: "oklch(54.5% 0.2 352)",
-  700: "oklch(44.5% 0.2 352)",
-};
-
-// Palette présentes uniquement pour le runtime de l'application (ne doivent
-// pas apparaître dans l'interface de configuration). Par ex. 'ocean' sert
-// le style de l'app mais ne doit pas être exposée comme couleur projet.
-const RUNTIME_ONLY_COLORS = new Set(["ocean"]);
+import {
+  state,
+  PLACEHOLDER_RASPBERRY,
+  RUNTIME_ONLY_COLORS,
+} from "./modules/state.js";
 
 // Éléments DOM
 const elements = {
@@ -75,6 +43,20 @@ function showGlobalError(message) {
   elements.globalError.textContent = message;
   elements.globalError.hidden = false;
 }
+
+// Importer le module d'événements pour permettre une activation progressive
+// des fonctionnalités modulaires. On expose ensuite son setup via une API
+// globale non intrusive.
+import { setupEventListeners as __modulesSetupEventListeners } from "./modules/events.js";
+import { generateThemeCSS as generateThemeCSSModule } from "./modules/generators.js";
+import {
+  loadThemeFile as moduleLoadThemeFile,
+  loadResetFile as moduleLoadResetFile,
+  loadLayoutsFile as moduleLoadLayoutsFile,
+  loadNativesFile as moduleLoadNativesFile,
+  loadStylesFiles as moduleLoadStylesFiles,
+} from "./modules/files.js";
+// module state is imported above as `state`
 
 /**
  * Cache le message d'erreur global
@@ -125,15 +107,31 @@ function validateCustomVars(css) {
   return true; // OK
 }
 async function init() {
-  // Charger les contenus des fichiers
-  await loadThemeFile();
-  await loadResetFile();
-  await loadLayoutsFile();
-  await loadNativesFile();
-  await loadStylesFiles();
+  // Charger les contenus des fichiers (les modules remplissent leur propre state)
+  await moduleLoadThemeFile();
+  // Le module met à jour directement `state.themeContent`.
+  await moduleLoadResetFile();
+  // Le module met à jour directement `state.resetContent`.
+  await moduleLoadLayoutsFile();
+  // Le module met à jour directement `state.layoutsContent`.
+  await moduleLoadNativesFile();
+  // Le module met à jour directement `state.nativesContent`.
+  await moduleLoadStylesFiles();
+  // Le module met à jour directement les contenus de styles.
 
   // Attacher les événements
-  attachEventListeners();
+  // Lorsque les modules seront activés progressivement, ils peuvent
+  // exposer leur propre setup. Si disponible, utiliser la version modulaire
+  // afin d'avancer fonctionnalité par fonctionnalité.
+  if (typeof window.setupEventListenersFromModules === "function") {
+    window.setupEventListenersFromModules();
+  } else if (typeof setupEventListeners === "function") {
+    // fallback vers l'implémentation legacy si présente
+    setupEventListeners();
+  } else {
+    // keep backward compatibility: call attachEventListeners (legacy)
+    attachEventListeners();
+  }
 
   // Générer les choix de couleurs initialement (affiche 'raspberry' par défaut)
   updateColorChoices();
@@ -142,55 +140,13 @@ async function init() {
 
   // Mettre à jour l'interface
   updateUI();
-}
-
-/**
- * Charge le contenu du fichier theme.css
- */
-async function loadThemeFile() {
+  // Mettre à jour l'aperçu du thème maintenant que les contenus sont chargés
   try {
-    const response = await fetch("assets/css/theme.css");
-    if (!response.ok) {
-      throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
-    }
-    const content = await response.text();
-    state.themeContent = content; // Sauvegarder le contenu original
     updateThemePreview();
-    hideGlobalError(); // Masquer les erreurs si tout va bien
-  } catch (error) {
-    console.error("Erreur lors du chargement de theme.css:", error);
-    showGlobalError(
-      "Impossible de charger le fichier theme.css. Vérifiez votre connexion ou les assets locaux."
-    );
-    elements.themePreview.textContent = "/* Erreur de chargement */";
+  } catch (e) {
+    console.warn("[init] updateThemePreview failed:", e);
   }
 }
-
-/**
- * Charge le contenu du fichier reset.css depuis le CDN
- */
-async function loadResetFile() {
-  try {
-    const timestamp = Date.now();
-    const response = await fetch(
-      `https://reset.alsacreations.com/public/reset.css?v=${timestamp}`
-    );
-    if (!response.ok) {
-      throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
-    }
-    state.resetContent = await response.text();
-  } catch (error) {
-    console.error("Erreur lors du chargement de reset.css:", error);
-    showGlobalError(
-      "Impossible de charger reset.css depuis le CDN. L'application fonctionne en mode dégradé."
-    );
-    state.resetContent = "/* Erreur lors du chargement de reset.css */";
-  }
-}
-
-/**
- * Charge le contenu du fichier layouts.css depuis GitHub
- */
 async function loadLayoutsFile() {
   try {
     const timestamp = Date.now();
@@ -373,6 +329,34 @@ function applyCustomVarsToDocument() {
   // Mettre à jour le set tracé
   state.appliedCustomVars = newKeys;
 }
+
+// API progressive pour que les modules puissent appeler l'initialisation
+// des listeners sans casser l'état monolithique.
+window.setupEventListenersFromModules = function () {
+  if (typeof __modulesSetupEventListeners === "function") {
+    __modulesSetupEventListeners();
+  }
+};
+
+// API pour que les modules demandent l'application des variables custom
+// sur l'état monolithique (migration progressive)
+window.applyCustomVarsFromModules = function (value) {
+  // Mettre à jour l'état principal
+  state.config.customVars = value;
+
+  // Valider
+  const validation = validateCustomVars(value);
+  if (validation !== true) {
+    showGlobalError(`Variables personnalisées : ${validation}`);
+  } else {
+    hideGlobalError();
+  }
+
+  // Appliquer et rafraîchir l'aperçu
+  applyCustomVarsToDocument();
+  updateThemePreview();
+  updateColorChoices();
+};
 
 /**
  * Parse les variables de couleur depuis une chaîne CSS

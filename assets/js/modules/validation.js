@@ -3,6 +3,8 @@
  * Fonctions de validation des données utilisateur
  */
 
+import { elements } from "./dom.js";
+
 /**
  * Cache le message d'erreur global
  */

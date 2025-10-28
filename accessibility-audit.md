@@ -4,7 +4,7 @@
 
 **Date :** 28 octobre 2025  
 **Niveau ciblé :** RGAA 4.1 niveau AA  
-**Outil utilisé :** Analyse manuelle des critères RGAA  
+**Outil utilisé :** Analyse manuelle des critères RGAA
 
 ### ✅ **Points forts identifiés**
 
@@ -147,7 +147,7 @@ Dans `index.html`, supprimer :
 
 ```html
 <!-- Supprimer role="navigation" (implicite sur <nav>) -->
-<nav class="step-actions" aria-label="Navigation entre les étapes">
+<nav class="step-actions" aria-label="Navigation entre les étapes"></nav>
 ```
 
 ### **3. Amélioration de la structure des listes**
@@ -158,12 +158,14 @@ Modifier la navigation des étapes :
 <!-- Avant -->
 <nav class="steps-nav" aria-label="Étapes de configuration">
   <div class="steps-list" data-layout="cluster" data-justify="center">
-
-<!-- Après -->
-<nav class="steps-nav" aria-label="Étapes de configuration">
-  <ol class="steps-list" data-layout="cluster" data-justify="center">
-    <!-- ... -->
-  </ol>
+    <!-- Après -->
+    <nav class="steps-nav" aria-label="Étapes de configuration">
+      <ol class="steps-list" data-layout="cluster" data-justify="center">
+        <!-- ... -->
+      </ol>
+    </nav>
+  </div>
+</nav>
 ```
 
 ---
@@ -176,7 +178,7 @@ Modifier la navigation des étapes :
 ### **Répartition par thèmes :**
 
 - **Images :** 100% ✅
-- **Cadres :** 100% ✅  
+- **Cadres :** 100% ✅
 - **Couleurs :** 80% ⚠️ (à vérifier)
 - **Multimédia :** 100% ✅
 - **Tableaux :** N/A
@@ -196,7 +198,7 @@ Modifier la navigation des étapes :
 ### **Phase 1 : Corrections critiques (1-2h)**
 
 1. ✅ Ajouter les indicateurs de focus visible
-2. ✅ Supprimer les rôles ARIA redondants  
+2. ✅ Supprimer les rôles ARIA redondants
 3. ✅ Corriger la structure des listes
 
 ### **Phase 2 : Tests et validation (1h)**

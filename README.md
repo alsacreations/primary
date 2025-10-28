@@ -6,7 +6,36 @@
 
 Cet outil est destiné aux **intégrateurs chez Alsacréations** pour démarrer rapidement leurs projets avec une base CSS cohérente et personnalisable.
 
-## 🚀 Utilisation
+## � Installation
+
+### Prérequis
+
+- Node.js (version 16 ou supérieure)
+- pnpm (installé via `npm install -g pnpm` ou via votre gestionnaire de paquets)
+
+### Installation
+
+1. Clonez le dépôt :
+
+   ```bash
+   git clone https://github.com/alsacreations/primary.git
+   cd primary
+   ```
+
+2. Installez les dépendances :
+
+   ```bash
+   pnpm install
+   ```
+
+### Scripts disponibles
+
+- **`pnpm run serve`** : Lance un serveur local sur `http://localhost:8080` pour tester l'application.
+- **`pnpm run test`** : Exécute les tests automatisés de génération CSS.
+- **`pnpm run lint`** : Vérifie et corrige automatiquement la syntaxe CSS avec Stylelint.
+- **`pnpm run build`** : Placeholder (pas de build nécessaire pour ce projet statique).
+
+## �🚀 Utilisation
 
 ### Accès
 

@@ -464,3 +464,21 @@ dl {
     color: var(--on-surface);
   }
 }
+
+/* ---------------------
+ * Global Error Messages
+ * -------------------- */
+
+.global-error {
+  margin: var(--gap-m) 0;
+  padding: var(--gap-m);
+  background: var(--error, oklch(50.54% 0.19 27.52));
+  color: var(--on-error, oklch(100% 0 0));
+  border: 1px solid var(--error, oklch(35.54% 0.19 27.52));
+  border-radius: var(--radius-m);
+  font-size: var(--text-s);
+}
+
+.global-error[hidden] {
+  display: none;
+}

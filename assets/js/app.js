@@ -65,11 +65,65 @@ const elements = {
   generatedTheme: document.getElementById("generated-theme"),
   generatedTokens: document.getElementById("generated-tokens"),
   generatedStyles: document.getElementById("generated-styles"),
+  globalError: document.getElementById("global-error"),
 };
 
 /**
- * Initialisation de l'application
+ * Affiche un message d'erreur global
  */
+function showGlobalError(message) {
+  elements.globalError.textContent = message;
+  elements.globalError.hidden = false;
+}
+
+/**
+ * Cache le message d'erreur global
+ */
+function hideGlobalError() {
+  elements.globalError.hidden = true;
+  elements.globalError.textContent = "";
+}
+
+/**
+ * Valide la syntaxe basique du CSS personnalisé
+ */
+function validateCustomVars(css) {
+  if (!css.trim()) return true; // Vide est OK
+
+  // Regex simple pour détecter des erreurs évidentes
+  const lines = css
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Vérifier que chaque ligne non vide commence par --
+    if (!line.startsWith("--")) {
+      return `Ligne ${i + 1}: Les variables doivent commencer par "--".`;
+    }
+
+    // Vérifier la présence de ":"
+    if (!line.includes(":")) {
+      return `Ligne ${i + 1}: Variable mal formée (manque ":").`;
+    }
+
+    // Vérifier la présence de ";"
+    if (!line.endsWith(";")) {
+      return `Ligne ${i + 1}: Variable mal formée (manque ";").`;
+    }
+
+    // Vérifier les accolades non fermées (basique)
+    const openBraces = (line.match(/\(/g) || []).length;
+    const closeBraces = (line.match(/\)/g) || []).length;
+    if (openBraces !== closeBraces) {
+      return `Ligne ${i + 1}: Parenthèses non équilibrées.`;
+    }
+  }
+
+  return true; // OK
+}
 async function init() {
   // Charger les contenus des fichiers
   await loadThemeFile();
@@ -96,11 +150,18 @@ async function init() {
 async function loadThemeFile() {
   try {
     const response = await fetch("assets/css/theme.css");
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+    }
     const content = await response.text();
     state.themeContent = content; // Sauvegarder le contenu original
     updateThemePreview();
+    hideGlobalError(); // Masquer les erreurs si tout va bien
   } catch (error) {
     console.error("Erreur lors du chargement de theme.css:", error);
+    showGlobalError(
+      "Impossible de charger le fichier theme.css. Vérifiez votre connexion ou les assets locaux."
+    );
     elements.themePreview.textContent = "/* Erreur de chargement */";
   }
 }
@@ -114,9 +175,15 @@ async function loadResetFile() {
     const response = await fetch(
       `https://reset.alsacreations.com/public/reset.css?v=${timestamp}`
     );
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+    }
     state.resetContent = await response.text();
   } catch (error) {
     console.error("Erreur lors du chargement de reset.css:", error);
+    showGlobalError(
+      "Impossible de charger reset.css depuis le CDN. L'application fonctionne en mode dégradé."
+    );
     state.resetContent = "/* Erreur lors du chargement de reset.css */";
   }
 }
@@ -130,9 +197,15 @@ async function loadLayoutsFile() {
     const response = await fetch(
       `https://raw.githubusercontent.com/alsacreations/bretzel/main/public/layouts.css?v=${timestamp}`
     );
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+    }
     state.layoutsContent = await response.text();
   } catch (error) {
     console.error("Erreur lors du chargement de layouts.css:", error);
+    showGlobalError(
+      "Impossible de charger layouts.css depuis GitHub. L'application fonctionne en mode dégradé."
+    );
     state.layoutsContent = "/* Erreur lors du chargement de layouts.css */";
   }
 }
@@ -146,9 +219,15 @@ async function loadNativesFile() {
     const response = await fetch(
       `https://knacss.com/css/natives.css?v=${timestamp}`
     );
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+    }
     state.nativesContent = await response.text();
   } catch (error) {
     console.error("Erreur lors du chargement de natives.css:", error);
+    showGlobalError(
+      "Impossible de charger natives.css depuis KNACSS. L'application fonctionne en mode dégradé."
+    );
     state.nativesContent = "/* Erreur lors du chargement de natives.css */";
   }
 }
@@ -160,13 +239,24 @@ async function loadStylesFiles() {
   try {
     // Charger styles.css (système)
     const responseSystem = await fetch("public/samples/styles.css");
+    if (!responseSystem.ok) {
+      throw new Error(`Erreur HTTP ${responseSystem.status} pour styles.css`);
+    }
     state.stylesSystemContent = await responseSystem.text();
 
     // Charger styles-2.css (Poppins)
     const responsePoppins = await fetch("public/samples/styles-2.css");
+    if (!responsePoppins.ok) {
+      throw new Error(
+        `Erreur HTTP ${responsePoppins.status} pour styles-2.css`
+      );
+    }
     state.stylesPoppinsContent = await responsePoppins.text();
   } catch (error) {
     console.error("Erreur lors du chargement des fichiers styles:", error);
+    showGlobalError(
+      "Impossible de charger les fichiers de styles. Vérifiez les assets locaux."
+    );
   }
 }
 
@@ -610,7 +700,17 @@ function attachEventListeners() {
   });
 
   elements.customVarsInput.addEventListener("input", (e) => {
-    state.config.customVars = e.target.value;
+    const value = e.target.value;
+    state.config.customVars = value;
+
+    // Valider la syntaxe CSS
+    const validation = validateCustomVars(value);
+    if (validation !== true) {
+      showGlobalError(`Variables personnalisées : ${validation}`);
+    } else {
+      hideGlobalError();
+    }
+
     // Mettre à jour l'affichage de theme.css avec les variables personnalisées
     updateThemePreview();
     // Mettre à jour les choix de couleurs quand l'utilisateur ajoute des variables
@@ -729,6 +829,12 @@ function generateTokensCSS() {
     spacingResponsive,
     customVars,
   } = state.config;
+
+  // Valider les variables personnalisées avant génération
+  const validation = validateCustomVars(customVars);
+  if (validation !== true) {
+    throw new Error(`Variables personnalisées invalides : ${validation}`);
+  }
 
   // Utiliser directement le nom de la couleur pour référencer la variable
   const primaryValue = `var(--color-${primaryColor}-500)`;
@@ -1117,69 +1223,77 @@ function generateAppCSS() {
  * Génère et affiche tous les fichiers CSS
  */
 function generateAllFiles() {
-  const appCSS = generateAppCSS();
-  const themeCSS = generateThemeCSS();
-  const tokensCSS = generateTokensCSS();
-  const stylesCSS = generateStylesCSS();
+  try {
+    const appCSS = generateAppCSS();
+    const themeCSS = generateThemeCSS();
+    const tokensCSS = generateTokensCSS();
+    const stylesCSS = generateStylesCSS();
 
-  // Afficher app.css avec coloration syntaxique
-  elements.generatedApp.innerHTML = Prism.highlight(
-    appCSS,
-    Prism.languages.css,
-    "css"
-  );
+    // Masquer les erreurs si la génération réussit
+    hideGlobalError();
 
-  // Afficher reset.css avec coloration syntaxique
-  elements.generatedReset.innerHTML = Prism.highlight(
-    state.resetContent,
-    Prism.languages.css,
-    "css"
-  );
-
-  // Afficher layouts.css avec coloration syntaxique
-  elements.generatedLayouts.innerHTML = Prism.highlight(
-    state.layoutsContent,
-    Prism.languages.css,
-    "css"
-  );
-
-  // Afficher natives.css avec coloration syntaxique
-  elements.generatedNatives.innerHTML = Prism.highlight(
-    state.nativesContent,
-    Prism.languages.css,
-    "css"
-  );
-
-  // Afficher theme.css avec coloration syntaxique
-  elements.generatedTheme.innerHTML = Prism.highlight(
-    themeCSS,
-    Prism.languages.css,
-    "css"
-  );
-
-  // Afficher theme-tokens.css avec coloration syntaxique
-  elements.generatedTokens.innerHTML = Prism.highlight(
-    tokensCSS,
-    Prism.languages.css,
-    "css"
-  );
-
-  // Afficher styles.css avec coloration syntaxique
-  elements.generatedStyles.innerHTML = Prism.highlight(
-    stylesCSS,
-    Prism.languages.css,
-    "css"
-  );
-
-  // Appliquer la coloration syntaxique à l'exemple app.css
-  const appCssExample = document.getElementById("app-css-example");
-  if (appCssExample) {
-    const appCssContent = appCssExample.textContent;
-    appCssExample.innerHTML = Prism.highlight(
-      appCssContent,
+    // Afficher app.css avec coloration syntaxique
+    elements.generatedApp.innerHTML = Prism.highlight(
+      appCSS,
       Prism.languages.css,
       "css"
     );
+
+    // Afficher reset.css avec coloration syntaxique
+    elements.generatedReset.innerHTML = Prism.highlight(
+      state.resetContent,
+      Prism.languages.css,
+      "css"
+    );
+
+    // Afficher layouts.css avec coloration syntaxique
+    elements.generatedLayouts.innerHTML = Prism.highlight(
+      state.layoutsContent,
+      Prism.languages.css,
+      "css"
+    );
+
+    // Afficher natives.css avec coloration syntaxique
+    elements.generatedNatives.innerHTML = Prism.highlight(
+      state.nativesContent,
+      Prism.languages.css,
+      "css"
+    );
+
+    // Afficher theme.css avec coloration syntaxique
+    elements.generatedTheme.innerHTML = Prism.highlight(
+      themeCSS,
+      Prism.languages.css,
+      "css"
+    );
+
+    // Afficher theme-tokens.css avec coloration syntaxique
+    elements.generatedTokens.innerHTML = Prism.highlight(
+      tokensCSS,
+      Prism.languages.css,
+      "css"
+    );
+
+    // Afficher styles.css avec coloration syntaxique
+    elements.generatedStyles.innerHTML = Prism.highlight(
+      stylesCSS,
+      Prism.languages.css,
+      "css"
+    );
+
+    // Appliquer la coloration syntaxique à l'exemple app.css
+    const appCssExample = document.getElementById("app-css-example");
+    if (appCssExample) {
+      const appCssContent = appCssExample.textContent;
+      appCssExample.innerHTML = Prism.highlight(
+        appCssContent,
+        Prism.languages.css,
+        "css"
+      );
+    }
+  } catch (error) {
+    showGlobalError(`Erreur lors de la génération : ${error.message}`);
+    console.error("Erreur de génération :", error);
   }
 }
 

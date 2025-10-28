@@ -1,0 +1,33 @@
+{
+  "name": "primary-css-generator",
+  "version": "1.0.0",
+  "description": "Configurateur CSS pour projets Alsacréations - Générateur de tokens et thèmes personnalisés",
+  "main": "index.html",
+  "scripts": {
+    "test": "node scripts/test-generate.js",
+    "lint": "stylelint assets/css/**/*.css --fix",
+    "serve": "npx http-server . -p 8080",
+    "build": "echo 'No build step required - static files only'"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "stylelint": "^16.0.0",
+    "stylelint-config-html": "^1.1.0",
+    "stylelint-config-property-sort-order-smacss": "^10.0.0",
+    "stylelint-config-standard": "^36.0.0"
+  },
+  "author": "Alsacréations",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alsacreations/primary"
+  },
+  "keywords": [
+    "css",
+    "generator",
+    "tokens",
+    "alsacreations",
+    "design-system"
+  ],
+  "type": "module"
+}

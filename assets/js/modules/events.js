@@ -94,7 +94,12 @@ export async function copyToClipboard(element) {
   }
 }
 
-import { generateAppCSS, generateThemeCSS, generateTokensCSS, generateStylesCSS } from "./generators.js";
+import {
+  generateAppCSS,
+  generateThemeCSS,
+  generateTokensCSS,
+  generateStylesCSS,
+} from "./generators.js";
 
 /**
  * Télécharge tous les fichiers CSS

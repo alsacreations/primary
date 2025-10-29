@@ -32,10 +32,39 @@ export function generateMissingVariants(variants) {
   if (hasAll) return result;
 
   const numericKeys = Array.from(result.keys()).filter((k) => /^\d+$/.test(k));
+  // Desired lightness mapping for semantic variants. These are absolute
+  // target L values (in percent) used when we can parse an existing value
+  // as oklch(). If parsing fails we fall back to copying an existing
+  // numeric variant (best-effort) or a neutral oklch value.
+  const desiredL = { 100: 92, 300: 76, 500: 60, 700: 44 };
+
+  // Try to find an existing oklch numeric variant to base extrapolation on.
+  let baseOklch = null;
+  for (const k of numericKeys) {
+    const val = String(result.get(k)).trim();
+    // Match oklch(L% C H) where L is percent and C/H are numbers (decimals allowed)
+    const m = /oklch\(\s*([0-9.]+)%\s+([0-9.]+)\s+([0-9.]+)\s*\)/i.exec(val);
+    if (m) {
+      baseOklch = { L: parseFloat(m[1]), C: m[2], H: m[3] };
+      break;
+    }
+  }
+
   for (const r of required) {
     if (!result.has(r)) {
-      if (numericKeys.length) result.set(r, result.get(numericKeys[0]));
-      else result.set(r, "oklch(50% 0 0)");
+      if (baseOklch) {
+        // Construct a new oklch value with the desired lightness but same C/H
+        const L = desiredL[r];
+        const C = baseOklch.C;
+        const H = baseOklch.H;
+        result.set(r, `oklch(${L}% ${C} ${H})`);
+      } else if (numericKeys.length) {
+        // No oklch base found: copy first numeric variant
+        result.set(r, result.get(numericKeys[0]));
+      } else {
+        // As ultimate fallback, provide a neutral oklch
+        result.set(r, "oklch(50% 0 0)");
+      }
     }
   }
   return result;

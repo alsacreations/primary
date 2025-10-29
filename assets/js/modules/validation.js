@@ -35,27 +35,49 @@ export function validateCustomVars(css) {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const isLast = i === lines.length - 1;
 
     // Vérifier que chaque ligne non vide commence par --
+    // Mais être tolérant si l'utilisateur est en train d'écrire la ligne
     if (!line.startsWith("--")) {
-      return `Ligne ${i + 1}: Les variables doivent commencer par "--".`;
+      if (!isLast) {
+        return `Ligne ${i + 1}: Les variables doivent commencer par "--".`;
+      } else {
+        // Dernière ligne incomplète : laisser passer (utilisateur en cours de frappe)
+        return true;
+      }
     }
 
-    // Vérifier la présence de ":"
+    // Vérifier la présence de ":" — si la ligne courante est la dernière et
+    // ne contient pas encore ":", on considère que l'utilisateur est en train
+    // d'écrire et on évite de renvoyer une erreur agressive.
     if (!line.includes(":")) {
-      return `Ligne ${i + 1}: Variable mal formée (manque ":").`;
+      if (!isLast) {
+        return `Ligne ${i + 1}: Variable mal formée (manque ":").`;
+      } else {
+        return true;
+      }
     }
 
-    // Vérifier la présence de ";"
+    // Vérifier la présence de ";" — tolérer l'absence uniquement sur la ligne
+    // en cours (dernière ligne) pour éviter de spammer l'utilisateur.
     if (!line.endsWith(";")) {
-      return `Ligne ${i + 1}: Variable mal formée (manque ";").`;
+      if (!isLast) {
+        return `Ligne ${i + 1}: Variable mal formée (manque ";").`;
+      } else {
+        return true;
+      }
     }
 
-    // Vérifier les accolades non fermées (basique)
+    // Vérifier les parenthèses non fermées (basique) — tolérer sur la dernière
     const openBraces = (line.match(/\(/g) || []).length;
     const closeBraces = (line.match(/\)/g) || []).length;
     if (openBraces !== closeBraces) {
-      return `Ligne ${i + 1}: Parenthèses non équilibrées.`;
+      if (!isLast) {
+        return `Ligne ${i + 1}: Parenthèses non équilibrées.`;
+      } else {
+        return true;
+      }
     }
   }
 

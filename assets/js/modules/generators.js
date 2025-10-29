@@ -271,6 +271,7 @@ export function generateTokensCSS() {
   lines.push("");
 
   // accent: depending on themeMode
+  lines.push("  /* Couleur d'accent */");
   if (themeMode === "both") {
     lines.push(
       `  --accent: light-dark(var(--primary), var(--color-${chosen}-300));`
@@ -307,7 +308,8 @@ export function generateTokensCSS() {
   }
 
   lines.push("");
-  // simple layers / link / selection / states
+  // Niveaux de profondeur / Interactions / Sélection / États
+  lines.push("  /* Niveaux de profondeur */");
   if (themeMode === "both") {
     lines.push(
       "  --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));"
@@ -319,6 +321,7 @@ export function generateTokensCSS() {
       "  --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));"
     );
     lines.push("");
+    lines.push("  /* Interactions */");
     lines.push(
       "  --link: light-dark(var(--primary), var(--color-" + chosen + "-300));"
     );
@@ -328,6 +331,7 @@ export function generateTokensCSS() {
         "-700), var(--primary));"
     );
     lines.push("");
+    lines.push("  /* Couleur de sélection */");
     lines.push(
       "  --selection: light-dark(var(--color-" +
         chosen +
@@ -336,6 +340,7 @@ export function generateTokensCSS() {
         "-500));"
     );
     lines.push("");
+    lines.push("  /* États */");
     lines.push(
       "  --warning: light-dark(var(--color-warning-500), var(--color-warning-300));"
     );
@@ -353,11 +358,14 @@ export function generateTokensCSS() {
     lines.push("  --layer-2: var(--color-gray-100);");
     lines.push("  --layer-3: var(--color-gray-200);");
     lines.push("");
+    lines.push("  /* Interactions */");
     lines.push("  --link: var(--primary);");
     lines.push("  --link-hover: var(--color-" + chosen + "-700);");
     lines.push("");
+    lines.push("  /* Couleur de sélection */");
     lines.push("  --selection: var(--color-" + chosen + "-300);");
     lines.push("");
+    lines.push("  /* États */");
     lines.push("  --warning: var(--color-warning-500);");
     lines.push("  --error: var(--color-error-500);");
     lines.push("  --success: var(--color-success-500);");
@@ -365,7 +373,7 @@ export function generateTokensCSS() {
   }
 
   lines.push("");
-  // borders
+  // Bordures
   if (themeMode === "both") {
     lines.push(
       "  --border-light: light-dark(var(--color-gray-100), var(--color-gray-800));"
@@ -433,17 +441,27 @@ export function generateTokensCSS() {
     lines.push(
       "  --spacing-m: clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32));"
     );
+    lines.push(
+      "  --spacing-l: clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48));"
+    );
+    lines.push(
+      "  --spacing-xl: clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80));"
+    );
   } else {
     lines.push("  --gap-s: var(--spacing-8);");
     lines.push("  --gap-m: var(--spacing-16);");
     lines.push("  --gap-l: var(--spacing-24);");
     lines.push("  --gap-xl: var(--spacing-32);");
+    lines.push("  --spacing-xs: var(--spacing-4);");
     lines.push("  --spacing-s: var(--spacing-8);");
     lines.push("  --spacing-m: var(--spacing-16);");
+    lines.push("  --spacing-l: var(--spacing-24);");
+    lines.push("  --spacing-xl: var(--spacing-32);");
   }
 
   lines.push("");
-  // small forms / controls
+  // Formulaires
+  lines.push("  /* Formulaires */");
   lines.push("  --form-control-background: var(--color-gray-200);");
   lines.push("  --on-form-control: var(--color-gray-900);");
   lines.push("  --form-control-spacing: var(--spacing-12) var(--spacing-16);");

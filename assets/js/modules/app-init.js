@@ -5,33 +5,7 @@ import {
   parseColorVariables,
   generateMissingVariants,
 } from "./generators.js";
-
-// Exposer les éléments DOM et fonctions UI minimalistes qui étaient dans app.js
-export const elements = {
-  steps: document.querySelectorAll(".step"),
-  stepButtons: document.querySelectorAll(".step-button"),
-  sections: document.querySelectorAll(".step-section"),
-  btnPrev: document.getElementById("btn-prev"),
-  btnNext: document.getElementById("btn-next"),
-  btnCopyApp: document.getElementById("btn-copy-app"),
-  btnCopyReset: document.getElementById("btn-copy-reset"),
-  btnCopyLayouts: document.getElementById("btn-copy-layouts"),
-  btnCopyNatives: document.getElementById("btn-copy-natives"),
-  btnCopyTheme: document.getElementById("btn-copy-theme"),
-  btnCopyTokens: document.getElementById("btn-copy-tokens"),
-  btnCopyStyles: document.getElementById("btn-copy-styles"),
-  btnDownloadAll: document.getElementById("btn-download-all"),
-  themePreview: document.getElementById("theme-preview"),
-  customVarsInput: document.getElementById("custom-vars-input"),
-  generatedApp: document.getElementById("generated-app"),
-  generatedReset: document.getElementById("generated-reset"),
-  generatedLayouts: document.getElementById("generated-layouts"),
-  generatedNatives: document.getElementById("generated-natives"),
-  generatedTheme: document.getElementById("generated-theme"),
-  generatedTokens: document.getElementById("generated-tokens"),
-  generatedStyles: document.getElementById("generated-styles"),
-  globalError: document.getElementById("global-error"),
-};
+import { elements } from "./dom.js";
 
 export function showGlobalError(message) {
   elements.globalError.textContent = message;

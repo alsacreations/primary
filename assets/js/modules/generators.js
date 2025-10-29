@@ -543,7 +543,7 @@ export function generateThemeCSS(options = {}) {
       if (!hasRaspberry && typeof PLACEHOLDER_RASPBERRY !== "undefined") {
         const ph = PLACEHOLDER_RASPBERRY || {};
         const order = ["100", "200", "300", "400", "500", "600", "700"];
-        const blockLines = ["/* Placeholder raspberry (généré) */"];
+        const blockLines = ["/* Couleur projet placeholder : raspberry */"];
         for (const k of order) {
           if (ph[k]) blockLines.push(`  --color-raspberry-${k}: ${ph[k]};`);
         }

@@ -404,6 +404,13 @@ body {
   display: inline-block;
 }
 
+/* Variante d'icône plus petite (boutons d'action) */
+.file-icon--download {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+}
+
 .info-title {
   margin: 0;
   color: var(--primary);

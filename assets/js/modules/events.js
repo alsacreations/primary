@@ -122,54 +122,8 @@ function attachNavigationHandlers() {
 function attachConfigHandlers() {
   if (!elements.primaryColorSelect) return;
 
-  // Support both legacy <select> and the new .color-choices container
-  if (elements.primaryColorSelect.tagName === "SELECT") {
-    elements.primaryColorSelect.addEventListener("change", (e) => {
-      state.config.primaryColor = e.target.value;
-      try {
-        refreshColorSelection();
-      } catch (err) {
-        /* noop */
-      }
-      // If already on generation step, refresh generated files
-      if (state.currentStep === 3) generateAllFiles();
-    });
-  } else {
-    // Event delegation for radio inputs rendered inside the container
-    elements.primaryColorSelect.addEventListener("change", (e) => {
-      const input =
-        e.target.closest && e.target.closest('input[name="primary-color"]');
-      if (input) {
-        state.config.primaryColor = input.value;
-        try {
-          refreshColorSelection();
-        } catch (err) {
-          /* noop */
-        }
-        try {
-          syncConfigFromDOM();
-        } catch (err) {
-          /* noop */
-        }
-        if (state.currentStep === 3) generateAllFiles();
-      }
-    });
-
-    // Also handle clicks on labels (some browsers may not trigger change)
-    elements.primaryColorSelect.addEventListener("click", (e) => {
-      const input =
-        e.target.closest && e.target.closest('input[name="primary-color"]');
-      if (input) {
-        state.config.primaryColor = input.value;
-        try {
-          refreshColorSelection();
-        } catch (err) {
-          /* noop */
-        }
-        if (state.currentStep === 3) generateAllFiles();
-      }
-    });
-  }
+  // Délègue la gestion des changements de couleur primaire
+  attachPrimaryColorHandlers();
 
   // Theme mode radios (light / dark / both)
   if (elements.themeModeInputs && elements.themeModeInputs.length) {
@@ -241,6 +195,57 @@ function attachCustomVarsHandler() {
     // et le rendu instantané utilisent ces valeurs.
     applyCustomVarsToDocument();
   });
+}
+
+function attachPrimaryColorHandlers() {
+  // Support both legacy <select> and the new .color-choices container
+  if (elements.primaryColorSelect.tagName === "SELECT") {
+    elements.primaryColorSelect.addEventListener("change", (e) => {
+      state.config.primaryColor = e.target.value;
+      try {
+        refreshColorSelection();
+      } catch (err) {
+        /* noop */
+      }
+      // If already on generation step, refresh generated files
+      if (state.currentStep === 3) generateAllFiles();
+    });
+  } else {
+    // Event delegation for radio inputs rendered inside the container
+    elements.primaryColorSelect.addEventListener("change", (e) => {
+      const input =
+        e.target.closest && e.target.closest('input[name="primary-color"]');
+      if (input) {
+        state.config.primaryColor = input.value;
+        try {
+          refreshColorSelection();
+        } catch (err) {
+          /* noop */
+        }
+        try {
+          syncConfigFromDOM();
+        } catch (err) {
+          /* noop */
+        }
+        if (state.currentStep === 3) generateAllFiles();
+      }
+    });
+
+    // Also handle clicks on labels (some browsers may not trigger change)
+    elements.primaryColorSelect.addEventListener("click", (e) => {
+      const input =
+        e.target.closest && e.target.closest('input[name="primary-color"]');
+      if (input) {
+        state.config.primaryColor = input.value;
+        try {
+          refreshColorSelection();
+        } catch (err) {
+          /* noop */
+        }
+        if (state.currentStep === 3) generateAllFiles();
+      }
+    });
+  }
 }
 
 function attachActionHandlers() {

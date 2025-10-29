@@ -1,6 +1,11 @@
 #!/usr/bin/env node
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// ESM equivalents for __filename / __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Minimal test harness to validate generateThemeCSS-like behavior
 const RUNTIME_ONLY_COLORS = new Set(["ocean"]);

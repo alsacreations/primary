@@ -35,6 +35,32 @@ export async function loadThemeFile() {
  * Charge le fichier reset.css
  */
 export async function loadResetFile() {
+  // Prioriser une version distante si disponible (ex: dépôt central),
+  // fallback sur la copie locale.
+  const candidates = [
+    "https://raw.githubusercontent.com/alsacreations/bretzel/main/public/reset.css",
+    "https://knacss.com/css/reset.css",
+    "assets/css/reset.css",
+  ];
+
+  for (const url of candidates) {
+    try {
+      // ajouter un timestamp pour éviter le cache
+      const separator = url.includes("?") ? "&" : "?";
+      const fetchUrl = url.startsWith("http")
+        ? `${url}${separator}v=${Date.now()}`
+        : url;
+      const r = await fetch(fetchUrl);
+      if (r.ok) {
+        state.resetContent = await r.text();
+        return;
+      }
+    } catch (err) {
+      // essayer le suivant
+      console.warn(`Impossible de charger ${url}, fallback :`, err);
+    }
+  }
+  // Si tout échoue, laisser la valeur vide et afficher erreur via loadCSSFile
   await loadCSSFile("assets/css/reset.css", "resetContent");
 }
 
@@ -42,6 +68,22 @@ export async function loadResetFile() {
  * Charge le fichier layouts.css
  */
 export async function loadLayoutsFile() {
+  // Prioriser la version distante sur GitHub (repo bretzel) puis fallback
+  const remote =
+    "https://raw.githubusercontent.com/alsacreations/bretzel/main/public/layouts.css";
+  try {
+    const resp = await fetch(`${remote}?v=${Date.now()}`);
+    if (resp.ok) {
+      state.layoutsContent = await resp.text();
+      return;
+    }
+  } catch (err) {
+    console.warn(
+      "Impossible de charger layouts.css distant, fallback local:",
+      err
+    );
+  }
+
   await loadCSSFile("assets/css/layouts.css", "layoutsContent");
 }
 
@@ -56,6 +98,26 @@ export async function loadAppFile() {
  * Charge le fichier natives.css
  */
 export async function loadNativesFile() {
+  // Prioriser la version distante officielle de knacss, fallback sur le
+  // fichier local si la requête échoue. Cela permet de toujours fournir la
+  // version la plus à jour quand l'utilisateur est en ligne.
+  const remote = "https://knacss.com/css/natives.css";
+  try {
+    const resp = await fetch(remote);
+    if (resp.ok) {
+      state.nativesContent = await resp.text();
+      return;
+    }
+    // else fall through to local
+  } catch (err) {
+    // ignore and fallback to local file
+    console.warn(
+      "Impossible de charger natives.css distant, fallback local:",
+      err
+    );
+  }
+
+  // Fallback local copy
   await loadCSSFile("assets/css/natives.css", "nativesContent");
 }
 

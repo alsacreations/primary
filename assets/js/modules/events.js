@@ -55,15 +55,28 @@ export async function copyToClipboard(element) {
     // Feedback visuel - Trouver le bouton overlay dans le details parent
     const details = element.closest("details");
     if (details) {
-      const button = details.querySelector(".copy-button");
+      // bouton overlay attendu dans le DOM : .btn-copy-overlay
+      const button = details.querySelector(".btn-copy-overlay");
       if (button) {
-        const originalText = button.textContent;
-        button.textContent = "Copié !";
-        button.classList.add("is-success");
-
+        // Conserver le contenu initial et afficher une coche pour feedback
+        const original = button.innerHTML;
+        // Marquer visuellement et pour AT via aria-live
+        try {
+          button.setAttribute("aria-live", "polite");
+        } catch (e) {
+          /* noop */
+        }
+        button.innerHTML = '<span aria-hidden="true">✅</span>';
+        button.disabled = true;
+        // Remettre l'état initial après 2s
         setTimeout(() => {
-          button.textContent = originalText;
-          button.classList.remove("is-success");
+          button.innerHTML = original;
+          button.disabled = false;
+          try {
+            button.removeAttribute("aria-live");
+          } catch (e) {
+            /* noop */
+          }
         }, 2000);
       }
     }
@@ -80,15 +93,24 @@ export async function copyToClipboard(element) {
     // Feedback visuel même en fallback
     const details = element.closest("details");
     if (details) {
-      const button = details.querySelector(".copy-button");
+      const button = details.querySelector(".btn-copy-overlay");
       if (button) {
-        const originalText = button.textContent;
-        button.textContent = "Copié !";
-        button.classList.add("is-success");
-
+        const original = button.innerHTML;
+        try {
+          button.setAttribute("aria-live", "polite");
+        } catch (e) {
+          /* noop */
+        }
+        button.innerHTML = '<span aria-hidden="true">✅</span>';
+        button.disabled = true;
         setTimeout(() => {
-          button.textContent = originalText;
-          button.classList.remove("is-success");
+          button.innerHTML = original;
+          button.disabled = false;
+          try {
+            button.removeAttribute("aria-live");
+          } catch (e) {
+            /* noop */
+          }
         }, 2000);
       }
     }

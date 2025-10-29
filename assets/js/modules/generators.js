@@ -11,7 +11,7 @@
 import { state, RUNTIME_ONLY_COLORS, PLACEHOLDER_RASPBERRY } from "./state.js";
 
 // --- Helpers / Parsers ----------------------------------------------------
-function parseColorVariants(cssText = "") {
+export function parseColorVariants(cssText = "") {
   const rx = /--color-([a-z0-9-]+)-(\d+):\s*([^;]+);/gim;
   const map = new Map();
   let m;
@@ -23,6 +23,23 @@ function parseColorVariants(cssText = "") {
     map.get(name).set(variant, value);
   }
   return map;
+}
+
+export function parseColorVariables(cssText = "") {
+  // Retourne la liste des noms de couleurs trouvés (--color-{name}-...)
+  try {
+    const map = parseColorVariants(cssText);
+    return Array.from(map.keys());
+  } catch (e) {
+    // Fallback regex if parseColorVariants fails
+    const colors = new Set();
+    const colorRegex = /--color-([\w-]+)-(?:\d+|fade|bright)\s*:/g;
+    let m;
+    while ((m = colorRegex.exec(cssText))) {
+      colors.add(m[1]);
+    }
+    return Array.from(colors);
+  }
 }
 
 export function generateMissingVariants(variants) {

@@ -587,6 +587,15 @@ export function generateThemeCSS(options = {}) {
   }
 
   // Normalize excessive blank lines and ensure trailing newline
+  // Remove any @import lines referencing runtime palettes (eg. palettes/ocean.css)
+  // These palette imports are app/runtime-only and must not appear in the
+  // preview or in exported/generated files.
+  try {
+    all = all.replace(/^.*palettes\/[\w-]+\.css.*$\n?/gim, "");
+  } catch (e) {
+    /* noop */
+  }
+
   all = all.replace(/\n{3,}/g, "\n\n").trim();
   if (all.length) all += "\n";
   return all;

@@ -6,7 +6,7 @@
 
 Cet outil est destiné aux **intégrateurs chez Alsacréations** pour démarrer rapidement leurs projets avec une base CSS cohérente et personnalisable.
 
-## � Installation
+## Installation
 
 ### Prérequis
 
@@ -32,10 +32,10 @@ Cet outil est destiné aux **intégrateurs chez Alsacréations** pour démarrer 
 
 - **`pnpm run serve`** : Lance un serveur local sur `http://localhost:8080` pour tester l'application.
 - **`pnpm run test`** : Exécute les tests automatisés de génération CSS.
-- **`pnpm run lint`** : Vérifie et corrige automatiquement la syntaxe CSS avec Stylelint.
+- **`pnpm run lint`** : Vérifie et corrige la syntaxe CSS avec Stylelint.
 - **`pnpm run build`** : Placeholder (pas de build nécessaire pour ce projet statique).
 
-## �🚀 Utilisation
+## 🚀 Utilisation
 
 ### Accès
 
@@ -65,7 +65,9 @@ Personnalisez votre thème selon vos besoins :
 
 - Visualisez tous les fichiers CSS générés avec coloration syntaxique
 - Copiez individuellement chaque fichier si besoin
-- **Téléchargez le kit complet** en un clic (fichier `primary-css.zip`)
+- **Téléchargez le kit complet** en un clic (fichier `primary-css.zip`).
+
+**Note (WordPress)** : si vous choisissez la technologie **WordPress** dans l'interface, le kit inclut un fichier `theme.json` prêt à l'emploi pour la configuration du thème WordPress. Ce fichier n'est pas généré/affiché pour la techno **static**.
 
 ## 📦 Contenu du kit téléchargé
 
@@ -260,4 +262,4 @@ Contactez l'équipe Alsacréations ou ouvrez une issue sur le repository.
 
 ---
 
-Bon intégration ! 🚀
+Bonne intégration ! 🚀

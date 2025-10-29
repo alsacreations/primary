@@ -394,6 +394,16 @@ body {
   }
 }
 
+/* Normalisation des icônes de fichiers (liste de génération) */
+.file-icon {
+  width: 1.25rem; /* ~20px */
+  height: 1.25rem;
+  vertical-align: middle;
+  margin-right: 0.6rem;
+  flex: 0 0 1.25rem;
+  display: inline-block;
+}
+
 .info-title {
   margin: 0;
   color: var(--primary);

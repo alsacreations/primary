@@ -77,7 +77,13 @@ export async function setupEventListeners() {
     // mais on poursuit l'initialisation pour garder l'app réactive.
     console.warn("loadAllFiles a échoué dans setupEventListeners:", err);
   }
+  // Attach grouped handlers to keep setupEventListeners concise
+  attachNavigationHandlers();
+  attachConfigHandlers();
+  attachActionHandlers();
+}
 
+function attachNavigationHandlers() {
   // Navigation des étapes
   elements.stepButtons.forEach((button) => {
     button.addEventListener("click", (e) => {
@@ -111,64 +117,60 @@ export async function setupEventListeners() {
   if (elements.btnNext) {
     elements.btnNext.addEventListener("click", nextStep);
   }
+}
 
-  // Étape 2 - Configuration
-  // Helper: synchronise les valeurs du DOM dans state.config
-  // Utilise la fonction partagée exportée par modules/ui.js
-  // (importée via side-effect at top of file) — ensure we have it available.
-  // NOTE: we import it dynamically below to avoid cyclical import ordering
-  // issues in the build/runtime environment.
+function attachConfigHandlers() {
+  if (!elements.primaryColorSelect) return;
 
-  if (elements.primaryColorSelect) {
-    // Support both legacy <select> and the new .color-choices container
-    if (elements.primaryColorSelect.tagName === "SELECT") {
-      elements.primaryColorSelect.addEventListener("change", (e) => {
-        state.config.primaryColor = e.target.value;
+  // Support both legacy <select> and the new .color-choices container
+  if (elements.primaryColorSelect.tagName === "SELECT") {
+    elements.primaryColorSelect.addEventListener("change", (e) => {
+      state.config.primaryColor = e.target.value;
+      try {
+        refreshColorSelection();
+      } catch (err) {
+        /* noop */
+      }
+      // If already on generation step, refresh generated files
+      if (state.currentStep === 3) generateAllFiles();
+    });
+  } else {
+    // Event delegation for radio inputs rendered inside the container
+    elements.primaryColorSelect.addEventListener("change", (e) => {
+      const input =
+        e.target.closest && e.target.closest('input[name="primary-color"]');
+      if (input) {
+        state.config.primaryColor = input.value;
         try {
           refreshColorSelection();
         } catch (err) {
           /* noop */
         }
-        // If already on generation step, refresh generated files
+        try {
+          syncConfigFromDOM();
+        } catch (err) {
+          /* noop */
+        }
         if (state.currentStep === 3) generateAllFiles();
-      });
-    } else {
-      // Event delegation for radio inputs rendered inside the container
-      elements.primaryColorSelect.addEventListener("change", (e) => {
-        const input =
-          e.target.closest && e.target.closest('input[name="primary-color"]');
-        if (input) {
-          state.config.primaryColor = input.value;
-          try {
-            refreshColorSelection();
-          } catch (err) {
-            /* noop */
-          }
-          try {
-            syncConfigFromDOM();
-          } catch (err) {
-            /* noop */
-          }
-          if (state.currentStep === 3) generateAllFiles();
-        }
-      });
+      }
+    });
 
-      // Also handle clicks on labels (some browsers may not trigger change)
-      elements.primaryColorSelect.addEventListener("click", (e) => {
-        const input =
-          e.target.closest && e.target.closest('input[name="primary-color"]');
-        if (input) {
-          state.config.primaryColor = input.value;
-          try {
-            refreshColorSelection();
-          } catch (err) {
-            /* noop */
-          }
-          if (state.currentStep === 3) generateAllFiles();
+    // Also handle clicks on labels (some browsers may not trigger change)
+    elements.primaryColorSelect.addEventListener("click", (e) => {
+      const input =
+        e.target.closest && e.target.closest('input[name="primary-color"]');
+      if (input) {
+        state.config.primaryColor = input.value;
+        try {
+          refreshColorSelection();
+        } catch (err) {
+          /* noop */
         }
-      });
-    }
+        if (state.currentStep === 3) generateAllFiles();
+      }
+    });
   }
+
   // Theme mode radios (light / dark / both)
   if (elements.themeModeInputs && elements.themeModeInputs.length) {
     elements.themeModeInputs.forEach((input) => {
@@ -238,43 +240,38 @@ export async function setupEventListeners() {
       applyCustomVarsToDocument();
     });
   }
+}
 
+function attachActionHandlers() {
   // Boutons de copie
-  if (elements.btnCopyApp) {
+  if (elements.btnCopyApp)
     elements.btnCopyApp.addEventListener("click", () =>
       copyToClipboard(elements.generatedApp)
     );
-  }
-  if (elements.btnCopyReset) {
+  if (elements.btnCopyReset)
     elements.btnCopyReset.addEventListener("click", () =>
       copyToClipboard(elements.generatedReset)
     );
-  }
-  if (elements.btnCopyLayouts) {
+  if (elements.btnCopyLayouts)
     elements.btnCopyLayouts.addEventListener("click", () =>
       copyToClipboard(elements.generatedLayouts)
     );
-  }
-  if (elements.btnCopyNatives) {
+  if (elements.btnCopyNatives)
     elements.btnCopyNatives.addEventListener("click", () =>
       copyToClipboard(elements.generatedNatives)
     );
-  }
-  if (elements.btnCopyTheme) {
+  if (elements.btnCopyTheme)
     elements.btnCopyTheme.addEventListener("click", () =>
       copyToClipboard(elements.generatedTheme)
     );
-  }
-  if (elements.btnCopyTokens) {
+  if (elements.btnCopyTokens)
     elements.btnCopyTokens.addEventListener("click", () =>
       copyToClipboard(elements.generatedTokens)
     );
-  }
-  if (elements.btnCopyStyles) {
+  if (elements.btnCopyStyles)
     elements.btnCopyStyles.addEventListener("click", () =>
       copyToClipboard(elements.generatedStyles)
     );
-  }
 
   // Bouton de téléchargement
   if (elements.btnDownloadAll) {

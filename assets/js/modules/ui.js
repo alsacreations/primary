@@ -8,6 +8,7 @@ import { elements } from "./dom.js";
 import {
   generateTokensCSS,
   generateThemeCSS,
+  generateThemeJSON,
   generateStylesCSS,
   generateAppCSS,
   generateMissingVariants,
@@ -139,6 +140,14 @@ export function syncConfigFromDOM() {
         (i) => i.checked
       );
       if (checked) state.config.fontFamily = checked.value;
+    }
+
+    // Technology (static | wordpress)
+    if (elements.technologyInputs && elements.technologyInputs.length) {
+      const checkedTech = Array.from(elements.technologyInputs).find(
+        (i) => i.checked
+      );
+      if (checkedTech) state.config.technology = checkedTech.value;
     }
 
     // Variables personnalisées
@@ -580,6 +589,63 @@ export function generateAllFiles() {
       Prism.languages.css,
       "css"
     );
+
+    // theme.json (WordPress) : afficher uniquement en mode 'wordpress'
+    if (elements.generatedThemeJson) {
+      // Localiser l'élément conteneur <details> pour pouvoir le cacher
+      const themeJsonContainer = elements.generatedThemeJson.closest
+        ? elements.generatedThemeJson.closest("details")
+        : null;
+
+      try {
+        if (state.config && state.config.technology === "wordpress") {
+          // Assurer que le bloc est visible
+          if (themeJsonContainer) themeJsonContainer.hidden = false;
+
+          const themeJson = generateThemeJSON();
+
+          // Le langage Prism pour JSON n'est pas toujours chargé dans tous
+          // les embeds ; basculer en texte brut (échappé) si besoin pour
+          // éviter une sortie vide.
+          if (
+            typeof Prism !== "undefined" &&
+            Prism.languages &&
+            Prism.languages.json
+          ) {
+            elements.generatedThemeJson.innerHTML = Prism.highlight(
+              themeJson,
+              Prism.languages.json,
+              "json"
+            );
+          } else {
+            // Simple safe-escaping
+            const esc = (s) =>
+              String(s)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            elements.generatedThemeJson.innerHTML = `<pre>${esc(
+              themeJson
+            )}</pre>`;
+          }
+        } else {
+          // Pour le mode 'static' : masquer complètement le bloc (ne pas afficher
+          // d'indication textuelle). Le bloc <details> est caché pour éviter
+          // toute confusion.
+          if (themeJsonContainer) themeJsonContainer.hidden = true;
+        }
+      } catch (e) {
+        // Afficher l'erreur dans la zone plutôt que la laisser vide
+        try {
+          elements.generatedThemeJson.textContent =
+            "Erreur lors de la génération de theme.json";
+        } catch (err) {
+          /* noop */
+        }
+        // et logger l'erreur pour debug
+        console.error("Erreur generateAllFiles -> theme.json:", e);
+      }
+    }
 
     // Afficher styles.css avec coloration syntaxique
     elements.generatedStyles.innerHTML = Prism.highlight(

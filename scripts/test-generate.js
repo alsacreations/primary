@@ -3,19 +3,20 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// ESM equivalents for __filename / __dirname
+// Équivalents ESM pour __filename / __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Import generator modules to run headless comparisons
+// Importer les modules de génération pour exécuter les comparaisons headless
 import {
   generateAppCSS,
   generateStylesCSS,
+  generateThemeJSON,
   generateTokensCSS,
 } from "../assets/js/modules/generators.js";
 import { state } from "../assets/js/modules/state.js";
 
-// Minimal test harness to validate generateThemeCSS-like behavior
+// Petite harness de tests pour valider le comportement de generateThemeCSS
 const RUNTIME_ONLY_COLORS = new Set(["ocean"]);
 const PLACEHOLDER_RASPBERRY = {
   100: "oklch(98% 0.03 352)",
@@ -55,7 +56,7 @@ function generateThemeCSS({
   // If user provided custom vars, inject them into the generated output
   if (customList.length > 0) {
     const indentedCustomVars = customList
-      .split(/\r?\n/) // handle windows + unix
+      .split(/\r?\n/) // gérer Windows + Unix
       .map((l) => `  ${l.trim()}`)
       .filter((l) => l.trim().length > 0)
       .join("\n");
@@ -81,13 +82,14 @@ function generateThemeCSS({
     }
   }
 
-  // If user provided custom vars, remove any injected raspberry definitions
+  // Si l'utilisateur fournit des variables personnalisées, retirer
+  // les définitions raspberry injectées
   if (customList.length > 0) {
     themeCSS = themeCSS.replace(/--color-raspberry-[\w-]*:\s*[^;]+;?/g, "");
     themeCSS = themeCSS.replace(/\n{3,}/g, "\n\n").replace(/\n\s+\n/g, "\n\n");
   }
 
-  // Filter runtime-only colors and imports
+  // Filtrer les couleurs et imports spécifiques au runtime
   if (RUNTIME_ONLY_COLORS.size > 0) {
     const names = Array.from(RUNTIME_ONLY_COLORS)
       .map((n) => n.replace(/[-\\/\\^$*+?.()|[\]{}]/g, "\\$&"))
@@ -284,6 +286,97 @@ async function runHeadlessComparisons() {
   );
   console.log(
     "✓ canonical theme-tokens match public/samples/theme-tokens-base-light-dark.css"
+  );
+
+  // 5) theme.json (WordPress) canonical comparison
+  state.config.technology = "wordpress";
+  // ensure canonical config
+  state.config.primaryColor = "raspberry";
+  state.config.themeMode = "both";
+  state.config.typoResponsive = true;
+  state.config.spacingResponsive = true;
+  const generatedThemeJson = generateThemeJSON();
+  const expectedThemeJson = fs.readFileSync(
+    path.join(
+      __dirname,
+      "..",
+      "public",
+      "samples",
+      "theme-base-light-dark.json"
+    ),
+    "utf8"
+  );
+  assert(
+    generatedThemeJson === expectedThemeJson,
+    "Canonical theme.json mismatch vs public/samples/theme-base-light-dark.json"
+  );
+  console.log(
+    "✓ canonical theme.json matches public/samples/theme-base-light-dark.json"
+  );
+
+  // 6) theme.json should omit Poppins when config.fontFamily !== 'poppins'
+  state.config.technology = "wordpress";
+  // Use a non-canonical primary color so the generator doesn't return the
+  // embedded canonical sample (which always contains Poppins).
+  state.config.primaryColor = "info";
+  state.config.fontFamily = "system";
+  const generatedThemeJsonSystem = generateThemeJSON();
+  let parsedJson;
+  try {
+    parsedJson = JSON.parse(generatedThemeJsonSystem);
+  } catch (e) {
+    assert(false, "Generated theme.json (system) is not valid JSON");
+  }
+  const families =
+    (parsedJson &&
+      parsedJson.settings &&
+      parsedJson.settings.typography &&
+      parsedJson.settings.typography.fontFamilies) ||
+    [];
+  assert(
+    !families.some((f) => f && f.slug === "poppins"),
+    "theme.json should not include Poppins when state.config.fontFamily !== 'poppins'"
+  );
+  assert(
+    parsedJson.styles &&
+      parsedJson.styles.typography &&
+      parsedJson.styles.typography.fontFamily === "system",
+    "theme.json styles.typography.fontFamily should equal 'system' when Poppins is not selected"
+  );
+  console.log(
+    "✓ theme.json omits Poppins and uses 'system' when fontFamily=system"
+  );
+
+  // 7) theme.json should include Poppins when explicitly selected
+  // Again use a non-canonical primary color to exercise the non-canonical
+  // builder branch.
+  state.config.primaryColor = "info";
+  state.config.fontFamily = "poppins";
+  const generatedThemeJsonPoppins = generateThemeJSON();
+  try {
+    parsedJson = JSON.parse(generatedThemeJsonPoppins);
+  } catch (e) {
+    assert(false, "Generated theme.json (poppins) is not valid JSON");
+  }
+  const families2 =
+    (parsedJson &&
+      parsedJson.settings &&
+      parsedJson.settings.typography &&
+      parsedJson.settings.typography.fontFamilies) ||
+    [];
+  assert(
+    families2.some((f) => f && f.slug === "poppins"),
+    "theme.json should include Poppins when state.config.fontFamily === 'poppins'"
+  );
+  assert(
+    parsedJson.styles &&
+      parsedJson.styles.typography &&
+      parsedJson.styles.typography.fontFamily ===
+        "var:preset|font-family|poppins",
+    "theme.json styles.typography.fontFamily should reference the poppins preset when Poppins is selected"
+  );
+  console.log(
+    "✓ theme.json includes Poppins and preset reference when fontFamily=poppins"
   );
 
   console.log("\nHeadless comparisons passed");

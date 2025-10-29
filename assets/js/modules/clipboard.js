@@ -30,7 +30,7 @@ export async function copyToClipboard(element) {
     }
   } catch (err) {
     console.error("Erreur lors de la copie :", err);
-    // Fallback
+    // Repli (méthode alternative si l'API clipboard échoue)
     const textArea = document.createElement("textarea");
     textArea.value = element.textContent;
     document.body.appendChild(textArea);
@@ -46,7 +46,7 @@ export async function copyToClipboard(element) {
         try {
           button.setAttribute("aria-live", "polite");
         } catch (e) {
-          /* noop */
+          // noop (aucune action requise)
         }
         button.innerHTML = '<span aria-hidden="true">✅</span>';
         button.disabled = true;
@@ -56,7 +56,7 @@ export async function copyToClipboard(element) {
           try {
             button.removeAttribute("aria-live");
           } catch (e) {
-            /* noop */
+            // noop (aucune action requise)
           }
         }, 2000);
       }

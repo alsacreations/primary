@@ -270,6 +270,26 @@
                 </label>
               </div>
             </fieldset>
+
+            <!-- Technologie / Format de génération -->
+            <fieldset class="config-fieldset">
+              <legend class="config-legend">Format de génération</legend>
+              <div data-layout="stack" data-gap="s">
+                <label class="config-radio">
+                  <input
+                    type="radio"
+                    name="technology"
+                    value="static"
+                    checked
+                  />
+                  <span>Static (fichiers CSS)</span>
+                </label>
+                <label class="config-radio">
+                  <input type="radio" name="technology" value="wordpress" />
+                  <span>WordPress (génère <code>theme.json</code>)</span>
+                </label>
+              </div>
+            </fieldset>
           </form>
         </div>
       </section>
@@ -390,6 +410,26 @@
                   <pre
                     class="generated-code"
                   ><code id="generated-theme"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
+
+              <!-- theme.json (WordPress) -->
+              <details>
+                <summary>
+                  <strong>theme.json (WordPress)</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-theme-json"
+                    aria-label="Copier le code de theme.json"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="generated-code"
+                  ><code id="generated-theme-json"><!-- Sera rempli par JS (theme.json) --></code></pre>
                 </div>
               </details>
 

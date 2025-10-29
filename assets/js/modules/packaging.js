@@ -78,6 +78,18 @@ export async function downloadAllFiles() {
     console.warn("Police Poppins non incluse dans le ZIP:", err);
   }
 
+  // theme.json (WordPress) si demandé
+  try {
+    if (state.config && state.config.technology === "wordpress") {
+      // Générer le JSON via le générateur afin de respecter le cas canonical
+      const { generateThemeJSON } = await import("./generators.js");
+      const themeJson = generateThemeJSON();
+      zip.file("theme.json", themeJson);
+    }
+  } catch (err) {
+    console.warn("Impossible d'ajouter theme.json au ZIP:", err);
+  }
+
   // Générer le blob et déclencher le téléchargement
   try {
     const content = await zip.generateAsync({ type: "blob" });

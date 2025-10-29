@@ -13,6 +13,7 @@ export const state = {
     themeMode: "both",
     typoResponsive: true,
     spacingResponsive: true,
+    technology: "static",
     fontFamily: "system",
     customVars: "",
   },

@@ -127,6 +127,8 @@ function attachConfigHandlers() {
   // Délègue la gestion du mode thème et des options responsive
   attachThemeModeHandlers();
   attachResponsiveHandlers();
+  // Délègue la gestion du format de génération (static | wordpress)
+  attachTechnologyHandlers();
 
   elements.fontFamilyInputs.forEach((input) => {
     input.addEventListener("change", (e) => {
@@ -178,14 +180,14 @@ function attachCustomVarsHandler() {
 }
 
 function attachPrimaryColorHandlers() {
-  // Support both legacy <select> and the new .color-choices container
+  // Supporte à la fois l'ancien <select> et le nouveau conteneur .color-choices
   if (elements.primaryColorSelect.tagName === "SELECT") {
     elements.primaryColorSelect.addEventListener("change", (e) => {
       state.config.primaryColor = e.target.value;
       try {
         refreshColorSelection();
       } catch (err) {
-        /* noop */
+        // noop (aucune action requise)
       }
       // If already on generation step, refresh generated files
       if (state.currentStep === 3) generateAllFiles();
@@ -200,12 +202,12 @@ function attachPrimaryColorHandlers() {
         try {
           refreshColorSelection();
         } catch (err) {
-          /* noop */
+          // noop (aucune action requise)
         }
         try {
           syncConfigFromDOM();
         } catch (err) {
-          /* noop */
+          // noop (aucune action requise)
         }
         if (state.currentStep === 3) generateAllFiles();
       }
@@ -220,7 +222,7 @@ function attachPrimaryColorHandlers() {
         try {
           refreshColorSelection();
         } catch (err) {
-          /* noop */
+          // noop (aucune action requise)
         }
         if (state.currentStep === 3) generateAllFiles();
       }
@@ -234,6 +236,18 @@ function attachThemeModeHandlers() {
     elements.themeModeInputs.forEach((input) => {
       input.addEventListener("change", (e) => {
         state.config.themeMode = e.target.value;
+        if (state.currentStep === 3) generateAllFiles();
+      });
+    });
+  }
+}
+
+function attachTechnologyHandlers() {
+  if (elements.technologyInputs && elements.technologyInputs.length) {
+    elements.technologyInputs.forEach((input) => {
+      input.addEventListener("change", (e) => {
+        state.config.technology = e.target.value;
+        // If already on generation step, refresh generated files
         if (state.currentStep === 3) generateAllFiles();
       });
     });
@@ -278,6 +292,12 @@ function attachActionHandlers() {
     elements.btnCopyTheme.addEventListener("click", () =>
       copyToClipboard(elements.generatedTheme)
     );
+  // Copy theme.json if present
+  if (elements.btnCopyThemeJson && elements.generatedThemeJson) {
+    elements.btnCopyThemeJson.addEventListener("click", () =>
+      copyToClipboard(elements.generatedThemeJson)
+    );
+  }
   if (elements.btnCopyTokens)
     elements.btnCopyTokens.addEventListener("click", () =>
       copyToClipboard(elements.generatedTokens)

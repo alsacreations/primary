@@ -36,7 +36,7 @@ export async function loadThemeFile() {
  */
 export async function loadResetFile() {
   // Prioriser une version distante si disponible (ex: dépôt central),
-  // fallback sur la copie locale.
+  // repli sur la copie locale.
   const candidates = [
     "https://raw.githubusercontent.com/alsacreations/bretzel/main/public/reset.css",
     "https://knacss.com/css/reset.css",
@@ -56,8 +56,8 @@ export async function loadResetFile() {
         return;
       }
     } catch (err) {
-      // essayer le suivant
-      console.warn(`Impossible de charger ${url}, fallback :`, err);
+      // essayer l'URL suivante
+      console.warn(`Impossible de charger ${url}, repli :`, err);
     }
   }
   // Si tout échoue, laisser la valeur vide et afficher erreur via loadCSSFile
@@ -108,16 +108,16 @@ export async function loadNativesFile() {
       state.nativesContent = await resp.text();
       return;
     }
-    // else fall through to local
+    // sinon, retomber sur la copie locale
   } catch (err) {
-    // ignore and fallback to local file
+    // ignorer l'erreur et utiliser la copie locale
     console.warn(
-      "Impossible de charger natives.css distant, fallback local:",
+      "Impossible de charger natives.css distant, repli local:",
       err
     );
   }
 
-  // Fallback local copy
+  // Repli sur la copie locale
   await loadCSSFile("assets/css/natives.css", "nativesContent");
 }
 
@@ -147,7 +147,7 @@ export async function loadStylesFiles() {
           break;
         }
       } catch (e) {
-        // ignore and try next
+        // ignorer l'erreur et essayer le suivant
       }
     }
     state.stylesSystemContent = systemText || "";
@@ -168,7 +168,7 @@ export async function loadStylesFiles() {
           break;
         }
       } catch (e) {
-        // ignore and try next
+        // ignorer l'erreur et essayer le suivant
       }
     }
     state.stylesPoppinsContent = poppinsText || "";

@@ -33,7 +33,9 @@ export const elements = {
   spacingResponsiveInputs: document.querySelectorAll(
     'input[name="spacing-responsive"]'
   ),
-  // Backwards-compatible single-element aliases (used by events.js)
+  // Technologie / format de génération (static | wordpress)
+  technologyInputs: document.querySelectorAll('input[name="technology"]'),
+  // Alias rétro-compatible mon-élément (utilisé par events.js)
   typoResponsiveInput: document.querySelector('input[name="typo-responsive"]'),
   spacingResponsiveInput: document.querySelector(
     'input[name="spacing-responsive"]'
@@ -46,6 +48,8 @@ export const elements = {
   generatedLayouts: document.getElementById("generated-layouts"),
   generatedNatives: document.getElementById("generated-natives"),
   generatedTheme: document.getElementById("generated-theme"),
+  // Optionnel : sortie générée theme.json (présente uniquement si le template l'inclut)
+  generatedThemeJson: document.getElementById("generated-theme-json"),
   generatedTokens: document.getElementById("generated-tokens"),
   generatedStyles: document.getElementById("generated-styles"),
 
@@ -55,6 +59,7 @@ export const elements = {
   btnCopyLayouts: document.getElementById("btn-copy-layouts"),
   btnCopyNatives: document.getElementById("btn-copy-natives"),
   btnCopyTheme: document.getElementById("btn-copy-theme"),
+  btnCopyThemeJson: document.getElementById("btn-copy-theme-json"),
   btnCopyTokens: document.getElementById("btn-copy-tokens"),
   btnCopyStyles: document.getElementById("btn-copy-styles"),
   btnDownloadAll: document.getElementById("btn-download-all"),

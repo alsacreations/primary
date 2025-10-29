@@ -16,8 +16,9 @@ import {
   updateColorChoices,
   applyCustomVarsToDocument,
   generateAllFiles,
+  syncConfigFromDOM,
+  refreshColorSelection,
 } from "./ui.js";
-import { refreshColorSelection } from "./ui.js";
 
 /**
  * Navigue vers l'étape précédente
@@ -179,35 +180,10 @@ export async function setupEventListeners() {
 
   // Étape 2 - Configuration
   // Helper: synchronise les valeurs du DOM dans state.config
-  function syncConfigFromDOM() {
-    try {
-      const primary = document.querySelector(
-        'input[name="primary-color"]:checked'
-      );
-      if (primary) state.config.primaryColor = primary.value;
-
-      const theme = document.querySelector('input[name="theme-mode"]:checked');
-      if (theme) state.config.themeMode = theme.value;
-
-      const typo = document.querySelector(
-        'input[name="typo-responsive"]:checked'
-      );
-      if (typo) state.config.typoResponsive = typo.value === "true";
-
-      const spacing = document.querySelector(
-        'input[name="spacing-responsive"]:checked'
-      );
-      if (spacing) state.config.spacingResponsive = spacing.value === "true";
-
-      const font = document.querySelector('input[name="font-family"]:checked');
-      if (font) state.config.fontFamily = font.value;
-
-      const custom = document.getElementById("custom-vars-input");
-      if (custom) state.config.customVars = custom.value || "";
-    } catch (e) {
-      // defensive noop
-    }
-  }
+  // Utilise la fonction partagée exportée par modules/ui.js
+  // (importée via side-effect at top of file) — ensure we have it available.
+  // NOTE: we import it dynamically below to avoid cyclical import ordering
+  // issues in the build/runtime environment.
 
   if (elements.primaryColorSelect) {
     // Support both legacy <select> and the new .color-choices container

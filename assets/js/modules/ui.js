@@ -85,7 +85,7 @@ export function updateThemePreview() {
  * problèmes de valeurs stale quand les listeners n'ont pas encore
  * propagé l'état.
  */
-function syncConfigFromDOM() {
+export function syncConfigFromDOM() {
   try {
     // Primary color (select or radio container)
     const primaryContainer = elements.primaryColorSelect;

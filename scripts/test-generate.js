@@ -7,6 +7,14 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Import generator modules to run headless comparisons
+import {
+  generateAppCSS,
+  generateStylesCSS,
+  generateTokensCSS,
+} from "../assets/js/modules/generators.js";
+import { state } from "../assets/js/modules/state.js";
+
 // Minimal test harness to validate generateThemeCSS-like behavior
 const RUNTIME_ONLY_COLORS = new Set(["ocean"]);
 const PLACEHOLDER_RASPBERRY = {
@@ -166,8 +174,125 @@ function runTests() {
   console.log("\nAll tests passed");
 }
 
+async function runHeadlessComparisons() {
+  console.log("\nRunning headless file comparisons (app/styles/tokens)...");
+
+  // Load files into state (styles, app, theme, etc.) directly from disk
+  // to avoid importing DOM-dependent modules (dom.js) in Node.
+  const read = (p) => fs.readFileSync(path.join(__dirname, "..", ...p), "utf8");
+  try {
+    state.themeContent = read(["assets", "css", "theme.css"]);
+  } catch (e) {
+    state.themeContent = "";
+  }
+  try {
+    state.resetContent = read(["assets", "css", "reset.css"]);
+  } catch (e) {
+    state.resetContent = "";
+  }
+  try {
+    state.layoutsContent = read(["assets", "css", "layouts.css"]);
+  } catch (e) {
+    state.layoutsContent = "";
+  }
+  try {
+    state.nativesContent = read(["assets", "css", "natives.css"]);
+  } catch (e) {
+    state.nativesContent = "";
+  }
+  try {
+    state.stylesSystemContent = read(["public", "samples", "styles.css"]);
+  } catch (e) {
+    state.stylesSystemContent = "";
+  }
+  try {
+    state.stylesPoppinsContent = read([
+      "public",
+      "samples",
+      "styles-poppins.css",
+    ]);
+  } catch (e) {
+    state.stylesPoppinsContent = "";
+  }
+  try {
+    state.appContent = read(["assets", "css", "app.css"]);
+  } catch (e) {
+    state.appContent = "";
+  }
+
+  // Ensure canonical config
+  state.config.primaryColor = "raspberry";
+  state.config.themeMode = "both";
+  state.config.typoResponsive = true;
+  state.config.spacingResponsive = true;
+
+  // 1) app.css -> compare with assets/css/app.css (source of truth)
+  const generatedApp = generateAppCSS();
+  const expectedApp = fs.readFileSync(
+    path.join(__dirname, "..", "assets", "css", "app.css"),
+    "utf8"
+  );
+  assert(
+    generatedApp === expectedApp,
+    "App CSS mismatch (generated vs assets/css/app.css)"
+  );
+  console.log("✓ app.css matches assets/css/app.css");
+
+  // 2) styles.css system
+  state.config.fontFamily = "system";
+  const generatedStylesSystem = generateStylesCSS();
+  const expectedStylesSystem = fs.readFileSync(
+    path.join(__dirname, "..", "public", "samples", "styles.css"),
+    "utf8"
+  );
+  assert(
+    generatedStylesSystem === expectedStylesSystem,
+    "styles.css (system) mismatch vs public/samples/styles.css"
+  );
+  console.log("✓ styles.css (system) matches public/samples/styles.css");
+
+  // 3) styles.css poppins
+  state.config.fontFamily = "poppins";
+  const generatedStylesPoppins = generateStylesCSS();
+  const expectedStylesPoppins = fs.readFileSync(
+    path.join(__dirname, "..", "public", "samples", "styles-poppins.css"),
+    "utf8"
+  );
+  assert(
+    generatedStylesPoppins === expectedStylesPoppins,
+    "styles.css (poppins) mismatch vs public/samples/styles-poppins.css"
+  );
+  console.log(
+    "✓ styles.css (poppins) matches public/samples/styles-poppins.css"
+  );
+
+  // 4) tokens canonical
+  const generatedTokens = generateTokensCSS();
+  const expectedTokens = fs.readFileSync(
+    path.join(
+      __dirname,
+      "..",
+      "public",
+      "samples",
+      "theme-tokens-base-light-dark.css"
+    ),
+    "utf8"
+  );
+  assert(
+    generatedTokens === expectedTokens,
+    "Canonical theme-tokens mismatch vs public/samples/theme-tokens-base-light-dark.css"
+  );
+  console.log(
+    "✓ canonical theme-tokens match public/samples/theme-tokens-base-light-dark.css"
+  );
+
+  console.log("\nHeadless comparisons passed");
+}
+
 try {
   runTests();
+  // run headless comparisons after the internal tests
+  await runHeadlessComparisons();
 } catch (err) {
   console.error("\nOne or more tests failed.");
   process.exit(process.exitCode || 1);

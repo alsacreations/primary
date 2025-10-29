@@ -124,29 +124,9 @@ function attachConfigHandlers() {
 
   // Délègue la gestion des changements de couleur primaire
   attachPrimaryColorHandlers();
-
-  // Theme mode radios (light / dark / both)
-  if (elements.themeModeInputs && elements.themeModeInputs.length) {
-    elements.themeModeInputs.forEach((input) => {
-      input.addEventListener("change", (e) => {
-        state.config.themeMode = e.target.value;
-        if (state.currentStep === 3) generateAllFiles();
-      });
-    });
-  }
-  if (elements.typoResponsiveInput) {
-    elements.typoResponsiveInput.addEventListener("change", (e) => {
-      state.config.typoResponsive = e.target.checked;
-      if (state.currentStep === 3) generateAllFiles();
-    });
-  }
-
-  if (elements.spacingResponsiveInput) {
-    elements.spacingResponsiveInput.addEventListener("change", (e) => {
-      state.config.spacingResponsive = e.target.checked;
-      if (state.currentStep === 3) generateAllFiles();
-    });
-  }
+  // Délègue la gestion du mode thème et des options responsive
+  attachThemeModeHandlers();
+  attachResponsiveHandlers();
 
   elements.fontFamilyInputs.forEach((input) => {
     input.addEventListener("change", (e) => {
@@ -244,6 +224,34 @@ function attachPrimaryColorHandlers() {
         }
         if (state.currentStep === 3) generateAllFiles();
       }
+    });
+  }
+}
+
+function attachThemeModeHandlers() {
+  // Theme mode radios (light / dark / both)
+  if (elements.themeModeInputs && elements.themeModeInputs.length) {
+    elements.themeModeInputs.forEach((input) => {
+      input.addEventListener("change", (e) => {
+        state.config.themeMode = e.target.value;
+        if (state.currentStep === 3) generateAllFiles();
+      });
+    });
+  }
+}
+
+function attachResponsiveHandlers() {
+  if (elements.typoResponsiveInput) {
+    elements.typoResponsiveInput.addEventListener("change", (e) => {
+      state.config.typoResponsive = e.target.checked;
+      if (state.currentStep === 3) generateAllFiles();
+    });
+  }
+
+  if (elements.spacingResponsiveInput) {
+    elements.spacingResponsiveInput.addEventListener("change", (e) => {
+      state.config.spacingResponsive = e.target.checked;
+      if (state.currentStep === 3) generateAllFiles();
     });
   }
 }

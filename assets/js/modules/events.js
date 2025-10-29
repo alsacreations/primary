@@ -199,47 +199,48 @@ function attachConfigHandlers() {
       state.config.fontFamily = e.target.value;
     });
   });
+  // Attach the custom variables handler if the input exists
+  if (elements.customVarsInput) attachCustomVarsHandler();
+}
 
-  // Variables personnalisées
-  if (elements.customVarsInput) {
-    elements.customVarsInput.addEventListener("input", (e) => {
-      const value = e.target.value;
+function attachCustomVarsHandler() {
+  elements.customVarsInput.addEventListener("input", (e) => {
+    const value = e.target.value;
 
-      // Si l'application principale a exposé une API globale pour
-      // appliquer les variables (mode progressif de migration), l'utiliser
-      // afin d'éviter les problèmes de double-état entre app.js et
-      // modules/state.js. Sinon, tomber back sur le state du module.
-      if (typeof window.applyCustomVarsFromModules === "function") {
-        // Mettre à jour l'état principal via l'API exposée
-        window.applyCustomVarsFromModules(value);
-        // Synchroniser aussi l'état local du module afin que les générateurs
-        // qui lisent `modules/state.js` voient la même valeur.
-        try {
-          state.config.customVars = value;
-        } catch (err) {
-          // noop
-        }
-      } else {
+    // Si l'application principale a exposé une API globale pour
+    // appliquer les variables (mode progressif de migration), l'utiliser
+    // afin d'éviter les problèmes de double-état entre app.js et
+    // modules/state.js. Sinon, tomber back sur le state du module.
+    if (typeof window.applyCustomVarsFromModules === "function") {
+      // Mettre à jour l'état principal via l'API exposée
+      window.applyCustomVarsFromModules(value);
+      // Synchroniser aussi l'état local du module afin que les générateurs
+      // qui lisent `modules/state.js` voient la même valeur.
+      try {
         state.config.customVars = value;
+      } catch (err) {
+        // noop
       }
+    } else {
+      state.config.customVars = value;
+    }
 
-      // Valider la syntaxe CSS
-      const validation = validateCustomVars(value);
-      if (validation !== true) {
-        showGlobalError(`Variables personnalisées : ${validation}`);
-      } else {
-        hideGlobalError();
-      }
+    // Valider la syntaxe CSS
+    const validation = validateCustomVars(value);
+    if (validation !== true) {
+      showGlobalError(`Variables personnalisées : ${validation}`);
+    } else {
+      hideGlobalError();
+    }
 
-      // Mettre à jour l'affichage de theme.css avec les variables personnalisées
-      updateThemePreview();
-      // Mettre à jour les choix de couleurs quand l'utilisateur ajoute des variables
-      updateColorChoices();
-      // Appliquer les variables personnalisées au document pour que les swatches
-      // et le rendu instantané utilisent ces valeurs.
-      applyCustomVarsToDocument();
-    });
-  }
+    // Mettre à jour l'affichage de theme.css avec les variables personnalisées
+    updateThemePreview();
+    // Mettre à jour les choix de couleurs quand l'utilisateur ajoute des variables
+    updateColorChoices();
+    // Appliquer les variables personnalisées au document pour que les swatches
+    // et le rendu instantané utilisent ces valeurs.
+    applyCustomVarsToDocument();
+  });
 }
 
 function attachActionHandlers() {

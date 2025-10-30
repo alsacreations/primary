@@ -1,39 +1,10 @@
-# Primary - Générateur de CSS Alsacréations
+# Primary - Configurateur de projet CSS Alsacréations
 
 **Primary** est un outil de génération de fichiers CSS personnalisés pour vos projets Alsacréations. Il permet de configurer et télécharger un kit CSS complet avec tokens, thématisation et layouts.
 
 ## 🎯 Pour qui ?
 
 Cet outil est destiné aux **intégrateurs chez Alsacréations** pour démarrer rapidement leurs projets avec une base CSS cohérente et personnalisable.
-
-## Installation
-
-### Prérequis
-
-- Node.js (version 16 ou supérieure)
-- pnpm (installé via `npm install -g pnpm` ou via votre gestionnaire de paquets)
-
-### Installation
-
-1. Clonez le dépôt :
-
-   ```bash
-   git clone https://github.com/alsacreations/primary.git
-   cd primary
-   ```
-
-2. Installez les dépendances :
-
-   ```bash
-   pnpm install
-   ```
-
-### Scripts disponibles
-
-- **`pnpm run serve`** : Lance un serveur local sur `http://localhost:8080` pour tester l'application.
-- **`pnpm run test`** : Exécute les tests automatisés de génération CSS.
-- **`pnpm run lint`** : Vérifie et corrige la syntaxe CSS avec Stylelint.
-- **`pnpm run build`** : Placeholder (pas de build nécessaire pour ce projet statique).
 
 ## 🚀 Utilisation
 
@@ -60,6 +31,7 @@ Personnalisez votre thème selon vos besoins :
 - **Typographie** : Responsive (avec `clamp()`) ou fixe
 - **Espacements** : Responsive (avec `clamp()`) ou fixes
 - **Police de caractères** : Système ou Poppins
+- **Technologie** : Statique ou WordPress
 
 #### 3️⃣ Génération
 
@@ -90,9 +62,9 @@ index.html            # Page de démonstration des styles
 ## 📚 Ressources
 
 - [Guidelines CSS Alsacréations](guidelines-css.md)
+- [Reset CSS Alsacréations](https://reset.alsacreations.com/)
 - [Bretzel Layouts](https://bretzel.alsacreations.com/)
 - [KNACSS](https://knacss.com/)
-- [Reset CSS Alsacréations](https://reset.alsacreations.com/)
 
 ## ⚡ Fichiers toujours à jour
 

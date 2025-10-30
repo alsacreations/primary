@@ -84,35 +84,8 @@ css/
 ├── styles.css           # Styles de base (selon config police)
 └── fonts/               # Police Poppins (si sélectionnée)
     └── Poppins-Variable-opti.woff2
+index.html            # Page de démonstration des styles
 ```
-
-## 🔧 Intégration dans votre projet
-
-### 1. Extraire le ZIP
-
-Décompressez `primary-css.zip` à la racine de votre projet.
-
-### 2. Importer dans votre HTML
-
-```html
-<!DOCTYPE html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="css/app.css" />
-  </head>
-  <body>
-    <!-- Votre contenu -->
-  </body>
-</html>
-```
-
-### 3. Personnaliser si besoin
-
-- **Ajouter des composants** : Créez vos fichiers dans le layer `components`
-- **Ajouter des utilitaires** : Créez vos fichiers dans le layer `utilities`
-- **Modifier les tokens** : Éditez `theme-tokens.css` selon vos besoins
 
 ## 📚 Ressources
 
@@ -144,31 +117,19 @@ Si vous avez choisi **"Light et Dark"** :
 
 Le thème s'adapte automatiquement selon la préférence système de l'utilisateur.
 
-### Forcer un thème
-
-Ajoutez l'attribut `data-theme` sur `<html>` :
-
-```html
-<!-- Forcer le thème clair -->
-<html lang="fr" data-theme="light"></html>
-
-<!-- Forcer le thème sombre -->
-<html lang="fr" data-theme="dark"></html>
-```
-
 ## 📐 Layouts Bretzel
 
 Utilisez les attributs `data-layout` pour structurer vos pages :
 
 ```html
 <!-- Empilement vertical -->
-<div data-layout="stack" data-gap="m">...</div>
+<div data-layout="stack" data-gap="s">...</div>
 
 <!-- Grille fluide -->
 <div data-layout="autogrid" data-gap="l">...</div>
 
 <!-- 2 colonnes -->
-<div data-layout="duo" data-gap="m">...</div>
+<div data-layout="duo" data-split="1-2">...</div>
 ```
 
 Consultez la [documentation Bretzel](https://bretzel.alsacreations.com/) pour tous les layouts disponibles.

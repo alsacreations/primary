@@ -670,8 +670,8 @@ export function generateThemeJSON() {
       "defaultGradients": false,
       "defaultPalette": false,
       "palette": [
-        { "name": "white", "color": "oklch(100% 0 0)", "slug": "white" },
-        { "name": "black", "color": "oklch(0% 0 0)", "slug": "black" },
+        { "name": "white", "color": "oklch(1 0 0)", "slug": "white" },
+        { "name": "black", "color": "oklch(0 0 0)", "slug": "black" },
         { "name": "gray-50", "color": "oklch(97% 0 0)", "slug": "gray-50" },
         { "name": "gray-100", "color": "oklch(92.2% 0 0)", "slug": "gray-100" },
         { "name": "gray-200", "color": "oklch(87% 0 0)", "slug": "gray-200" },

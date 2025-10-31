@@ -219,8 +219,8 @@ async function generate() {
     const hasBlack = colors.some(
       (c) => sanitizeVarName(c.name) === "--color-black"
     );
-    if (!hasWhite) themeCss += `  --color-white: oklch(100% 0 0);\n`;
-    if (!hasBlack) themeCss += `  --color-black: oklch(0% 0 0);\n`;
+    if (!hasWhite) themeCss += `  --color-white: oklch(1 0 0);\n`;
+    if (!hasBlack) themeCss += `  --color-black: oklch(0 0 0);\n`;
 
     emitGroup(groups.gray);
     // Then semantic groups in order

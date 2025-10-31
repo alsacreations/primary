@@ -116,10 +116,18 @@ async function generate() {
   // theme.css generation (primitives) - collect by category then print grouped blocks
   let themeCss = `/* ----------------------------------\n * Theme du projet (valeurs primitives)\n * ----------------------------------\n */\n:root {\n`;
 
+  // Ensure breakpoints always present at the top of :root
+  themeCss += `  /* Breakpoints (en dur) */\n`;
+  themeCss += `  --md: 48rem; /* 768px */\n`;
+  themeCss += `  --lg: 64rem; /* 1024px */\n`;
+  themeCss += `  --xl: 80rem; /* 1280px */\n`;
+  themeCss += `  --xxl: 96rem; /* 1536px */\n\n`;
+
   const colors = [];
   const spacings = [];
   const roundeds = [];
   const others = [];
+  const lineheightPrimitives = [];
 
   // alias-aware prefixes
   const spacingPrefixes = new Set(["spacing", "space", "gap"]);
@@ -141,11 +149,12 @@ async function generate() {
         spacings.push({ name, px });
       } else if (roundedPrefixes.has(first)) {
         roundeds.push({ name, px });
-      } else if (
-        name.startsWith("FontSize/") ||
-        name.startsWith("LineHeight/")
-      ) {
-        // skip font tokens here
+      } else if (/(^line[- ]?height$|^leading$)/i.test(first)) {
+        // Normalize any Line-height / LineHeight / leading primitives into
+        // explicit --line-height-<px> primitives (keep px value for sorting).
+        lineheightPrimitives.push({ name, px });
+      } else if (name.toLowerCase().startsWith("fontsize/")) {
+        // skip font-size tokens here (handled in Token Font.json)
       } else {
         others.push({ name, px });
       }
@@ -178,14 +187,41 @@ async function generate() {
       else groups.others.push(c);
     }
 
-    themeCss += `\n  /* Couleurs */\n`;
+    themeCss += `\n  /* Couleurs globales */\n`;
+    // Emit group with numeric-suffix-aware sorting so that --color-*-50 comes before --color-*-100
     const emitGroup = (arr) => {
-      arr.sort(sortByName).forEach((c) => {
-        themeCss += `  ${sanitizeVarName(c.name)}: ${c.css};\n`;
-      });
+      const numericSuffix = (varName) => {
+        const n = sanitizeVarName(varName);
+        const m = n.match(/-(\d+)$/);
+        return m ? Number(m[1]) : null;
+      };
+      arr
+        .sort((a, b) => {
+          const na = sanitizeVarName(a.name);
+          const nb = sanitizeVarName(b.name);
+          const aa = numericSuffix(a.name);
+          const bb = numericSuffix(b.name);
+          if (aa !== null && bb !== null) return aa - bb;
+          if (aa !== null) return -1;
+          if (bb !== null) return 1;
+          return na.localeCompare(nb, "en");
+        })
+        .forEach((c) => {
+          themeCss += `  ${sanitizeVarName(c.name)}: ${c.css};\n`;
+        });
     };
 
     // Emit gray first
+    // Ensure white and black primitives always present and placed before gray
+    const hasWhite = colors.some(
+      (c) => sanitizeVarName(c.name) === "--color-white"
+    );
+    const hasBlack = colors.some(
+      (c) => sanitizeVarName(c.name) === "--color-black"
+    );
+    if (!hasWhite) themeCss += `  --color-white: oklch(100% 0 0);\n`;
+    if (!hasBlack) themeCss += `  --color-black: oklch(0% 0 0);\n`;
+
     emitGroup(groups.gray);
     // Then semantic groups in order
     emitGroup(groups.error);
@@ -212,7 +248,22 @@ async function generate() {
     roundeds
       .sort((a, b) => Number(a.px) - Number(b.px))
       .forEach((r) => {
-        themeCss += `  ${sanitizeVarName(r.name)}: ${pxToRem(r.px)};\n`;
+        // normalize rounded/* -> --radius-<px>
+        const px = Math.round(Number(r.px));
+        const name = `--radius-${px}`;
+        themeCss += `  ${name}: ${pxToRem(r.px)};\n`;
+      });
+  }
+
+  // Line-height primitives (from Primitives.json) — normalize to --line-height-<px>
+  if (lineheightPrimitives.length) {
+    // Removed unused declaration
+    lineheightPrimitives
+      .sort((a, b) => Number(a.px) - Number(b.px))
+      .forEach((lh) => {
+        const px = Math.round(Number(lh.px));
+        const name = `--line-height-${px}`;
+        themeCss += `  ${name}: ${pxToRem(lh.px)};\n`;
       });
   }
 
@@ -274,7 +325,9 @@ async function generate() {
       lineHeightPrefixes.has(first) ||
       name.toLowerCase().startsWith("lineheight/")
     ) {
-      const varName = "--" + name.split("/").pop().toLowerCase();
+      const rawLast = name.split("/").pop().toLowerCase().replace(/\s+/g, "-");
+      const key = rawLast.replace(/^(lineheight|line-height|leading)-?/, "");
+      const varName = `--line-height-${key}`;
       const modes = Object.keys(v.resolvedValuesByMode || {});
       const mobileKey = modes[0];
       const desktopKey = modes[1] || mobileKey;
@@ -303,7 +356,12 @@ async function generate() {
   const linePrimitives = [];
 
   for (const f of fontSizes) {
-    const prefix = f.varName.slice(2).split("-")[0];
+    const partsF = f.varName.slice(2).split("-");
+    let prefix = partsF.slice(0, partsF.length - 1).join("-") || partsF[0];
+    // normalize common prefixes (line-height / leading -> line-height)
+    if (/^(lineheight|line-height|leading)$/i.test(prefix))
+      prefix = "line-height";
+    if (/^(text|fontsize|font-size)$/i.test(prefix)) prefix = "text";
     const minPx = Math.round(f.minRem * 16);
     const maxPx = Math.round(f.maxRem * 16);
     fontPrimitives.push({
@@ -319,7 +377,11 @@ async function generate() {
   }
 
   for (const lh of lineHeights) {
-    const prefix = lh.varName.slice(2).split("-")[0];
+    const partsL = lh.varName.slice(2).split("-");
+    let prefix = partsL.slice(0, partsL.length - 1).join("-") || partsL[0];
+    if (/^(lineheight|line-height|leading)$/i.test(prefix))
+      prefix = "line-height";
+    if (/^(text|fontsize|font-size)$/i.test(prefix)) prefix = "text";
     const minPx = Math.round(lh.minRem * 16);
     const maxPx = Math.round(lh.maxRem * 16);
     linePrimitives.push({
@@ -359,12 +421,18 @@ async function generate() {
   }
 
   themeCss += `\n}\n`;
+  // build a lookup set of primitives we just emitted for validation
+  // normalize excessive blank lines (collapse 3+ newlines into 2)
+  themeCss = themeCss.replace(/\n{3,}/g, "\n\n");
 
   // build a lookup set of primitives we just emitted for validation
-  const primitiveNames = new Set([
-    ...fontPrimitives.map((p) => p.name),
-    ...linePrimitives.map((p) => p.name),
-  ]);
+  // parse the emitted themeCss — this is the single source of truth
+  const primitiveNames = new Set();
+  const varRe = /^\s*(--[a-z0-9-]+)\s*:/gim;
+  let vm;
+  while ((vm = varRe.exec(themeCss)) !== null) {
+    primitiveNames.add(vm[1]);
+  }
 
   function preferredValue(minRem, maxRem, wMin = 360, wMax = 1280) {
     if (minRem === maxRem) return formatNumber(minRem) + "rem";
@@ -377,7 +445,12 @@ async function generate() {
   if (fontSizes.length) {
     tokensCss += `\n  /* Typographie — Tailles de police */\n`;
     for (const f of fontSizes) {
-      const prefix = f.varName.slice(2).split("-")[0];
+      const partsFtok = f.varName.slice(2).split("-");
+      let prefix =
+        partsFtok.slice(0, partsFtok.length - 1).join("-") || partsFtok[0];
+      if (/^(lineheight|line-height|leading)$/i.test(prefix))
+        prefix = "line-height";
+      if (/^(text|fontsize|font-size)$/i.test(prefix)) prefix = "text";
       const minPx = Math.round(f.minRem * 16);
       const maxPx = Math.round(f.maxRem * 16);
       const minName = `--${prefix}-${minPx}`;
@@ -404,7 +477,12 @@ async function generate() {
   if (lineHeights.length) {
     tokensCss += `\n  /* Typographie — Hauteurs de lignes */\n`;
     for (const lh of lineHeights) {
-      const prefix = lh.varName.slice(2).split("-")[0];
+      const partsLtok = lh.varName.slice(2).split("-");
+      let prefix =
+        partsLtok.slice(0, partsLtok.length - 1).join("-") || partsLtok[0];
+      if (/^(lineheight|line-height|leading)$/i.test(prefix))
+        prefix = "line-height";
+      if (/^(text|fontsize|font-size)$/i.test(prefix)) prefix = "text";
       const minPx = Math.round(lh.minRem * 16);
       const maxPx = Math.round(lh.maxRem * 16);
       const minName = `--${prefix}-${minPx}`;
@@ -427,7 +505,78 @@ async function generate() {
     }
   }
 
+  // Espacements sémantiques (ex : --spacing-s, --spacing-m, ...)
+  // On n'ajoute chaque variable sémantique QUE si les primitives min et max existent.
+  // Support des préfixes tolérants : --spacing-, --space-, --gap-
+  const spacingMap = new Map();
+  for (const s of spacings) {
+    const px = Math.round(Number(s.px));
+    spacingMap.set(px, {
+      name: sanitizeVarName(s.name),
+      rem: Number(s.px) / 16,
+    });
+  }
+
+  const findSpacingVar = (n) => {
+    const candidates = [`--spacing-${n}`, `--space-${n}`, `--gap-${n}`];
+    return candidates.find((c) => primitiveNames.has(c)) || null;
+  };
+
+  const emitSemanticSpacing = () => {
+    const lines = [];
+    // XS -> single primitive (4)
+    const xsVar = findSpacingVar(4);
+    if (xsVar) {
+      lines.push(`  --spacing-xs: var(${xsVar});`);
+    }
+
+    // helper to emit clamp if both primitives exist and we can compute rems
+    const emitClampIf = (label, minPx, maxPx) => {
+      const minVar = findSpacingVar(minPx);
+      const maxVar = findSpacingVar(maxPx);
+      const minEntry = spacingMap.get(minPx);
+      const maxEntry = spacingMap.get(maxPx);
+      if (minVar && maxVar && minEntry && maxEntry) {
+        const middle = preferredValue(minEntry.rem, maxEntry.rem);
+        lines.push(
+          `  --spacing-${label}: clamp(var(${minVar}), ${middle}, var(${maxVar}));`
+        );
+      }
+    };
+
+    // S: 8 -> 16
+    emitClampIf("s", 8, 16);
+    // M: 16 -> 32
+    emitClampIf("m", 16, 32);
+    // L: 24 -> 48
+    emitClampIf("l", 24, 48);
+    // XL: 32 -> 80
+    emitClampIf("xl", 32, 80);
+
+    if (lines.length) {
+      tokensCss += `\n  /* Espacements */\n`;
+      tokensCss += lines.join("\n") + "\n";
+    }
+  };
+
+  emitSemanticSpacing();
+
   tokensCss += `\n}\n`;
+
+  // final validation: ensure every var(...) used in tokensCss references an emitted primitive
+  const varUsageRe = /var\(\s*(--[a-z0-9-]+)\s*\)/g;
+  const missing = new Set();
+  let mu;
+  while ((mu = varUsageRe.exec(tokensCss)) !== null) {
+    if (!primitiveNames.has(mu[1])) missing.add(mu[1]);
+  }
+  if (missing.size) {
+    console.error(
+      "Aborting generation: theme-tokens.css references primitives not emitted in theme.css :",
+      [...missing].join(", ")
+    );
+    process.exit(2);
+  }
 
   // write outputs to tmp/
   await fs.writeFile(path.join(outDir, "theme.css"), themeCss, "utf8");

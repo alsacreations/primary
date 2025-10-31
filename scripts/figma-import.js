@@ -230,6 +230,164 @@ async function generate() {
     emitGroup(groups.info);
     // Then any other colors
     emitGroup(groups.others);
+    // Build a quick map of emitted color primitives -> raw OKLCH values so that
+    // project palette entries that alias existing color tokens can be resolved
+    // to their underlying raw values (we must NOT emit var(...) inside theme.css
+    // primitives; theme.css must contain only raw primitives).
+    const colorMap = {};
+    colors.forEach((c) => {
+      const varName = sanitizeVarName(c.name);
+      colorMap[varName] = c.css;
+    });
+    if (!hasWhite) colorMap["--color-white"] = "oklch(1 0 0)";
+    if (!hasBlack) colorMap["--color-black"] = "oklch(0 0 0)";
+
+    // If a Token colors file is present in the samples, import project palette
+    // and emit both primitives into themeCss and semantic tokens into tokensCss.
+    try {
+      const tokenColorsPath = path.join(samplesDir, "Token colors.json");
+      const tokenColors = await readJson(tokenColorsPath);
+      const modeMap = tokenColors.modes || {};
+      // invert modeMap to find light/dark keys
+      let lightModeId = null;
+      let darkModeId = null;
+      for (const k of Object.keys(modeMap)) {
+        if (modeMap[k] === "light") lightModeId = k;
+        if (modeMap[k] === "dark") darkModeId = k;
+      }
+      // fallback to first/second if explicit keys missing
+      const modeKeys = Object.keys(modeMap);
+      if (!lightModeId && modeKeys.length) lightModeId = modeKeys[0];
+      if (!darkModeId && modeKeys.length > 1) darkModeId = modeKeys[1];
+
+      const projectSemantics = [];
+      // collect synthesized primitives in a map varName -> rawValue
+      const synthesizedMap = {};
+      let needColorScheme = false;
+
+      const toVarNameFromAlias = (alias) => {
+        if (!alias) return null;
+        // already a CSS var name
+        if (/^--/.test(alias)) return alias;
+        // if it's a var(...) string, extract the inner var name
+        const m = String(alias).match(/var\(\s*(--[a-z0-9-]+)\s*\)/i);
+        if (m) return m[1];
+        // otherwise sanitize the Figma-style name
+        return sanitizeVarName(alias);
+      };
+
+      for (const v of tokenColors.variables || []) {
+        const rawName = (v.name || "").toLowerCase().replace(/\s+/g, "-");
+        const primLightName = `--color-${rawName}-light`;
+        const primDarkName = `--color-${rawName}-dark`;
+        if (rawName === "primary") {
+          // primary token inspected for resolved values (kept silent in normal runs)
+        }
+
+        const rvLight =
+          v.resolvedValuesByMode && v.resolvedValuesByMode[lightModeId];
+        const rvDark = darkModeId
+          ? v.resolvedValuesByMode && v.resolvedValuesByMode[darkModeId]
+          : null;
+
+        // derive primitive reference: prefer aliasName mapping to existing primitive
+        // else synthesize a primitive for the resolvedValue and emit it into themeCss
+        let lightPrim = null;
+        if (rawName === "primary") {
+          // primary resolvedValues are available in rvLight / rvDark if present
+        }
+        if (rvLight && rvLight.aliasName) {
+          const aliasVar = sanitizeVarName(rvLight.aliasName);
+          lightPrim = aliasVar;
+          // if the aliased primitive is not present in our colorMap, try to
+          // resolve it from primitives.variables or from the resolvedValue
+          if (!colorMap[aliasVar]) {
+            // If the aliased primitive was not present, synthesize it from the
+            // token's resolvedValue when available. This ensures theme.css
+            // contains base primitives like --color-blue-500.
+            if (rvLight && rvLight.resolvedValue) {
+              const raw = figmaColorToCss(rvLight.resolvedValue);
+              synthesizedMap[aliasVar] = raw;
+              colorMap[aliasVar] = raw;
+            }
+          }
+        } else if (rvLight && rvLight.resolvedValue) {
+          lightPrim = `--color-${rawName}-light`;
+          const raw = figmaColorToCss(rvLight.resolvedValue);
+          if (!colorMap[lightPrim]) {
+            synthesizedMap[lightPrim] = raw;
+            colorMap[lightPrim] = raw;
+          }
+        }
+
+        let darkPrim = null;
+        if (rvDark && rvDark.aliasName) {
+          const aliasVar = sanitizeVarName(rvDark.aliasName);
+          darkPrim = aliasVar;
+          if (!colorMap[aliasVar]) {
+            if (rvDark && rvDark.resolvedValue) {
+              const raw = figmaColorToCss(rvDark.resolvedValue);
+              synthesizedMap[aliasVar] = raw;
+              colorMap[aliasVar] = raw;
+            }
+          }
+        } else if (rvDark && rvDark.resolvedValue) {
+          darkPrim = `--color-${rawName}-dark`;
+          const raw = figmaColorToCss(rvDark.resolvedValue);
+          if (!colorMap[darkPrim]) {
+            synthesizedMap[darkPrim] = raw;
+            colorMap[darkPrim] = raw;
+          }
+        }
+
+        // resolved primitives for this token (kept internal)
+
+        // semantic token should reference primitive variables (existing or synthesized)
+        if (darkPrim) {
+          needColorScheme = true;
+          projectSemantics.push(
+            `  --${rawName}: light-dark(var(${lightPrim}), var(${darkPrim}));`
+          );
+        } else if (lightPrim) {
+          projectSemantics.push(`  --${rawName}: var(${lightPrim});`);
+        }
+      }
+
+      const synthKeys = Object.keys(synthesizedMap || {});
+      if (synthKeys.length) {
+        // sort synthesized keys with numeric-suffix-aware ordering similar to emitGroup
+        synthKeys.sort((a, b) => {
+          // Sort by base name (family) then numeric suffix when present.
+          // a/b are like --color-blue-500
+          const na = a.replace(/^--/, "");
+          const nb = b.replace(/^--/, "");
+          const ma = na.match(/^(.*?)-(\d+)$/);
+          const mb = nb.match(/^(.*?)-(\d+)$/);
+          const baseA = ma ? ma[1] : na;
+          const baseB = mb ? mb[1] : nb;
+          if (baseA !== baseB) return baseA.localeCompare(baseB, "en");
+          // same base, compare numeric suffix if present
+          if (ma && mb) return Number(ma[2]) - Number(mb[2]);
+          if (ma) return -1; // numbers come before non-numeric variants of same base
+          if (mb) return 1;
+          return na.localeCompare(nb, "en");
+        });
+        themeCss += `\n  /* Couleurs personnalisées (projet) - primitives synthétisées */\n`;
+        for (const k of synthKeys) {
+          themeCss += `  ${k}: ${synthesizedMap[k]};\n`;
+        }
+      }
+      if (projectSemantics.length) {
+        generate._projectSemantics = generate._projectSemantics || [];
+        generate._projectSemantics.push({
+          lines: projectSemantics,
+          needColorScheme,
+        });
+      }
+      // project debug dump intentionally omitted in normal runs
+    } catch (e) {
+      // no token colors present — ignore
+    }
   }
 
   // Spacing block (sort by numeric value)
@@ -279,6 +437,32 @@ async function generate() {
 
   // theme-tokens.css generation (fonts responsive) — collect, sort by min value, then emit grouped blocks
   let tokensCss = `/* ----------------------------------\n * Theme-tokens\n * Surcouche de theme.css\n * ----------------------------------\n */\n:root {\n`;
+  // If project semantics were prepared while emitting themeCss, inject them here.
+  // capture whether any project token required a light/dark scheme so we can
+  // conditionally emit light-dark() in other semantic blocks (forms etc.).
+  let projectNeedColorScheme = false;
+  if (generate._projectSemantics && generate._projectSemantics.length) {
+    const all = generate._projectSemantics.reduce(
+      (acc, cur) => {
+        if (cur.lines && cur.lines.length) acc.lines.push(...cur.lines);
+        if (cur.needColorScheme) acc.needColorScheme = true;
+        return acc;
+      },
+      { lines: [], needColorScheme: false }
+    );
+
+    projectNeedColorScheme = Boolean(all.needColorScheme);
+
+    if (all.needColorScheme) {
+      const cs = `  color-scheme: light dark;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n\n`;
+      tokensCss = tokensCss.replace(":root {\n", `:root {\n${cs}`);
+    }
+
+    if (all.lines.length) {
+      tokensCss += `\n  /* Couleurs personnalisées (projet) */\n`;
+      tokensCss += all.lines.join("\n") + "\n";
+    }
+  }
 
   const fontSizes = [];
   const lineHeights = [];
@@ -486,6 +670,8 @@ async function generate() {
   // normalize excessive blank lines (collapse 3+ newlines into 2)
   themeCss = themeCss.replace(/\n{3,}/g, "\n\n");
 
+  // Intermediate debug file omitted in normal runs
+
   // build a lookup set of primitives we just emitted for validation
   // parse the emitted themeCss — this is the single source of truth
   const primitiveNames = new Set();
@@ -621,6 +807,42 @@ async function generate() {
   };
 
   emitSemanticSpacing();
+
+  // Formulaires — placer ce bloc systématiquement à la fin de :root
+  // Utiliser light-dark() uniquement si le projet propose à minima des
+  // variantes light et dark (projectNeedColorScheme). Sinon, on choisit la
+  // variante light par défaut.
+  tokensCss += `\n  /* Formulaires */\n`;
+  if (projectNeedColorScheme) {
+    tokensCss += `  --form-control-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );\n`;
+    tokensCss += `  --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));\n`;
+  } else {
+    // default to light variant if no dark modes available
+    tokensCss += `  --form-control-background: var(--color-gray-200);\n`;
+    tokensCss += `  --on-form-control: var(--color-gray-900);\n`;
+  }
+  tokensCss += `  --form-control-spacing: var(--spacing-12) var(--spacing-16);\n`;
+  tokensCss += `  --form-control-border-width: 1px;\n`;
+  tokensCss += `  --form-control-border-color: var(--color-gray-400);\n`;
+  // choose a sensible fallback for --radius-m if it's not present in theme primitives
+  (function () {
+    const radiusCandidates = [
+      "--radius-m",
+      "--radius-16",
+      "--radius-8",
+      "--radius-0",
+      "--radius-9999",
+    ];
+    let chosen = radiusCandidates.find((r) => primitiveNames.has(r));
+    if (!chosen) {
+      // fallback to any emitted --radius-<number> if available
+      chosen = Array.from(primitiveNames).find((n) => /^--radius-\d+$/.test(n));
+    }
+    if (!chosen) chosen = "--radius-0";
+    tokensCss += `  --form-control-border-radius: var(${chosen});\n`;
+  })();
+  tokensCss += `  --checkables-border-color: var(--color-gray-400);\n`;
+  tokensCss += `  --checkable-size: 1.25em;\n`;
 
   tokensCss += `\n}\n`;
 

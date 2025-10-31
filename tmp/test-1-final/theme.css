@@ -74,6 +74,17 @@
   --text-60: 3.75rem;
   --text-80: 5rem;
 
+  /* Typographie - Familles de police */
+  --font-base: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* Typographie - Graisses de police */
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+
   /* Typographie — Hauteurs de lignes */
   --line-height-20: 1.25rem;
   --line-height-24: 1.5rem;
@@ -85,5 +96,15 @@
   --line-height-68: 4.25rem;
   --line-height-80: 5rem;
   --line-height-100: 6.25rem;
+
+  /* Transitions et animations */
+  --transition-duration: 0.25s;
+
+  /* Niveaux de z-index */
+  --z-under-page-level: -1;
+  --z-above-page-level: 1;
+  --z-header-level: 1000;
+  --z-above-header-level: 2000;
+  --z-above-all-level: 3000;
 
 }

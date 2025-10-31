@@ -408,6 +408,42 @@ async function generate() {
     }
   }
 
+  // Ensure generic font families and font-weight tokens are present under the
+  // "Typographie — Tailles de police" section. Add only missing entries.
+  const families = [
+    { name: "--font-base", value: "system-ui, sans-serif" },
+    { name: "--font-mono", value: "ui-monospace, monospace" },
+  ];
+  const weights = [
+    { name: "--font-weight-regular", value: "400" },
+    { name: "--font-weight-semibold", value: "600" },
+    { name: "--font-weight-bold", value: "700" },
+    { name: "--font-weight-extrabold", value: "800" },
+    { name: "--font-weight-black", value: "900" },
+  ];
+
+  // Only add header if at least one entry is missing
+  const missingFamily = families.some(
+    (f) => !new RegExp(`${f.name}\s*:`).test(themeCss)
+  );
+  const missingWeight = weights.some(
+    (w) => !new RegExp(`${w.name}\s*:`).test(themeCss)
+  );
+  if (missingFamily || missingWeight) {
+    themeCss += `\n  /* Typographie - Familles de police */\n`;
+    for (const f of families) {
+      if (!new RegExp(`${f.name}\s*:`).test(themeCss)) {
+        themeCss += `  ${f.name}: ${f.value};\n`;
+      }
+    }
+    themeCss += `\n  /* Typographie - Graisses de police */\n`;
+    for (const w of weights) {
+      if (!new RegExp(`${w.name}\s*:`).test(themeCss)) {
+        themeCss += `  ${w.name}: ${w.value};\n`;
+      }
+    }
+  }
+
   // emit line-height primitives into themeCss under /* Line heights */
   if (linePrimitives.length) {
     const seenLine = new Set();
@@ -418,6 +454,31 @@ async function generate() {
       seenLine.add(p.name);
       themeCss += `  ${p.name}: ${p.rem};\n`;
     }
+  }
+
+  // Ensure transitions and z-index variables are present at the end of :root
+  const ensureVar = (name) => new RegExp(`${name}\s*:`).test(themeCss);
+  const missingTransitions = [];
+  if (!ensureVar("--transition-duration"))
+    missingTransitions.push(`  --transition-duration: 0.25s;`);
+
+  const missingZ = [];
+  if (!ensureVar("--z-under-page-level"))
+    missingZ.push(`  --z-under-page-level: -1;`);
+  if (!ensureVar("--z-above-page-level"))
+    missingZ.push(`  --z-above-page-level: 1;`);
+  if (!ensureVar("--z-header-level"))
+    missingZ.push(`  --z-header-level: 1000;`);
+  if (!ensureVar("--z-above-header-level"))
+    missingZ.push(`  --z-above-header-level: 2000;`);
+  if (!ensureVar("--z-above-all-level"))
+    missingZ.push(`  --z-above-all-level: 3000;`);
+
+  if (missingTransitions.length || missingZ.length) {
+    themeCss += `\n  /* Transitions et animations */\n`;
+    missingTransitions.forEach((l) => (themeCss += l + "\n"));
+    themeCss += `\n  /* Niveaux de z-index */\n`;
+    missingZ.forEach((l) => (themeCss += l + "\n"));
   }
 
   themeCss += `\n}\n`;

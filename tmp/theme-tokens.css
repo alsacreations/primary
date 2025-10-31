@@ -14,7 +14,6 @@
     color-scheme: dark;
   }
 
-
   /* Couleurs personnalisées (projet) */
   --surface: light-dark(var(--color-white), var(--color-gray-900));
   --on-surface: light-dark(var(--color-gray-900), var(--color-white));

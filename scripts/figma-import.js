@@ -846,6 +846,9 @@ async function generate() {
 
   tokensCss += `\n}\n`;
 
+  // normalize excessive blank lines in tokensCss (collapse 3+ newlines into 2)
+  tokensCss = tokensCss.replace(/\n{3,}/g, "\n\n");
+
   // final validation: ensure every var(...) used in tokensCss references an emitted primitive
   const varUsageRe = /var\(\s*(--[a-z0-9-]+)\s*\)/g;
   const missing = new Set();

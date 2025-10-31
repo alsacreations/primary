@@ -6,6 +6,8 @@
   "scripts": {
     "test": "node scripts/test-generate.js",
     "lint": "stylelint assets/css/**/*.css --fix",
+    "format:generated": "npx stylelint \"tmp/*.css\" --fix",
+    "generate:tokens": "node scripts/figma-import.js && npm run format:generated",
     "serve": "npx http-server . -p 8080",
     "build": "echo 'No build step required - static files only'"
   },

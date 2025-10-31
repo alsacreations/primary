@@ -1,0 +1,82 @@
+/* ----------------------------------
+ * Theme du projet (valeurs primitives)
+ * ----------------------------------
+ */
+:root {
+
+  /* Couleurs */
+  --color-gray-100: oklch(0.9219 0 89.8756);
+  --color-gray-200: oklch(0.8699 0 89.8756);
+  --color-gray-300: oklch(0.709 0 89.8756);
+  --color-gray-400: oklch(0.5555 0 89.8756);
+  --color-gray-50: oklch(0.9702 0 89.8756);
+  --color-gray-500: oklch(0.4386 0 89.8756);
+  --color-gray-600: oklch(0.3715 0 89.8756);
+  --color-gray-700: oklch(0.2686 0 89.8756);
+  --color-gray-800: oklch(0.2046 0 89.8756);
+  --color-gray-900: oklch(0.1448 0 89.8756);
+  --color-error-200: oklch(0.9205 0.0424 39.8434);
+  --color-error-300: oklch(0.7037 0.1879 27.7509);
+  --color-error-500: oklch(0.506 0.1899 27.6614);
+  --color-error-700: oklch(0.3852 0.158 29.2339);
+  --color-error-900: oklch(0.2237 0.0918 29.2339);
+  --color-success-100: oklch(0.9651 0.0559 151.4603);
+  --color-success-300: oklch(0.7159 0.1297 150.6326);
+  --color-success-500: oklch(0.5166 0.13 150.739);
+  --color-success-700: oklch(0.3751 0.116 145.5619);
+  --color-success-900: oklch(0.2363 0.0804 142.4953);
+  --color-warning-100: oklch(0.9369 0.0512 74.7366);
+  --color-warning-300: oklch(0.794 0.1416 57.8476);
+  --color-warning-500: oklch(0.6315 0.1687 49.2794);
+  --color-warning-700: oklch(0.4852 0.1567 38.619);
+  --color-warning-900: oklch(0.332 0.1029 40.6304);
+  --color-color: oklch(1 0 89.8756);
+
+  /* Espacements */
+  --spacing-0: 0;
+  --spacing-2: 0.125rem;
+  --spacing-4: 0.25rem;
+  --spacing-8: 0.5rem;
+  --spacing-12: 0.75rem;
+  --spacing-16: 1rem;
+  --spacing-20: 1.25rem;
+  --spacing-24: 1.5rem;
+  --spacing-32: 2rem;
+  --spacing-40: 2.5rem;
+  --spacing-48: 3rem;
+  --spacing-56: 3.5rem;
+  --spacing-80: 5rem;
+  --spacing-128: 8rem;
+  --spacing-160: 10rem;
+
+  /* Border radius */
+  --rounded-none: 0;
+  --rounded-8: 0.5rem;
+  --rounded-16: 1rem;
+  --rounded-full: 624.9375rem;
+
+  /* Typographie — Tailles de police */
+  --text-12: 0.75rem;
+  --text-14: 0.875rem;
+  --text-16: 1rem;
+  --text-18: 1.125rem;
+  --text-24: 1.5rem;
+  --text-30: 1.875rem;
+  --text-36: 2.25rem;
+  --text-48: 3rem;
+  --text-60: 3.75rem;
+  --text-80: 5rem;
+
+  /* Typographie — Hauteurs de lignes */
+  --lineheight-20: 1.25rem;
+  --lineheight-24: 1.5rem;
+  --lineheight-28: 1.75rem;
+  --lineheight-32: 2rem;
+  --lineheight-36: 2.25rem;
+  --lineheight-40: 2.5rem;
+  --lineheight-56: 3.5rem;
+  --lineheight-68: 4.25rem;
+  --lineheight-80: 5rem;
+  --lineheight-100: 6.25rem;
+
+}

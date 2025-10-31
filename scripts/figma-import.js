@@ -157,10 +157,43 @@ async function generate() {
 
   // Colors block
   if (colors.length) {
+    // group colors semantically: gray, error, success, warning, info, then others
+    const groups = {
+      gray: [],
+      error: [],
+      success: [],
+      warning: [],
+      info: [],
+      others: [],
+    };
+    for (const c of colors) {
+      const parts = c.name.split("/").map((p) => p.toLowerCase());
+      // expect names like color/gray/900 or color/error/500
+      const semantic = parts[1] || "";
+      if (semantic === "gray") groups.gray.push(c);
+      else if (semantic === "error") groups.error.push(c);
+      else if (semantic === "success") groups.success.push(c);
+      else if (semantic === "warning") groups.warning.push(c);
+      else if (semantic === "info") groups.info.push(c);
+      else groups.others.push(c);
+    }
+
     themeCss += `\n  /* Couleurs */\n`;
-    colors.sort(sortByName).forEach((c) => {
-      themeCss += `  ${sanitizeVarName(c.name)}: ${c.css};\n`;
-    });
+    const emitGroup = (arr) => {
+      arr.sort(sortByName).forEach((c) => {
+        themeCss += `  ${sanitizeVarName(c.name)}: ${c.css};\n`;
+      });
+    };
+
+    // Emit gray first
+    emitGroup(groups.gray);
+    // Then semantic groups in order
+    emitGroup(groups.error);
+    emitGroup(groups.success);
+    emitGroup(groups.warning);
+    emitGroup(groups.info);
+    // Then any other colors
+    emitGroup(groups.others);
   }
 
   // Spacing block (sort by numeric value)

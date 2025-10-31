@@ -5,12 +5,6 @@
 :root {
 
   /* Couleurs */
-  --color-color: oklch(1 0 89.8756);
-  --color-error-200: oklch(0.9205 0.0424 39.8434);
-  --color-error-300: oklch(0.7037 0.1879 27.7509);
-  --color-error-500: oklch(0.506 0.1899 27.6614);
-  --color-error-700: oklch(0.3852 0.158 29.2339);
-  --color-error-900: oklch(0.2237 0.0918 29.2339);
   --color-gray-100: oklch(0.9219 0 89.8756);
   --color-gray-200: oklch(0.8699 0 89.8756);
   --color-gray-300: oklch(0.709 0 89.8756);
@@ -21,6 +15,11 @@
   --color-gray-700: oklch(0.2686 0 89.8756);
   --color-gray-800: oklch(0.2046 0 89.8756);
   --color-gray-900: oklch(0.1448 0 89.8756);
+  --color-error-200: oklch(0.9205 0.0424 39.8434);
+  --color-error-300: oklch(0.7037 0.1879 27.7509);
+  --color-error-500: oklch(0.506 0.1899 27.6614);
+  --color-error-700: oklch(0.3852 0.158 29.2339);
+  --color-error-900: oklch(0.2237 0.0918 29.2339);
   --color-success-100: oklch(0.9651 0.0559 151.4603);
   --color-success-300: oklch(0.7159 0.1297 150.6326);
   --color-success-500: oklch(0.5166 0.13 150.739);
@@ -31,6 +30,7 @@
   --color-warning-500: oklch(0.6315 0.1687 49.2794);
   --color-warning-700: oklch(0.4852 0.1567 38.619);
   --color-warning-900: oklch(0.332 0.1029 40.6304);
+  --color-color: oklch(1 0 89.8756);
 
   /* Espacements */
   --spacing-0: 0;

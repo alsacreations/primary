@@ -68,7 +68,3 @@
 --form-control-border-radius: ;
 --checkables-border-color: ;
 --checkable-size: ;
-
-*::selection {
-  background: var(--selection);
-}

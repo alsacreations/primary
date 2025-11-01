@@ -99,7 +99,3 @@
   --checkables-border-color: var(--color-gray-400);
   --checkable-size: 1.25em;
 }
-
-*::selection {
-  background: var(--selection);
-}

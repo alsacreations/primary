@@ -203,15 +203,429 @@ const CANONICAL_THEME_TOKENS = `/* ----------------------------------
 // --- Generators -----------------------------------------------------------
 export function generateTokensCSS() {
   const cfg = state && state.config ? state.config : {};
-  // If a client-side canonical generator produced tokens, use them verbatim
-  if (state && state.tokensContent && state.tokensContent.trim().length) {
-    return state.tokensContent;
-  }
   const primaryColor = cfg.primaryColor;
   const themeMode = cfg.themeMode;
   const typoResponsive = !!cfg.typoResponsive;
   const spacingResponsive = !!cfg.spacingResponsive;
+  // If a client-side canonical generator produced tokens, use them verbatim
+  if (state && state.tokensContent && state.tokensContent.trim().length) {
+    try {
+      // Best-effort post-processing: if theme primitives are present in
+      // the current state.themeContent, replace raw color literals in the
+      // produced tokensContent (oklch(...), rgb(...), hex) with
+      // var(--primitive-name) so the UI preview shows primitives
+      // rather than inline values when possible.
+      const rawTokens = state.tokensContent;
+      const themeCss = (state && state.themeContent) || "";
+      const primMap = Object.create(null);
+      const primRx = /(--[a-z0-9-]+)\s*:\s*([^;]+);/gim;
+      let m;
+      while ((m = primRx.exec(themeCss))) {
+        const name = m[1];
+        const val = (m[2] || "").trim();
+        if (val) primMap[val] = primMap[val] || name;
+      }
 
+      const replaceRx = /oklch\([^\)]+\)|rgba?\([^\)]+\)|#[0-9a-fA-F]{3,8}/g;
+      let processed = rawTokens.replace(replaceRx, (match) => {
+        const key = match.trim();
+        if (primMap[key]) return `var(${primMap[key]})`;
+        return match;
+      });
+
+      // If the user asked for responsive typography but the client-generated
+      // tokensContent lacks the main responsive text token, append a small
+      // canonical-like typography block so the UI preview reflects the
+      // user's choice (best-effort; non-destructive).
+      try {
+        const hasTextM = /--text-m\s*:/i.test(processed);
+        const hasAnyText = /--text-[a-z0-9-]*\s*:/i.test(processed);
+        if (typoResponsive && !hasTextM) {
+          const typoLines = [];
+          typoLines.push("\n  /* Typographie - Tailles de police */");
+          typoLines.push("  --text-s: var(--text-14);");
+          typoLines.push(
+            "  --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));"
+          );
+          typoLines.push(
+            "  --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));"
+          );
+          typoLines.push(
+            "  --text-xl: clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30));"
+          );
+          typoLines.push(
+            "  --text-2xl: clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36));"
+          );
+          typoLines.push(
+            "  --text-3xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));"
+          );
+          typoLines.push(
+            "  --text-4xl: clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80));"
+          );
+          // Try replace before final closing brace, fallback to append
+          if (processed.replace) {
+            const replaced = processed.replace(
+              /\n}\s*$/m,
+              "\n" + typoLines.join("\n") + "\n}\n"
+            );
+            if (replaced === processed) {
+              // fallback: append before final closing brace if present
+              if (/\n}\s*$/.test(processed)) {
+                processed = processed.replace(
+                  /\n}\s*$/,
+                  "\n" + typoLines.join("\n") + "\n}\n"
+                );
+              } else {
+                processed =
+                  processed.trimEnd() + "\n" + typoLines.join("\n") + "\n";
+              }
+            } else {
+              processed = replaced;
+            }
+          }
+        } else if (!typoResponsive && !hasAnyText) {
+          // User requested fixed text sizes: append fixed-size tokens
+          const fixedTypo = [
+            "\n  /* Typographie - Tailles de police */",
+            "  --text-s: var(--text-14);",
+            "  --text-m: var(--text-16);",
+            "  --text-l: var(--text-18);",
+            "  --text-xl: var(--text-20);",
+            "  --text-2xl: var(--text-24);",
+            "  --text-3xl: var(--text-30);",
+            "  --text-4xl: var(--text-48);",
+            "\n",
+          ].join("\n");
+          if (/\n}\s*$/.test(processed))
+            processed = processed.replace(/\n}\s*$/m, "\n" + fixedTypo + "}\n");
+          else processed = processed.trimEnd() + "\n" + fixedTypo + "\n";
+        }
+      } catch (e) {
+        /* noop */
+      }
+
+      // If the user disabled spacing responsiveness, convert spacing clamps
+      // to fixed first-arguments regardless of the typography setting.
+      try {
+        if (spacingResponsive === false) {
+          const linesArr2 = processed.split(/\n/);
+          const replaceClampInLine2 = (line) => {
+            if (line.indexOf("clamp(") === -1) return line;
+            let out = "";
+            let i = 0;
+            while (i < line.length) {
+              const pos = line.indexOf("clamp(", i);
+              if (pos === -1) {
+                out += line.slice(i);
+                break;
+              }
+              out += line.slice(i, pos);
+              const start = pos + 6;
+              let depth = 0;
+              let firstComma = -1;
+              let j = start;
+              for (; j < line.length; j++) {
+                const ch = line[j];
+                if (ch === "(") depth++;
+                else if (ch === ")") {
+                  if (depth === 0) break;
+                  depth--;
+                } else if (ch === "," && depth === 0 && firstComma === -1) {
+                  firstComma = j;
+                }
+              }
+              if (firstComma === -1 || j >= line.length) {
+                out += line.slice(pos, j + 1);
+                i = j + 1;
+              } else {
+                const firstArg = line.slice(start, firstComma).trim();
+                out += firstArg;
+                i = j + 1;
+              }
+            }
+            return out;
+          };
+
+          for (let idx = 0; idx < linesArr2.length; idx++) {
+            const l = linesArr2[idx];
+            if (
+              /^\s*--gap-[a-z0-9-]*\s*:/.test(l) ||
+              /^\s*--spacing-[a-z0-9-]*\s*:/.test(l) ||
+              l.includes("/* Espacements */")
+            ) {
+              linesArr2[idx] = replaceClampInLine2(l);
+            }
+          }
+          processed = linesArr2.join("\n");
+        }
+      } catch (e) {
+        /* noop */
+      }
+
+      // If typography is fixed, convert any clamp(...) usages to their first
+      // argument so the tokens become fixed sizes. This covers cases where
+      // client-provided tokens are responsive but the UI is configured to
+      // display fixed sizes.
+      try {
+        if (!typoResponsive) {
+          // Only convert clamp(...) -> first-argument for typographic tokens
+          // (lines that declare --text-* or --line-height-*). We iterate the
+          // file line-by-line and replace clamp occurrences only on those
+          // lines. This preserves spacing clamps when spacingResponsive=false
+          // (the user only requested fixed typography).
+          const linesArr = processed.split(/\n/);
+          const replaceClampInLine = (line) => {
+            if (line.indexOf("clamp(") === -1) return line;
+            // Small parser to replace each clamp(...) in this single line
+            let out = "";
+            let i = 0;
+            while (i < line.length) {
+              const pos = line.indexOf("clamp(", i);
+              if (pos === -1) {
+                out += line.slice(i);
+                break;
+              }
+              out += line.slice(i, pos);
+              const start = pos + 6; // after 'clamp('
+              let depth = 0;
+              let firstComma = -1;
+              let j = start;
+              for (; j < line.length; j++) {
+                const ch = line[j];
+                if (ch === "(") depth++;
+                else if (ch === ")") {
+                  if (depth === 0) break;
+                  depth--;
+                } else if (ch === "," && depth === 0 && firstComma === -1) {
+                  firstComma = j;
+                }
+              }
+              if (firstComma === -1 || j >= line.length) {
+                // malformed: copy verbatim
+                out += line.slice(pos, j + 1);
+                i = j + 1;
+              } else {
+                const firstArg = line.slice(start, firstComma).trim();
+                out += firstArg;
+                i = j + 1;
+              }
+            }
+            return out;
+          };
+
+          for (let idx = 0; idx < linesArr.length; idx++) {
+            const l = linesArr[idx];
+            // target only typographic and line-height declarations
+            if (
+              /^\s*--text-[a-z0-9-]*\s*:/.test(l) ||
+              /^\s*--line-height-\d+\s*:/.test(l) ||
+              l.includes("/* Tailles de police */") ||
+              l.includes("/* Typographie — Hauteurs de lignes */")
+            ) {
+              linesArr[idx] = replaceClampInLine(l);
+            }
+            // If the user disabled spacing responsiveness, also convert
+            // spacing-related clamps to fixed first-arguments.
+            if (
+              spacingResponsive === false &&
+              (/^\s*--gap-[a-z0-9-]*\s*:/.test(l) ||
+                /^\s*--spacing-[a-z0-9-]*\s*:/.test(l) ||
+                l.includes("/* Espacements */"))
+            ) {
+              linesArr[idx] = replaceClampInLine(l);
+            }
+          }
+          processed = linesArr.join("\n");
+        }
+      } catch (e) {
+        /* noop */
+      }
+
+      // Ensure line-height tokens exist when responsive typography is enabled.
+      try {
+        const hasLineHeightToken = /--line-height-\d+/i.test(processed);
+        if (typoResponsive && !hasLineHeightToken) {
+          const themeCss = (state && state.themeContent) || "";
+          const lhRx = /(--line-height-\d+)\s*:\s*([^;]+);/gim;
+          let lm;
+          const lhLines = [];
+          while ((lm = lhRx.exec(themeCss))) {
+            const name = lm[1];
+            // Reference the primitive so tokens file exposes the semantic var
+            lhLines.push(`  ${name}: var(${name});`);
+          }
+          if (lhLines.length) {
+            const block =
+              "\n  /* Typographie — Hauteurs de lignes */\n" +
+              lhLines.join("\n") +
+              "\n";
+            if (/\n}\s*$/.test(processed))
+              processed = processed.replace(/\n}\s*$/m, "\n" + block + "}\n");
+            else processed = processed.trimEnd() + "\n" + block + "\n";
+          } else {
+            // Fallback: append a canonical-like line-height block so the UI
+            // preview includes typical line-height tokens when none were
+            // provided by the import. This mirrors the canonical sample.
+            const canonicalLH = [
+              "\n  /* Typographie — Hauteurs de lignes */",
+              "  --line-height-s: clamp(var(--line-height-20), 1.1522rem + 0.4348vw, var(--line-height-24));",
+              "  --line-height-m: clamp(var(--line-height-24), 1.4022rem + 0.4348vw, var(--line-height-28));",
+              "  --line-height-2xl: clamp(var(--line-height-32), 1.9022rem + 0.4348vw, var(--line-height-36));",
+              "  --line-height-5xl: clamp(var(--line-height-40), 1.8152rem + 3.0435vw, var(--line-height-68));",
+              "  --line-height-4xl: clamp(var(--line-height-40), 2.1087rem + 1.7391vw, var(--line-height-56));",
+              "  --line-height-6xl: clamp(var(--line-height-80), 4.5109rem + 2.1739vw, var(--line-height-100));",
+              "\n",
+            ].join("\n");
+            if (/\n}\s*$/.test(processed))
+              processed = processed.replace(
+                /\n}\s*$/m,
+                "\n" + canonicalLH + "}\n"
+              );
+            else processed = processed.trimEnd() + "\n" + canonicalLH + "\n";
+          }
+        } else if (!typoResponsive && !hasLineHeightToken) {
+          // Fixed typography requested: append simple line-height references
+          const fixedLH = [
+            "\n  /* Typographie — Hauteurs de lignes */",
+            "  --line-height-s: var(--line-height-20);",
+            "  --line-height-m: var(--line-height-24);",
+            "  --line-height-2xl: var(--line-height-32);",
+            "  --line-height-4xl: var(--line-height-56);",
+            "  --line-height-5xl: var(--line-height-68);",
+            "  --line-height-6xl: var(--line-height-100);",
+            "\n",
+          ].join("\n");
+          if (/\n}\s*$/.test(processed))
+            processed = processed.replace(/\n}\s*$/m, "\n" + fixedLH + "}\n");
+          else processed = processed.trimEnd() + "\n" + fixedLH + "\n";
+        }
+      } catch (e) {
+        /* noop */
+      }
+
+      // Ensure the Formulaires block is placed at the end of the :root
+      // so form tokens always appear last in theme-tokens.css.
+      try {
+        const formMarker = "/* Formulaires */";
+        const idx = processed.indexOf(formMarker);
+        if (idx !== -1) {
+          // extract block from marker up to the next blank line or closing brace
+          const after = processed.slice(idx);
+          // find end: prefer double newline, else closing brace
+          let endRel = after.indexOf("\n\n");
+          if (endRel === -1) endRel = after.indexOf("\n}");
+          if (endRel === -1) endRel = after.length;
+          const block = after.slice(0, endRel).trim();
+          // If block already at the end, skip
+          const endIdx = processed.search(/\n}\s*$/m);
+          const blockAtEnd =
+            endIdx !== -1 &&
+            processed.slice(endIdx - block.length, endIdx).includes(block);
+          if (!blockAtEnd) {
+            // remove first occurrence
+            processed =
+              processed.slice(0, idx) +
+              processed.slice(idx + after.slice(0, endRel).length);
+            // append before final closing brace
+            if (/\n}\s*$/.test(processed))
+              processed = processed.replace(
+                /\n}\s*$/m,
+                "\n  " + block + "\n}\n"
+              );
+            else processed = processed.trimEnd() + "\n  " + block + "\n";
+          }
+        }
+      } catch (e) {
+        /* noop */
+      }
+
+      // Final sanitization: remove accidental double-closing-paren sequences
+      // that may have been left by aggressive replacements (e.g. "var(...));")
+      try {
+        // Collapse 2+ consecutive blank lines (possibly with spaces) into
+        // exactly one blank line to avoid excessive vertical spacing.
+        processed = processed.replace(/(\r?\n\s*){2,}/g, "\n\n");
+      } catch (e) {
+        /* noop - sanitization best-effort */
+      }
+
+      // If a single theme is requested, normalise the color-scheme header
+      // and remove the alternate data-theme blocks so the preview reflects
+      // single-mode (no light-dark wrappers and no data-theme toggles).
+      try {
+        if (themeMode === "light" || themeMode === "dark") {
+          // Change `color-scheme: light dark;` -> `color-scheme: light;` (or dark)
+          processed = processed.replace(
+            /color-scheme:\s*light\s+dark\s*;/i,
+            `color-scheme: ${themeMode};`
+          );
+          // Remove any &[data-theme="light"] { ... } and &[data-theme="dark"] { ... }
+          processed = processed.replace(
+            /&\[data-theme=\"light\"\][\s\S]*?\}\s*/g,
+            ""
+          );
+          processed = processed.replace(
+            /&\[data-theme=\"dark\"\][\s\S]*?\}\s*/g,
+            ""
+          );
+        }
+      } catch (e) {
+        /* noop: best-effort */
+      }
+
+      // If the UI is configured to a single theme (light OR dark), collapse
+      // light-dark(...) calls to the appropriate branch so the preview shows
+      // only the selected value (avoid showing light-dark in single-mode).
+      try {
+        if (themeMode === "light" || themeMode === "dark") {
+          const preferFirst = themeMode === "light";
+          let out = "";
+          let cursor = 0;
+          while (true) {
+            const idx = processed.indexOf("light-dark(", cursor);
+            if (idx === -1) {
+              out += processed.slice(cursor);
+              break;
+            }
+            out += processed.slice(cursor, idx);
+            let j = idx + "light-dark(".length;
+            let depth = 0;
+            let commaPos = -1;
+            for (; j < processed.length; j++) {
+              const ch = processed[j];
+              if (ch === "(") depth++;
+              else if (ch === ")") {
+                if (depth === 0) break;
+                depth--;
+              } else if (ch === "," && depth === 0 && commaPos === -1) {
+                commaPos = j;
+              }
+            }
+            if (commaPos === -1 || j >= processed.length) {
+              // malformed: copy verbatim
+              out += processed.slice(idx, j + 1);
+              cursor = j + 1;
+            } else {
+              const first = processed
+                .slice(idx + "light-dark(".length, commaPos)
+                .trim();
+              const second = processed.slice(commaPos + 1, j).trim();
+              out += preferFirst ? first : second;
+              cursor = j + 1;
+            }
+          }
+          processed = out;
+        }
+      } catch (e) {
+        /* noop: best-effort collapse */
+      }
+
+      return processed;
+    } catch (e) {
+      // If post-processing fails for any reason, fall back to verbatim
+      return state.tokensContent;
+    }
+  }
   // If the configuration matches the canonical case, return exact bytes
   if (
     primaryColor === "raspberry" &&
@@ -392,7 +806,7 @@ export function generateTokensCSS() {
 
   lines.push("");
   // typography
-  lines.push("  /* Tailles de police */");
+  lines.push("  /* Typographie - Tailles de police */");
   lines.push("  --text-s: var(--text-14);");
   if (typoResponsive) {
     lines.push(

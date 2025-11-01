@@ -291,7 +291,10 @@ export function generateCanonicalThemeFromFigma({
         // as a raw primitive in themeCss. Collect it for later injection
         // into PROJECT_SEMANTICS so it appears in theme-tokens.css.
         if (!sName.startsWith("--color-")) {
-          primitivesAsSemantics.push({ name: sName, css });
+          // Preserve the original variable object so we can decide later
+          // whether to emit a light-dark(...) semantic or a single value
+          // depending on available modes.
+          primitivesAsSemantics.push({ name: sName, varObj: v, css });
         } else {
           colors.push({ name, css });
         }
@@ -428,6 +431,9 @@ export function generateCanonicalThemeFromFigma({
       if (!darkModeId && modeKeys.length > 1) darkModeId = modeKeys[1];
 
       const projectSemantics = [];
+      // Tracker des noms sémantiques déjà déclarés via tokenColors
+      // afin d'éviter que des primitives "as semantics" les écrasent.
+      const declaredSemanticNames = new Set();
       const synthesizedMap = {};
       let needColorScheme = false;
 
@@ -458,7 +464,7 @@ export function generateCanonicalThemeFromFigma({
                 lightRaw = raw;
                 lightPrim = null; // prefer raw when not synthesizing
               }
-            } else if (rvLight.resolvedValue) {
+            } else if (rvLight && rvLight.resolvedValue) {
               const raw = figmaColorToCss(rvLight.resolvedValue);
               if (synthesizeProjectPrimitives) {
                 synthesizedMap[aliasVar] = raw;
@@ -501,7 +507,7 @@ export function generateCanonicalThemeFromFigma({
                 darkRaw = raw;
                 darkPrim = null;
               }
-            } else if (rvDark.resolvedValue) {
+            } else if (rvDark && rvDark.resolvedValue) {
               const raw = figmaColorToCss(rvDark.resolvedValue);
               if (synthesizeProjectPrimitives) {
                 synthesizedMap[aliasVar] = raw;
@@ -547,17 +553,17 @@ export function generateCanonicalThemeFromFigma({
           }
         }
       }
-      if (synthesizeProjectPrimitives) {
-        // Merge pre-synthesized primitives collected from semantic variables
-        // earlier into the synthesizedMap so they will be emitted in the
-        // "Couleurs personnalisées (projet) - primitives synthétisées" block.
-        try {
-          for (const k of Object.keys(preSynth || {})) {
-            if (!synthesizedMap[k]) synthesizedMap[k] = preSynth[k];
-          }
-        } catch (e) {
-          /* noop */
+      // Merge pre-synthesized primitives collected from semantic variables
+      // earlier into the synthesizedMap so they will be emitted in the
+      // "Couleurs personnalisées (projet) - primitives synthétisées" block.
+      try {
+        for (const k of Object.keys(preSynth || {})) {
+          if (!synthesizedMap[k]) synthesizedMap[k] = preSynth[k];
         }
+      } catch (e) {
+        /* noop */
+      }
+      if (synthesizeProjectPrimitives) {
         const synthKeys = Object.keys(synthesizedMap || {});
         if (synthKeys.length) {
           synthKeys.sort((a, b) => {
@@ -574,33 +580,151 @@ export function generateCanonicalThemeFromFigma({
             return na.localeCompare(nb, "en");
           });
           themeCss += `\n  /* Couleurs personnalisées (projet) - primitives synthétisées */\n`;
-          for (const k of synthKeys)
+          for (const k of synthKeys) {
             themeCss += `  ${k}: ${synthesizedMap[k]};\n`;
+          }
         }
+      }
+      // Si des sémantiques ont été construites depuis tokenColors,
+      // extraire leurs noms pour protéger leur priorité.
+      try {
+        for (const ln of projectSemantics) {
+          const m = String(ln || "").match(/^\s*--([a-z0-9-]+)/i);
+          if (m && m[1]) declaredSemanticNames.add(`--${m[1]}`);
+        }
+      } catch (e) {
+        /* noop */
       }
       // If any primitives were detected as semantic tokens, add them to
       // the project semantics so they appear in tokensCss (and not in themeCss)
       if (primitivesAsSemantics.length) {
-        // Prefer referencing an existing primitive when the semantic value
-        // exactly matches a primitive's CSS value. This enforces the
-        // project's split: primitives in theme.css, semantics in theme-tokens.css
-        const semLines = primitivesAsSemantics.map((p) => {
-          // try to find a primitive var name that has the same CSS value
-          let mapped = null;
+        // Determine mode ids from tokenColors.modes if present so we can
+        // emit light-dark(...) when both light and dark variants exist.
+        const modeMapOuter =
+          tokenColors && tokenColors.modes ? tokenColors.modes : {};
+        let lightModeIdOuter = null;
+        let darkModeIdOuter = null;
+        for (const k of Object.keys(modeMapOuter)) {
+          if (modeMapOuter[k] === "light") lightModeIdOuter = k;
+          if (modeMapOuter[k] === "dark") darkModeIdOuter = k;
+        }
+        const modeKeysOuter = Object.keys(modeMapOuter);
+        if (!lightModeIdOuter && modeKeysOuter.length)
+          lightModeIdOuter = modeKeysOuter[0];
+        if (!darkModeIdOuter && modeKeysOuter.length > 1)
+          darkModeIdOuter = modeKeysOuter[1];
+
+        const semLines = [];
+        let anyNeedColorScheme = false;
+        for (const p of primitivesAsSemantics) {
+          // Ne pas émettre une sémantique si une définition explicite
+          // pour ce nom a déjà été produite par tokenColors (priorité).
           try {
-            for (const k of Object.keys(colorMap || {})) {
-              if (colorMap[k] === p.css) {
-                mapped = k;
-                break;
-              }
-            }
+            if (declaredSemanticNames.has(p.name)) continue;
           } catch (e) {
             /* noop */
           }
-          if (mapped) return `  ${p.name}: var(${mapped});`;
-          return `  ${p.name}: ${p.css};`;
+          const vobj = p.varObj;
+          const modes = vobj.resolvedValuesByMode || vobj.valuesByMode || {};
+          // If multiple mode entries exist, prefer using explicit mode ids
+          // (from tokenColors.modes) when available; otherwise fall back to
+          // the stable ordering of mode keys (first = light, second = dark)
+          // to match the Node generator's fallback behavior. Avoid trying to
+          // infer light/dark by comparing OKLCH lightness — that's guessing
+          // and can produce incorrect inversions (eg. surface vs on-surface).
+          const modeKeys = Object.keys(modes || {});
+          let rvLight = null;
+          let rvDark = null;
+          if (modeKeys.length >= 2) {
+            if (lightModeIdOuter && darkModeIdOuter) {
+              rvLight = modes[lightModeIdOuter];
+              rvDark = modes[darkModeIdOuter];
+            } else {
+              // Stable fallback: treat first key as light, second as dark
+              rvLight = modes[modeKeys[0]];
+              rvDark = modes[modeKeys[1]];
+            }
+          } else if (modeKeys.length === 1) {
+            rvLight = modes[modeKeys[0]];
+            rvDark = null;
+          } else {
+            rvLight = null;
+            rvDark = null;
+          }
+
+          const mapResolvedToPrimitive = (entry) => {
+            if (!entry) return { prim: null, raw: null };
+            if (entry.aliasName) {
+              const aliasVar = sanitizeVarName(entry.aliasName);
+              if (colorMap[aliasVar]) return { prim: aliasVar, raw: null };
+              const aliasTarget = nameIndex && nameIndex[entry.aliasName];
+              const resolved = aliasTarget ? resolveVarRgb(aliasTarget) : null;
+              if (resolved)
+                return { prim: null, raw: figmaColorToCss(resolved) };
+            }
+            if (
+              entry.resolvedValue &&
+              typeof entry.resolvedValue === "object" &&
+              typeof entry.resolvedValue.r === "number"
+            ) {
+              const raw = figmaColorToCss(entry.resolvedValue);
+              for (const k of Object.keys(colorMap || {})) {
+                if (colorMap[k] === raw) return { prim: k, raw: null };
+              }
+              return { prim: null, raw };
+            }
+            return { prim: null, raw: null };
+          };
+
+          try {
+            const L = mapResolvedToPrimitive(rvLight);
+            const D = rvDark
+              ? mapResolvedToPrimitive(rvDark)
+              : { prim: null, raw: null };
+            if (D.prim) {
+              anyNeedColorScheme = true;
+              semLines.push(
+                `  ${p.name}: light-dark(var(${L.prim || D.prim}), var(${
+                  D.prim
+                }));`
+              );
+            } else if (L.prim) {
+              // If the original variable object had multiple modes but we
+              // resolved only a single primitive for light, warn so the
+              // caller can inspect (helps debugging cases where dark variant
+              // is missing or wasn't discovered due to ordering).
+              try {
+                const modes = p.varObj && p.varObj.resolvedValuesByMode;
+                const hasMultipleModes = modes && Object.keys(modes).length > 1;
+                if (hasMultipleModes && !D.prim) {
+                  console.warn(
+                    `[figma-gen] semantic "${p.name}": multiple modes present but dark variant not resolved; emitting single var(${L.prim})`
+                  );
+                }
+              } catch (e) {
+                /* noop */
+              }
+              semLines.push(`  ${p.name}: var(${L.prim});`);
+            } else if (D.raw) {
+              anyNeedColorScheme = true;
+              semLines.push(
+                `  ${p.name}: light-dark(${L.raw || "var(--color-white)"}, ${
+                  D.raw
+                });`
+              );
+            } else if (L.raw) {
+              semLines.push(`  ${p.name}: ${L.raw};`);
+            } else {
+              semLines.push(`  ${p.name}: ${p.css || "var(--color-white)"};`);
+            }
+          } catch (e) {
+            semLines.push(`  ${p.name}: ${p.css || "var(--color-white)"};`);
+          }
+        }
+        PROJECT_SEMANTICS.push({
+          lines: semLines,
+          needColorScheme: anyNeedColorScheme,
         });
-        PROJECT_SEMANTICS.push({ lines: semLines, needColorScheme: false });
       }
       if (projectSemantics.length) {
         // Store synthesized semantic lines for later injection into tokensCss
@@ -1004,6 +1128,39 @@ export function generateCanonicalThemeFromFigma({
       "Tokens generation references primitives not present in theme primitives:",
       [...missing].join(", ")
     );
+  }
+
+  // Post-process tokensCss: replace any raw primitive values (eg. oklch(...))
+  // with var(--primitive) when the primitive was emitted in themeCss.
+  try {
+    // build map value -> varName for quick lookup
+    const valueToVar = Object.create(null);
+    const escapeRegExp = (s) =>
+      String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    for (const name of primitiveNames) {
+      const re = new RegExp(
+        "^\\s*" + escapeRegExp(name) + "\\s*:\\s*(.*);?",
+        "m"
+      );
+      const m = themeCss.match(re);
+      if (m) {
+        const val = (m[1] || "").trim();
+        if (val) valueToVar[val] = name;
+      }
+    }
+
+    // Replace occurrences of raw values with var(...) when possible.
+    // Look for oklch(...) or other raw token values used in tokensCss.
+    tokensCss = tokensCss.replace(
+      /oklch\([^\)]+\)|rgba?\([^\)]+\)|#[0-9a-fA-F]{3,8}/g,
+      (match) => {
+        const key = match.trim();
+        if (valueToVar[key]) return `var(${valueToVar[key]})`;
+        return match;
+      }
+    );
+  } catch (e) {
+    /* noop - best-effort only */
   }
 
   return { themeCss, tokensCss };

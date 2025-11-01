@@ -697,6 +697,12 @@ function attachJsonImportHandlers() {
           if (out && out.tokensCss) state.tokensContent = out.tokensCss;
           updateThemePreview();
           updateColorChoices();
+          // Re-générer les fichiers (tokens) maintenant que themeContent est finalisé
+          try {
+            generateAllFiles();
+          } catch (e) {
+            /* noop */
+          }
           setStatus(`Import réussi — ${files.length} fichier(s) traité(s).`);
           return;
         } catch (err) {
@@ -726,6 +732,11 @@ function attachJsonImportHandlers() {
       state.tokensContent = "";
       updateThemePreview();
       updateColorChoices();
+      try {
+        generateAllFiles();
+      } catch (e) {
+        /* noop */
+      }
       setStatus(`Import réussi — ${files.length} fichier(s) traité(s).`);
     });
   }
@@ -895,6 +906,11 @@ function attachJsonImportHandlers() {
             } catch (e) {
               /* noop */
             }
+            try {
+              generateAllFiles();
+            } catch (e) {
+              /* noop */
+            }
             setStatus("Import réussi — variables ajoutées.");
             return;
           } catch (err) {
@@ -913,6 +929,11 @@ function attachJsonImportHandlers() {
         state.themeFromImport = true;
         updateThemePreview();
         updateColorChoices();
+        try {
+          generateAllFiles();
+        } catch (e) {
+          /* noop */
+        }
         setStatus("Import réussi — variables ajoutées.");
       } catch (err) {
         console.error(err);

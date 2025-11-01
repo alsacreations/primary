@@ -1094,8 +1094,17 @@ export function generateTokensCSS() {
   lines.push("");
   // Formulaires
   lines.push("  /* Formulaires */");
-  lines.push("  --form-control-background: var(--color-gray-200);");
-  lines.push("  --on-form-control: var(--color-gray-900);");
+  if (themeMode === "both") {
+    lines.push(
+      "  --form-control-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );"
+    );
+    lines.push(
+      "  --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));"
+    );
+  } else {
+    lines.push("  --form-control-background: var(--color-gray-200);");
+    lines.push("  --on-form-control: var(--color-gray-900);");
+  }
   lines.push("  --form-control-spacing: var(--spacing-12) var(--spacing-16);");
   lines.push("  --form-control-border-width: 1px;");
   lines.push("  --form-control-border-color: var(--color-gray-400);");

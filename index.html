@@ -210,25 +210,7 @@
                   accept=".json,application/json"
                   multiple
                 />
-
-                <label for="json-import-paste" class="visually-hidden"
-                  >Coller le JSON</label
-                >
-                <textarea
-                  id="json-import-paste"
-                  rows="6"
-                  placeholder="Ou collez le contenu JSON ici..."
-                ></textarea>
-
-                <div data-layout="cluster" data-gap="s">
-                  <button type="button" class="btn" id="btn-import-json">
-                    Importer JSON
-                  </button>
-                  <button type="button" class="btn" id="btn-clear-import">
-                    Effacer
-                  </button>
-                </div>
-
+                <!-- JSON paste removed: imports are performed from downloaded files only -->
                 <p id="json-import-status" class="muted" aria-live="polite"></p>
               </div>
             </div>

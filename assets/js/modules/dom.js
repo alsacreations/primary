@@ -26,9 +26,8 @@ export const elements = {
   ),
   // JSON import UI (file + paste + actions)
   jsonImportFile: document.getElementById("json-import-file"),
-  jsonImportPaste: document.getElementById("json-import-paste"),
-  btnImportJson: document.getElementById("btn-import-json"),
-  btnClearImport: document.getElementById("btn-clear-import"),
+  // Paste input removed: JSON will be provided via downloaded files only
+  // (textarea `json-import-paste` and action buttons removed from the UI).
   jsonImportStatus: document.getElementById("json-import-status"),
 
   // Étape 2 - Configuration

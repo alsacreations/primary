@@ -180,6 +180,57 @@
                 aria-describedby="custom-vars-hint"
                 rows="10"
               ></textarea>
+
+              <div class="custom-vars-extra" style="margin-top: 0.5rem">
+                <label class="config-checkbox">
+                  <input type="checkbox" id="synthesize-project-colors" />
+                  <span>Extrapoler les couleurs du projet (optionnel)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Import JSON (Figma tokens) -->
+            <div class="json-import" aria-live="polite">
+              <h3 class="source-title">Importer depuis un JSON (optionnel)</h3>
+              <p class="custom-vars-hint">
+                Importez un fichier JSON d'export de tokens (Figma / autre). Le
+                parseur est tolérant : il cherchera des paires clé/valeur
+                contenant une propriété <code>value</code> ou des clés
+                commençant par <code>--</code> ou <code>color-</code> et les
+                transformera en variables CSS dans <code>:root</code>.
+              </p>
+
+              <div data-layout="stack" data-gap="s">
+                <label for="json-import-file" class="visually-hidden"
+                  >Choisir un fichier JSON</label
+                >
+                <input
+                  type="file"
+                  id="json-import-file"
+                  accept=".json,application/json"
+                  multiple
+                />
+
+                <label for="json-import-paste" class="visually-hidden"
+                  >Coller le JSON</label
+                >
+                <textarea
+                  id="json-import-paste"
+                  rows="6"
+                  placeholder="Ou collez le contenu JSON ici..."
+                ></textarea>
+
+                <div data-layout="cluster" data-gap="s">
+                  <button type="button" class="btn" id="btn-import-json">
+                    Importer JSON
+                  </button>
+                  <button type="button" class="btn" id="btn-clear-import">
+                    Effacer
+                  </button>
+                </div>
+
+                <p id="json-import-status" class="muted" aria-live="polite"></p>
+              </div>
             </div>
           </div>
         </div>

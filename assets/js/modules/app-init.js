@@ -4,6 +4,7 @@ import {
   parseColorVariants,
   parseColorVariables,
   generateMissingVariants,
+  generateTokensCSS,
 } from "./generators.js";
 import { elements } from "./dom.js";
 
@@ -68,6 +69,25 @@ export async function init() {
   updateColorChoices();
   applyCustomVarsToDocument();
 
+  // Si on est en mode debug (ex: ?debug=state), appliquer le thème complet
+  // au document pour faciliter le debug visuel local (ne s'active que via URL)
+  try {
+    if (
+      typeof window !== "undefined" &&
+      window.location.search.includes("debug=state")
+    ) {
+      applyThemeToDocument();
+      // Appliquer aussi les tokens sémantiques (primary, surface, etc.)
+      try {
+        applyTokensToDocument();
+      } catch (e) {
+        /* noop */
+      }
+    }
+  } catch (e) {
+    /* noop */
+  }
+
   // Mettre à jour l'interface et l'aperçu
   updateUI();
   try {
@@ -93,21 +113,29 @@ export function updateThemePreview() {
     preview = preview.replace(importRx, "");
     preview = preview.replace(/\n{3,}/g, "\n\n");
   }
-
-  const hasCustom = customVars.trim().length > 0;
-  if (!hasCustom) {
-    const hasRasp = /--color-raspberry-/.test(state.themeContent);
-    if (!hasRasp) {
-      const raspLines = Object.entries(PLACEHOLDER_RASPBERRY)
-        .map(([variant, value]) => `  --color-raspberry-${variant}: ${value};`)
-        .join("\n");
-      const raspBlock = `\n  /* Couleur projet placeholder : raspberry */\n${raspLines}\n`;
-      const lastBrace = preview.lastIndexOf("}");
-      if (lastBrace !== -1) {
-        preview =
-          preview.slice(0, lastBrace) + raspBlock + preview.slice(lastBrace);
-      } else {
-        preview += raspBlock;
+  // Si le thème affiché provient des fichiers intégrés (chargement normal)
+  // ET que l'utilisateur n'a pas chargé d'import JSON, injecter un exemple
+  // de couleur projet 'raspberry' dans l'aperçu pour servir d'exemple.
+  // Ne pas injecter ce bloc si le thème provient d'un import utilisateur
+  // (state.themeFromImport === true).
+  if (!state.themeFromImport) {
+    const hasCustom = customVars.trim().length > 0;
+    if (!hasCustom) {
+      const hasRasp = /--color-raspberry-/.test(preview);
+      if (!hasRasp) {
+        const raspLines = Object.entries(PLACEHOLDER_RASPBERRY)
+          .map(
+            ([variant, value]) => `  --color-raspberry-${variant}: ${value};`
+          )
+          .join("\n");
+        const raspBlock = `\n  /* Couleur projet placeholder : raspberry */\n${raspLines}\n`;
+        const lastBrace = preview.lastIndexOf("}");
+        if (lastBrace !== -1) {
+          preview =
+            preview.slice(0, lastBrace) + raspBlock + preview.slice(lastBrace);
+        } else {
+          preview += raspBlock;
+        }
       }
     }
   }
@@ -159,6 +187,78 @@ export function applyCustomVarsToDocument() {
   });
 
   state.appliedCustomVars = newKeys;
+}
+
+/**
+ * Applique l'ensemble des variables primitives présentes dans `state.themeContent`
+ * sur `document.documentElement` afin d'activer un aperçu visuel réel.
+ * Ceci est volontairement explicite et n'est activé automatiquement que
+ * via le flag `?debug=state` pour éviter d'impacter l'UI normale.
+ */
+export function applyThemeToDocument() {
+  try {
+    const css = state.themeContent || "";
+    if (!css.trim()) return;
+
+    // Supprimer les imports de palettes runtime-only
+    const cleaned = css.replace(/^.*palettes\/[\w-]+\.css.*$\n?/gim, "");
+
+    const variantsMap = parseColorVariants(cleaned);
+    variantsMap.forEach((variants, colorName) => {
+      // Ignore runtime-only palettes
+      if (RUNTIME_ONLY_COLORS.has(colorName)) return;
+      variants.forEach((value, variant) => {
+        const key = `--color-${colorName}-${variant}`;
+        try {
+          document.documentElement.style.setProperty(key, value);
+        } catch (e) {
+          console.warn(`Impossible d'appliquer ${key}: ${value}`, e);
+        }
+      });
+    });
+  } catch (e) {
+    console.error("applyThemeToDocument failed:", e);
+  }
+}
+
+/**
+ * Applique les variables sémantiques générées (theme-tokens) au document.
+ * Utilise `state.tokensContent` si présent, sinon génère via
+ * `generateTokensCSS()` pour reproduire l'aperçu exact.
+ */
+export function applyTokensToDocument() {
+  try {
+    let css = (state && state.tokensContent) || "";
+    if (!css.trim()) {
+      // Générer à la volée si aucun contenu client-side fourni
+      try {
+        css = generateTokensCSS();
+      } catch (e) {
+        css = "";
+      }
+    }
+    if (!css.trim()) return;
+
+    // Extraire toutes les déclarations de variables simples (--name: value;)
+    const rx = /--([a-z0-9-_]+)\s*:\s*([^;]+);/gim;
+    let m;
+    let applied = 0;
+    while ((m = rx.exec(css))) {
+      const name = m[1];
+      const value = m[2].trim();
+      try {
+        document.documentElement.style.setProperty(`--${name}`, value);
+        applied++;
+      } catch (e) {
+        console.warn(`Impossible d'appliquer --${name}: ${value}`, e);
+      }
+    }
+    if (typeof console !== "undefined" && console.info) {
+      console.info(`DEBUG: applied ${applied} token variables to :root`);
+    }
+  } catch (e) {
+    console.error("applyTokensToDocument failed:", e);
+  }
 }
 
 export function updateColorChoices() {

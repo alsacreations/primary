@@ -19,6 +19,25 @@ Rendez-vous sur : [**primary.alsacreations.com**](https://primary.alsacreations.
 - Consultez le fichier `theme.css` contenant toutes les **variables CSS primitives** (couleurs, espacements, typographie)
 - Ajoutez vos **variables personnalisées** si nécessaire dans la zone de texte
 
+##### Nouvelle option d'import (Step 1)
+
+À partir de la version courante, l'étape 1 propose deux sources possibles :
+
+- `project` : utiliser les sources déjà présentes dans le dépôt (par défaut `assets/css/theme.css` et le gabarit `public/samples/theme-tokens-base.css`). Utile si vous partez d'une base existante.
+- `figma` : importer directement des JSON exportés depuis Figma (via le script d'import actuel).
+
+Vous pouvez exécuter l'orchestrateur depuis la CLI :
+
+```bash
+# importer la source du projet (par défaut)
+npm run import:step1
+
+# importer depuis les JSON Figma (délégué au script figma-import)
+node scripts/import-step1.js --source=figma
+```
+
+Le reste du flux (Étapes 2 et 3) reste identique : configuration puis génération. L'orchestrateur permet de séparer proprement la logique d'import de la génération pour éviter les régressions.
+
 #### 2️⃣ Configuration
 
 Personnalisez votre thème selon vos besoins :

@@ -20,6 +20,7 @@ import {
   syncConfigFromDOM,
   refreshColorSelection,
 } from "./ui.js";
+import { applyThemeToDocument, applyTokensToDocument } from "./app-init.js";
 import { copyToClipboard } from "./clipboard.js";
 
 /**
@@ -140,6 +141,24 @@ function attachConfigHandlers() {
   });
   // Attach the custom variables handler if the input exists
   if (elements.customVarsInput) attachCustomVarsHandler();
+  // Attach synthesis checkbox handler (option explicite pour l'utilisateur)
+  attachSynthesisCheckboxHandler();
+}
+
+function attachSynthesisCheckboxHandler() {
+  const cb = elements.synthesizeProjectColorsCheckbox;
+  if (!cb) return;
+  // Initialize config value from the checkbox state
+  try {
+    state.config.synthesizeProjectPrimitives = Boolean(cb.checked);
+  } catch (e) {
+    /* noop */
+  }
+  cb.addEventListener("change", (e) => {
+    state.config.synthesizeProjectPrimitives = Boolean(e.target.checked);
+    // if on generation step, refresh generated files
+    if (state.currentStep === 3) generateAllFiles();
+  });
 }
 
 function attachCustomVarsHandler() {
@@ -344,6 +363,130 @@ function buildCssFromVars(vars) {
   return lines.join("\n");
 }
 
+/**
+ * Finalise le CSS généré par le client :
+ * - optionnellement synthétise des primitives projet (si activée)
+ * - ajoute un bloc distinct pour les variables personnalisées utilisateur
+ * Cette fonction évite tout conflit entre valeurs synthétisées et valeurs
+ * explicitement fournies par l'utilisateur.
+ */
+function finalizeGeneratedTheme(
+  generated,
+  primitives = { variables: [] },
+  tokenColors = { variables: [] }
+) {
+  if (!generated) return String(generated || "");
+
+  try {
+    // collect user-provided variable names (if any)
+    const userText = String((state.config && state.config.customVars) || "");
+    const userNames = new Set(
+      [...userText.matchAll(/--[A-Za-z0-9_-]+/g)].map((m) =>
+        sanitizeVarName(m[0])
+      )
+    );
+
+    const allowSynthesis = Boolean(
+      state.config && state.config.synthesizeProjectPrimitives
+    );
+
+    if (allowSynthesis) {
+      const rxColor = /--color-[a-z0-9-]+-\d+\s*:/gi;
+      const genColors = new Set(
+        (generated.match(rxColor) || []).map((s) =>
+          s.replace(/\s*:.*/, "").trim()
+        )
+      );
+
+      const importedMap = new Map();
+      for (const pv of primitives.variables || []) {
+        const nm = sanitizeVarName(pv.name || "");
+        importedMap.set(nm, pv);
+      }
+      for (const tv of tokenColors.variables || []) {
+        const modes = tv.resolvedValuesByMode || {};
+        for (const mk of Object.keys(modes || {})) {
+          const entry = modes[mk] || {};
+          if (entry && entry.aliasName)
+            importedMap.set(sanitizeVarName(entry.aliasName), entry);
+        }
+      }
+
+      const missing = [];
+      for (const [name] of importedMap) {
+        if (!genColors.has(name) && !userNames.has(name)) missing.push(name);
+      }
+
+      if (missing.length) {
+        const insertLines = [];
+        for (const m of missing) {
+          const pv = importedMap.get(m);
+          if (!pv) continue;
+          try {
+            const smallOut = fgClient.generateCanonicalThemeFromFigma({
+              primitives: { variables: [pv] },
+              synthesizeProjectPrimitives: false,
+            });
+            const smallCss = smallOut.themeCss || "";
+            const rxLine = new RegExp(`^\\s*${m}\\s*:\\s*(.*);?$`, "m");
+            const mm = smallCss.match(rxLine);
+            if (mm) {
+              const val = String(mm[1] || "").replace(/;\s*$/, "");
+              insertLines.push(`  ${m}: ${val};`);
+            }
+          } catch (err) {
+            /* noop */
+          }
+        }
+        if (insertLines.length) {
+          const lastBrace = generated.lastIndexOf("}");
+          if (lastBrace !== -1) {
+            generated =
+              generated.slice(0, lastBrace) +
+              "\n\n  /* Couleurs personnalisées (projet - synthèse) */\n" +
+              insertLines.join("\n") +
+              "\n" +
+              generated.slice(lastBrace);
+          } else {
+            generated +=
+              "\n\n  /* Couleurs personnalisées (projet - synthèse) */\n" +
+              insertLines.join("\n") +
+              "\n";
+          }
+        }
+      }
+    }
+  } catch (e) {
+    /* noop */
+  }
+
+  // Append user-provided custom vars so they override synthesized ones
+  try {
+    const userText = String(
+      (state.config && state.config.customVars) || ""
+    ).trim();
+    if (userText) {
+      const lastBrace = generated.lastIndexOf("}");
+      const block =
+        "\n\n  /* Couleurs personnalisées (utilisateur) */\n" +
+        userText
+          .split(/\r?\n/)
+          .map((l) => (l.trim() ? `  ${l.trim()}` : ""))
+          .filter(Boolean)
+          .join("\n") +
+        "\n";
+      if (lastBrace !== -1)
+        generated =
+          generated.slice(0, lastBrace) + block + generated.slice(lastBrace);
+      else generated += block;
+    }
+  } catch (e) {
+    /* noop */
+  }
+
+  return String(generated || "");
+}
+
 function attachActionHandlers() {
   // Boutons de copie
   if (elements.btnCopyApp)
@@ -397,6 +540,26 @@ function attachJsonImportHandlers() {
     }
   };
 
+  // Helper: heuristically determine if a resolved value looks like a color.
+  const looksLikeColor = (rv) => {
+    if (!rv) return false;
+    const candidate = rv.resolvedValue ?? rv.value ?? rv;
+    if (!candidate) return false;
+    if (typeof candidate === "object") {
+      // Figma resolved color objects often have r,g,b (0..1) or r,g,b (0..255)
+      if (
+        ("r" in candidate && "g" in candidate && "b" in candidate) ||
+        ("red" in candidate && "green" in candidate && "blue" in candidate)
+      )
+        return true;
+      return false;
+    }
+    if (typeof candidate === "string") {
+      return /^(#|rgb|hsl|oklch|oklab)/i.test(String(candidate).trim());
+    }
+    return false;
+  };
+
   // multi-file input
   if (elements.jsonImportFile) {
     elements.jsonImportFile.addEventListener("change", async (e) => {
@@ -442,21 +605,40 @@ function attachJsonImportHandlers() {
               p.modes
             );
           for (const v of p.variables || []) {
-            // heuristics to classify — prefer tokenColors when the entry has
-            // resolved values per mode or aliases, otherwise fallback to
-            // primitives/fonts based on type/name.
+            // heuristics to classify — prefer explicit COLOR/type first,
+            // then inspect per-mode resolved values to decide if the entry
+            // is a color primitive or a semantic token (tokenColors).
             const nm = String(v.name || "").toLowerCase();
-            if (
-              v.resolvedValuesByMode &&
-              Object.values(v.resolvedValuesByMode).some(
-                (rv) =>
-                  rv && (typeof rv.resolvedValue === "object" || rv.aliasName)
-              )
-            ) {
-              tokenColors.variables.push(v);
-            } else if (v.type === "COLOR" || nm.startsWith("color/")) {
+
+            if (v.type === "COLOR" || nm.startsWith("color/")) {
               primitives.variables.push(v);
-            } else if (
+              continue;
+            }
+
+            if (v.resolvedValuesByMode) {
+              const vals = Object.values(v.resolvedValuesByMode || {});
+              // If any resolved value looks like a concrete color, treat as primitive
+              if (vals.some((rv) => looksLikeColor(rv))) {
+                primitives.variables.push(v);
+                continue;
+              }
+              // If it contains aliases or object-like resolved values (non-color),
+              // treat as tokenColors (semantic tokens)
+              if (
+                vals.some(
+                  (rv) =>
+                    rv &&
+                    (rv.aliasName ||
+                      (rv.resolvedValue &&
+                        typeof rv.resolvedValue === "object"))
+                )
+              ) {
+                tokenColors.variables.push(v);
+                continue;
+              }
+            }
+
+            if (
               nm.includes("font") ||
               nm.includes("text") ||
               nm.includes("fontsize") ||
@@ -472,10 +654,26 @@ function attachJsonImportHandlers() {
         }
 
         try {
+          // Snapshot args for post-mortem inspection in the browser.
+          try {
+            if (typeof window !== "undefined" && window.__PRIMARY_STATE) {
+              window.__PRIMARY_STATE._lastGenerateArgs = {
+                primitives: (primitives && primitives.variables) || [],
+                tokenColors: (tokenColors && tokenColors.variables) || [],
+                fonts: (fonts && fonts.variables) || [],
+                ts: Date.now(),
+              };
+            }
+          } catch (e) {
+            /* noop */
+          }
+
           const out = fgClient.generateCanonicalThemeFromFigma({
             primitives,
             fonts,
             tokenColors,
+            // Project primitives must always be generated.
+            synthesizeProjectPrimitives: true,
           });
           // Même si out.themeCss est absent, considérer que l'origine
           // est un import utilisateur : cela évite que l'UI réinjecte des placeholders.
@@ -483,81 +681,18 @@ function attachJsonImportHandlers() {
           if (out && out.themeCss) {
             // Defensive merge: ensure project color primitives from the
             // original theme are present in the client-generated theme.
+            // NOTE: project synthesis must not conflict with user custom vars.
             let generated = out.themeCss;
-              try {
-                const rxColor = /--color-[a-z0-9-]+-\d+\s*:/gi;
-                const genColors = new Set(
-                  (generated.match(rxColor) || []).map((s) =>
-                    s.replace(/\s*:.*/, "").trim()
-                  )
-                );
-
-                // Build a map of primitives actually present in the imported files
-                // so we don't copy unrelated variables from the committed theme.
-                const importedMap = new Map();
-                for (const pv of primitives.variables || []) {
-                  const nm = sanitizeVarName(pv.name || "");
-                  importedMap.set(nm, pv);
-                }
-                for (const tv of tokenColors.variables || []) {
-                  const modes = tv.resolvedValuesByMode || {};
-                  for (const mk of Object.keys(modes || {})) {
-                    const entry = modes[mk] || {};
-                    if (entry && entry.aliasName) {
-                      importedMap.set(sanitizeVarName(entry.aliasName), entry);
-                    }
-                  }
-                }
-
-                const missing = [];
-                for (const [name] of importedMap) {
-                  if (!genColors.has(name)) missing.push(name);
-                }
-
-                if (missing.length) {
-                  const insertLines = [];
-                  for (const m of missing) {
-                    const pv = importedMap.get(m);
-                    if (!pv) continue;
-                    try {
-                      // Synthesize the primitive using the client generator on
-                      // the single variable so the conversion to OKLCH is
-                      // consistent with the main generator.
-                      const smallOut = fgClient.generateCanonicalThemeFromFigma({
-                        primitives: { variables: [pv] },
-                      });
-                      const smallCss = smallOut.themeCss || "";
-                      const rxLine = new RegExp(`^\\s*${m}\\s*:\\s*(.*);?$`, "m");
-                      const mm = smallCss.match(rxLine);
-                      if (mm) {
-                        const val = String(mm[1] || "").replace(/;\s*$/, "");
-                        insertLines.push(`  ${m}: ${val};`);
-                      }
-                    } catch (err) {
-                      // skip if we can't synthesize this primitive
-                    }
-                  }
-                  if (insertLines.length) {
-                    const lastBrace = generated.lastIndexOf("}");
-                    if (lastBrace !== -1) {
-                      generated =
-                        generated.slice(0, lastBrace) +
-                        "\n\n  /* Couleurs personnalisées (import - fusion) */\n" +
-                        insertLines.join("\n") +
-                        "\n" +
-                        generated.slice(lastBrace);
-                    } else {
-                      generated +=
-                        "\n\n  /* Couleurs personnalisées (import - fusion) */\n" +
-                        insertLines.join("\n") +
-                        "\n";
-                    }
-                  }
-                }
-              } catch (e) {
-                // noop - fall back to original generated content
-              }
-            state.themeContent = generated;
+            try {
+              generated = finalizeGeneratedTheme(
+                generated,
+                primitives,
+                tokenColors
+              );
+            } catch (e) {
+              /* noop */
+            }
+            state.themeContent = String(generated || "");
           }
           if (out && out.tokensCss) state.tokensContent = out.tokensCss;
           updateThemePreview();
@@ -584,7 +719,7 @@ function attachJsonImportHandlers() {
         return;
       }
 
-      state.themeContent = css;
+      state.themeContent = String(css || "");
       // provient d'un import utilisateur
       state.themeFromImport = true;
       // clear any previous tokens override
@@ -633,19 +768,37 @@ function attachJsonImportHandlers() {
               );
             for (const v of p.variables || []) {
               const nm = String(v.name || "").toLowerCase();
-              // Prefer tokenColors classification when the variable has per-mode
-              // resolved values or aliases (semantic tokens).
-              if (
-                v.resolvedValuesByMode &&
-                Object.values(v.resolvedValuesByMode).some(
-                  (rv) =>
-                    rv && (typeof rv.resolvedValue === "object" || rv.aliasName)
-                )
-              ) {
-                tokenColors.variables.push(v);
-              } else if (v.type === "COLOR" || nm.startsWith("color/")) {
+
+              // Prefer explicit color/type markers first
+              if (v.type === "COLOR" || nm.startsWith("color/")) {
                 primitives.variables.push(v);
-              } else if (
+                continue;
+              }
+
+              // If per-mode resolved values look like concrete colors (rgb/hex/oklch),
+              // treat as primitives. Otherwise, if they include aliases or object-like
+              // resolvedValues (semantic mapping), treat as tokenColors.
+              if (v.resolvedValuesByMode) {
+                const vals = Object.values(v.resolvedValuesByMode || {});
+                if (vals.some((rv) => looksLikeColor(rv))) {
+                  primitives.variables.push(v);
+                  continue;
+                }
+                if (
+                  vals.some(
+                    (rv) =>
+                      rv &&
+                      (rv.aliasName ||
+                        (rv.resolvedValue &&
+                          typeof rv.resolvedValue === "object"))
+                  )
+                ) {
+                  tokenColors.variables.push(v);
+                  continue;
+                }
+              }
+
+              if (
                 nm.includes("font") ||
                 nm.includes("text") ||
                 nm.includes("fontsize") ||
@@ -659,18 +812,89 @@ function attachJsonImportHandlers() {
             }
           }
           try {
+            // Debug: log counts and sample names passed to the client generator
+            try {
+              const primNames = (primitives.variables || [])
+                .slice(0, 6)
+                .map((p) => p.name);
+              const tokenNames = (tokenColors.variables || [])
+                .slice(0, 6)
+                .map((p) => p.name);
+              const fontNames = (fonts.variables || [])
+                .slice(0, 6)
+                .map((p) => p.name);
+              console.debug(
+                "[import-debug] primitives:",
+                (primitives.variables || []).length,
+                primNames
+              );
+              console.debug(
+                "[import-debug] tokenColors:",
+                (tokenColors.variables || []).length,
+                tokenNames
+              );
+              console.debug(
+                "[import-debug] fonts:",
+                (fonts.variables || []).length,
+                fontNames
+              );
+            } catch (e) {
+              /* noop */
+            }
+
+            // Snapshot the arguments for post-mortem inspection in the
+            // browser console. This helps when breakpoints are inconvenient.
+            try {
+              if (typeof window !== "undefined" && window.__PRIMARY_STATE) {
+                window.__PRIMARY_STATE._lastGenerateArgs = {
+                  primitives: (primitives && primitives.variables) || [],
+                  tokenColors: (tokenColors && tokenColors.variables) || [],
+                  fonts: (fonts && fonts.variables) || [],
+                  ts: Date.now(),
+                };
+              }
+            } catch (e) {
+              /* noop */
+            }
+
             const out = fgClient.generateCanonicalThemeFromFigma({
               primitives,
               fonts,
               tokenColors,
+              // Project primitives must always be generated.
+              synthesizeProjectPrimitives: true,
             });
             if (out && out.themeCss) {
-              state.themeContent = out.themeCss;
+              try {
+                state.themeContent = finalizeGeneratedTheme(
+                  out.themeCss,
+                  primitives,
+                  tokenColors
+                );
+              } catch (e) {
+                state.themeContent = String(out.themeCss || "");
+              }
               state.themeFromImport = true;
             }
             if (out && out.tokensCss) state.tokensContent = out.tokensCss;
             updateThemePreview();
             updateColorChoices();
+            // If debug mode, apply the generated primitives and tokens to the document
+            try {
+              if (
+                typeof window !== "undefined" &&
+                window.location.search.includes("debug=state")
+              ) {
+                applyThemeToDocument();
+                try {
+                  applyTokensToDocument();
+                } catch (e) {
+                  /* noop */
+                }
+              }
+            } catch (e) {
+              /* noop */
+            }
             setStatus("Import réussi — variables ajoutées.");
             return;
           } catch (err) {
@@ -684,7 +908,7 @@ function attachJsonImportHandlers() {
         }
 
         const css = buildCssFromVars(collected);
-        state.themeContent = css;
+        state.themeContent = String(css || "");
         state.tokensContent = "";
         state.themeFromImport = true;
         updateThemePreview();
@@ -705,7 +929,7 @@ function attachJsonImportHandlers() {
       // Restaurer le thème original si disponible
       try {
         if (state.originalThemeContent) {
-          state.themeContent = state.originalThemeContent;
+          state.themeContent = String(state.originalThemeContent || "");
           state.themeFromImport = false;
           state.tokensContent = "";
           updateThemePreview();

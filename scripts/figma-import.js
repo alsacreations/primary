@@ -4,8 +4,13 @@ import path from "path";
 
 // Resolve repo root reliably
 const ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
-const samplesDir = path.join(ROOT, "public", "samples", "figma-tokens");
-const outDir = path.join(ROOT, "tmp");
+let samplesDir = path.join(ROOT, "public", "samples", "figma-tokens");
+let outDir = path.join(ROOT, "tmp");
+
+function setPaths({ samplesDir: s, outDir: o } = {}) {
+  if (s) samplesDir = s;
+  if (o) outDir = o;
+}
 
 // Color conversion: sRGB (0..1) -> OKLab -> OKLCH
 function srgbToLinear(v) {
@@ -870,8 +875,21 @@ async function generate() {
 
   console.log("Generated tmp/theme.css and tmp/theme-tokens.css");
 }
+// Export generate() so other scripts (or tests) can call it programmatically.
+// Export generate() so other scripts (or tests) can call it programmatically.
+export { generate, setPaths };
 
-generate().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Provide a simple default API entrypoint for programmatic usage.
+export default async function run(opts = {}) {
+  // allow overriding the source/destination paths for testing or integration
+  if (opts && (opts.samplesDir || opts.outDir)) setPaths(opts);
+  return generate();
+}
+
+// If the script is executed directly, run the generator.
+if (process.argv[1] && process.argv[1].endsWith("figma-import.js")) {
+  generate().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

@@ -20,6 +20,16 @@ export const elements = {
   themePreview: document.getElementById("theme-preview"),
   // Aligné avec l'ID présent dans index.html
   customVarsInput: document.getElementById("custom-vars-input"),
+  // Checkbox pour activer l'extrapolation/synthèse des couleurs du projet
+  synthesizeProjectColorsCheckbox: document.getElementById(
+    "synthesize-project-colors"
+  ),
+  // JSON import UI (file + paste + actions)
+  jsonImportFile: document.getElementById("json-import-file"),
+  jsonImportPaste: document.getElementById("json-import-paste"),
+  btnImportJson: document.getElementById("btn-import-json"),
+  btnClearImport: document.getElementById("btn-clear-import"),
+  jsonImportStatus: document.getElementById("json-import-status"),
 
   // Étape 2 - Configuration
   // Le HTML n'utilise pas un <select> pour la couleur primaire mais

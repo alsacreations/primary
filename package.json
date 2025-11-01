@@ -8,6 +8,7 @@
     "lint": "stylelint assets/css/**/*.css --fix",
     "format:generated": "npx stylelint \"tmp/*.css\" --fix",
     "generate:tokens": "node scripts/figma-import.js && npm run format:generated",
+    "import:step1": "node scripts/import-step1.js --source=project",
     "serve": "npx http-server . -p 8080",
     "build": "echo 'No build step required - static files only'"
   },

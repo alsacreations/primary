@@ -203,6 +203,10 @@ const CANONICAL_THEME_TOKENS = `/* ----------------------------------
 // --- Generators -----------------------------------------------------------
 export function generateTokensCSS() {
   const cfg = state && state.config ? state.config : {};
+  // If a client-side canonical generator produced tokens, use them verbatim
+  if (state && state.tokensContent && state.tokensContent.trim().length) {
+    return state.tokensContent;
+  }
   const primaryColor = cfg.primaryColor;
   const themeMode = cfg.themeMode;
   const typoResponsive = !!cfg.typoResponsive;
@@ -502,7 +506,10 @@ export function generateThemeCSS(options = {}) {
   // If the user provided custom vars, insert them inside :root (if present)
   const trimmedCustom = customVars && customVars.trim();
   const hasRoot = /:root\s*\{[\s\S]*\}/m.test(all);
-  if (trimmedCustom) {
+  if (
+    trimmedCustom &&
+    !all.includes("/* Couleurs personnalisées (utilisateur) */")
+  ) {
     // Format custom vars with indentation when injecting into :root
     const formattedCustom = trimmedCustom
       .split("\n")
@@ -536,29 +543,34 @@ export function generateThemeCSS(options = {}) {
     }
   } else {
     // No custom vars provided: ensure placeholder raspberry exists inside :root
+    // BUT only inject the placeholder when the theme is NOT the result of a
+    // user import. When the theme comes from an import, the preview must
+    // reflect exactly the imported content (no UI decoration).
     try {
-      const hasRaspberry = /--color-raspberry-(?:\d+|fade|bright)\s*:/i.test(
-        all
-      );
-      if (!hasRaspberry && typeof PLACEHOLDER_RASPBERRY !== "undefined") {
-        const ph = PLACEHOLDER_RASPBERRY || {};
-        const order = ["100", "200", "300", "400", "500", "600", "700"];
-        const blockLines = ["/* Couleur projet placeholder : raspberry */"];
-        for (const k of order) {
-          if (ph[k]) blockLines.push(`  --color-raspberry-${k}: ${ph[k]};`);
-        }
-        const block = blockLines.join("\n");
-        if (hasRoot) {
-          const idx = all.lastIndexOf("}");
-          if (idx !== -1) {
-            const before = all.slice(0, idx).trimEnd();
-            const after = all.slice(idx);
-            all = before + "\n\n" + block + "\n" + after;
+      if (!state.themeFromImport) {
+        const hasRaspberry = /--color-raspberry-(?:\d+|fade|bright)\s*:/i.test(
+          all
+        );
+        if (!hasRaspberry && typeof PLACEHOLDER_RASPBERRY !== "undefined") {
+          const ph = PLACEHOLDER_RASPBERRY || {};
+          const order = ["100", "200", "300", "400", "500", "600", "700"];
+          const blockLines = ["/* Couleur projet placeholder : raspberry */"];
+          for (const k of order) {
+            if (ph[k]) blockLines.push(`  --color-raspberry-${k}: ${ph[k]};`);
+          }
+          const block = blockLines.join("\n");
+          if (hasRoot) {
+            const idx = all.lastIndexOf("}");
+            if (idx !== -1) {
+              const before = all.slice(0, idx).trimEnd();
+              const after = all.slice(idx);
+              all = before + "\n\n" + block + "\n" + after;
+            } else {
+              all = all + "\n\n" + block;
+            }
           } else {
             all = all + "\n\n" + block;
           }
-        } else {
-          all = all + "\n\n" + block;
         }
       }
     } catch (e) {
@@ -571,26 +583,41 @@ export function generateThemeCSS(options = {}) {
   // the missing ones so previews and downstream tokens can rely on a full
   // set of semantic variants.
   try {
-    const variantsMap = parseColorVariants(all);
-    const required = ["100", "300", "500", "700"];
-    for (const [base, map] of variantsMap.entries()) {
-      // consider only numeric variants presence
-      const numericKeys = Array.from(map.keys()).filter((k) => /^\d+$/.test(k));
-      if (!numericKeys.length) continue;
+    // Only auto-generate extrapolated color variants when the user has
+    // explicitly enabled project synthesis (checkbox). Do NOT treat the
+    // presence of `customVars` as an implicit request to extrapolate.
+    const allowExtrapolation = Boolean(
+      state && state.config && state.config.synthesizeProjectPrimitives
+    );
+    if (!allowExtrapolation) {
+      // Skip extrapolation entirely
+    } else {
+      const variantsMap = parseColorVariants(all);
+      const required = ["100", "300", "500", "700"];
+      // Collect all missing extrapolated variants across bases, then
+      // emit them under a single explanatory comment to avoid repeated
+      // identical headings.
+      const globalMissing = [];
+      for (const [base, map] of variantsMap.entries()) {
+        // consider only numeric variants presence
+        const numericKeys = Array.from(map.keys()).filter((k) =>
+          /^\d+$/.test(k)
+        );
+        if (!numericKeys.length) continue;
 
-      const completed = generateMissingVariants(map);
-      const missingLines = [];
-      for (const r of required) {
-        if (!map.has(r) && completed.has(r)) {
-          missingLines.push(`  --color-${base}-${r}: ${completed.get(r)};`);
+        const completed = generateMissingVariants(map);
+        for (const r of required) {
+          if (!map.has(r) && completed.has(r)) {
+            globalMissing.push(`  --color-${base}-${r}: ${completed.get(r)};`);
+          }
         }
       }
 
-      if (missingLines.length) {
+      if (globalMissing.length) {
         const idx = all.lastIndexOf("}");
         const extrapolatedBlock =
           "/* Couleurs personnalisées extrapolées */\n" +
-          missingLines.join("\n");
+          globalMissing.join("\n");
         if (idx !== -1) {
           const before = all.slice(0, idx).trimEnd();
           const after = all.slice(idx);

@@ -1,0 +1,35 @@
+name: Generate tokens smoke tests
+
+on:
+  push:
+    branches: [feat/import]
+  pull_request:
+    branches: [feat/import]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "pnpm"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@8
+
+      - name: Install dependencies (pnpm)
+        run: pnpm install --frozen-lockfile
+
+      - name: Import step1 (project source)
+        run: pnpm run import:step1
+
+      - name: Generate tokens (figma import)
+        run: pnpm run generate:tokens
+
+      - name: Check generated CSS (stylelint --max-warnings=0)
+        run: pnpm exec stylelint "tmp/*.css" --max-warnings=0

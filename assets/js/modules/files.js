@@ -29,6 +29,16 @@ async function loadCSSFile(url, propertyName) {
  */
 export async function loadThemeFile() {
   await loadCSSFile("assets/css/theme.css", "themeContent");
+  // Chargé depuis les sources intégrées : ne pas considérer ceci comme un import
+  // utilisateur.
+  try {
+    // importer l'état depuis le module state.js sans créer une dépendance cyclique
+    const stateModule = await import("./state.js");
+    if (stateModule && stateModule.state)
+      stateModule.state.themeFromImport = false;
+  } catch (e) {
+    // noop
+  }
 }
 
 /**

@@ -1,4 +1,4 @@
----- GENERATED TOKENS (FIXED SPACING + LIGHT) ----
+---- GENERATED TOKENS (UI) ----
 
 /* ----------------------------------
  * Theme-tokens
@@ -6,27 +6,35 @@
  * ----------------------------------
  */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
+
+  &[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  &[data-theme="dark"] {
+    color-scheme: dark;
+  }
 
   /* Couleurs personnalisées (projet) */
-  --surface: var(--color-white);
-  --on-surface: var(--color-gray-900);
-  --primary: var(--color-blue-500);
-  --surface-dim: var(--color-slate-100);
-  --accent-blue: var(--color-blue-500);
-  --accent-green: var(--color-green-500);
-  --accent-pink: var(--color-pink-700);
-  --accent-orange: var(--color-orange);
-  --on-primary: var(--color-white);
-  --on-surface2: var(--color-gray-700);
-  --layer: var(--color-white);
+  --surface: light-dark(var(--color-white), var(--color-gray-900));
+  --on-surface: light-dark(var(--color-gray-900), var(--color-white));
+  --primary: light-dark(var(--color-blue-500), var(--color-blue-500));
+  --surface-dim: light-dark(var(--color-slate-100), var(--color-slate-800));
+  --accent-blue: light-dark(var(--color-blue-500), var(--color-blue-400));
+  --accent-green: light-dark(var(--color-green-500), var(--color-green-400));
+  --accent-pink: light-dark(var(--color-pink-700), var(--color-pink-300));
+  --accent-orange: light-dark(var(--color-orange), var(--color-orange));
+  --on-primary: light-dark(var(--color-white), var(--color-white));
+  --on-surface2: light-dark(var(--color-gray-700), var(--color-gray-300));
+  --layer: light-dark(var(--color-white), var(--color-gray-900));
 
   /* Espacements */
   --spacing-xs: var(--spacing-4);
-  --spacing-s: var(--spacing-8);
-  --spacing-m: var(--spacing-16);
-  --spacing-l: var(--spacing-24);
-  --spacing-xl: var(--spacing-32);
+  --spacing-s: clamp(var(--spacing-8), 0.3043rem + 0.8696vw, var(--spacing-16));
+  --spacing-m: clamp(var(--spacing-16), 0.6087rem + 1.7391vw, var(--spacing-32));
+  --spacing-l: clamp(var(--spacing-24), 0.913rem + 2.6087vw, var(--spacing-48));
+  --spacing-xl: clamp(var(--spacing-32), 0.8261rem + 5.2174vw, var(--spacing-80));
 
   /* Typographie - Tailles de police */
   --text-s: var(--text-14);
@@ -46,8 +54,8 @@
   --line-height-6xl: clamp(var(--line-height-80), 4.5109rem + 2.1739vw, var(--line-height-100));
 
   /* Formulaires */
-  --form-control-background: var(--color-gray-200);
-  --on-form-control: var(--color-gray-900);
+  --form-control-background: light-dark(var(--color-gray-200), var(--color-gray-700));
+  --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));
   --form-control-spacing: var(--spacing-12) var(--spacing-16);
   --form-control-border-width: 1px;
   --form-control-border-color: var(--color-gray-400);
@@ -56,4 +64,7 @@
   --checkable-size: 1.25em;
 }
 
+
+
+---- END ----
 

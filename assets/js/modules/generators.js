@@ -3,11 +3,7 @@
  * Fournit :
  * - generateMissingVariants
  * - generateTokensCSS (avec cas canonique exact)
- * - generateThemeCSS (fusionne themeContent + customVars, enlève imports/vars runtime-only)
- * - generateStylesCSS
- * - generateAppCSS
  */
-
 import { state, RUNTIME_ONLY_COLORS, PLACEHOLDER_RASPBERRY } from "./state.js";
 
 // --- Helpers / Parsers ----------------------------------------------------
@@ -618,6 +614,224 @@ export function generateTokensCSS() {
         }
       } catch (e) {
         /* noop: best-effort collapse */
+      }
+
+      // Ensure clamp(...) and light-dark(...) expressions are kept on a
+      // single line: remove stray newlines inside their parentheses while
+      // preserving nested parentheses (var(...)). This fixes broken wraps
+      // introduced by earlier processing steps.
+      try {
+        const collapseInners = (text, token) => {
+          let cursor = 0;
+          while (true) {
+            const idx = text.indexOf(token, cursor);
+            if (idx === -1) break;
+            const start = idx + token.length;
+            let depth = 0;
+            let j = start;
+            for (; j < text.length; j++) {
+              const ch = text[j];
+              if (ch === "(") depth++;
+              else if (ch === ")") {
+                if (depth === 0) break;
+                depth--;
+              }
+            }
+            if (j >= text.length) break; // malformed, stop
+            const inner = text.slice(start, j);
+            const collapsed = inner
+              .replace(/\r?\n\s*/g, " ")
+              .replace(/\s{2,}/g, " ")
+              .trim();
+            text = text.slice(0, start) + collapsed + text.slice(j);
+            cursor = start + collapsed.length + 1; // continue after ')'
+          }
+          return text;
+        };
+        processed = collapseInners(processed, "clamp(");
+        processed = collapseInners(processed, "light-dark(");
+      } catch (e) {
+        /* noop */
+      }
+
+      // Additional sanitization: remove stray newlines before closing parens
+      // and ensure declarations after a semicolon start on a new indented line.
+      try {
+        // collapse newlines that appear directly before a ')'
+        processed = processed.replace(/\n\s*\)/g, ")");
+        // if a semicolon or closing-paren is followed by excessive spaces and then a new var,
+        // put the next declaration on its own line with two-space indent
+        processed = processed.replace(/;\s+--/g, ";\n  --");
+        processed = processed.replace(/\)\)\s+--/g, "))\n  --");
+        processed = processed.replace(/\)\s+--/g, ");\n  --");
+      } catch (e) {
+        /* noop */
+      }
+
+      // Fix broken declarations that were split across lines (e.g. long
+      // clamp lines or var names split). Rejoin lines for any declaration
+      // starting with --line-height- or --text- that does not end with a
+      // semicolon on the same physical line.
+      try {
+        const lines = processed.split(/\r?\n/);
+        const outLines = [];
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i];
+          // If this looks like the start/mid of a declaration that is
+          // incomplete (no semicolon), stitch subsequent lines until we
+          // reach a semicolon.
+          if (
+            /--line-height-\d+|--text-[a-z0-9-]*/.test(line) &&
+            !/;\s*$/.test(line)
+          ) {
+            let j = i + 1;
+            let accum = line;
+            while (j < lines.length && !/;\s*$/.test(accum)) {
+              accum += lines[j].trim();
+              j++;
+            }
+            outLines.push(accum);
+            i = j - 1;
+          } else {
+            outLines.push(line);
+          }
+        }
+        processed = outLines.join("\n");
+      } catch (e) {
+        /* noop */
+      }
+
+      // As a final pass, ensure each declaration starts on its own line by
+      // inserting a newline before any " --var" sequence that is not
+      // already on a new line. This handles residual cases where multiple
+      // declarations ended up on the same physical line.
+      try {
+        // Insert a newline before any declaration start that directly
+        // follows a closing paren or semicolon (safer than a global match
+        // which could hit comment hyphen lines).
+        processed = processed.replace(/([);\}])\s+--/g, "$1\n  --");
+      } catch (e) {
+        /* noop */
+      }
+
+      // Normalize any multi-line --line-height-... declarations into single
+      // lines: match the full declaration (even across newlines) and collapse
+      // internal newlines/spaces.
+      try {
+        processed = processed.replace(
+          /\s*--line-height-\d+\s*:[\s\S]*?;/g,
+          (m) => {
+            const collapsed = m.replace(/\r?\n\s*/g, " ").trim();
+            return "  " + collapsed;
+          }
+        );
+      } catch (e) {
+        /* noop */
+      }
+
+      // Rebuild the :root block to ensure declarations and comments are
+      // each on their own line (prevents mid-token newlines and joins
+      // multiple declarations accidentally concatenated on one line).
+      try {
+        const rootIdx = processed.indexOf(":root");
+        if (rootIdx !== -1) {
+          const braceOpen = processed.indexOf("{", rootIdx);
+          if (braceOpen !== -1) {
+            // find matching closing brace for :root
+            let depth = 0;
+            let j = braceOpen;
+            for (; j < processed.length; j++) {
+              if (processed[j] === "{") depth++;
+              else if (processed[j] === "}") {
+                depth--;
+                if (depth === 0) break;
+              }
+            }
+            if (j < processed.length) {
+              const inner = processed.slice(braceOpen + 1, j);
+              // parse inner content: emit comments and declarations
+              const out = [];
+              let i = 0;
+              while (i < inner.length) {
+                // skip leading whitespace/newlines
+                if (/\s/.test(inner[i])) {
+                  i++;
+                  continue;
+                }
+                // comment block
+                if (inner[i] === "/" && inner[i + 1] === "*") {
+                  const end = inner.indexOf("*/", i + 2);
+                  const comment =
+                    end === -1 ? inner.slice(i) : inner.slice(i, end + 2);
+                  // Preserve a blank line before the section comment if the
+                  // previous item was not already a blank line.
+                  if (out.length && out[out.length - 1] !== "") out.push("");
+                  // Emit the comment line. Do NOT insert an extra blank line
+                  // after the comment — the next declaration should follow
+                  // immediately on the next line (single newline).
+                  out.push("  " + comment.trim());
+                  i = end === -1 ? inner.length : end + 2;
+                  continue;
+                }
+                // If this is a nested block (selector { ... }), parse the
+                // full block including inner semicolons and closing brace.
+                // Otherwise treat it as a single-line declaration ending
+                // at the next semicolon.
+                const nextBrace = inner.indexOf("{", i);
+                const nextSemi = inner.indexOf(";", i);
+                if (
+                  nextBrace !== -1 &&
+                  (nextSemi === -1 || nextBrace < nextSemi)
+                ) {
+                  // Parse block: find matching closing brace
+                  let depth2 = 0;
+                  let k = nextBrace;
+                  for (; k < inner.length; k++) {
+                    if (inner[k] === "{") depth2++;
+                    else if (inner[k] === "}") {
+                      depth2--;
+                      if (depth2 === 0) break;
+                    }
+                  }
+                  const blockEnd = k;
+                  const selector = inner.slice(i, nextBrace).trim();
+                  const blockInner = inner.slice(nextBrace + 1, blockEnd);
+                  // Emit a blank line before selector-block if helpful
+                  if (out.length && out[out.length - 1] !== "") out.push("");
+                  out.push("  " + selector + " {");
+                  // Emit inner declarations with additional indentation
+                  const subLines = blockInner
+                    .split(/;/g)
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                  for (const sl of subLines) {
+                    out.push("    " + sl + ";");
+                  }
+                  out.push("  }");
+                  i = blockEnd + 1;
+                } else {
+                  // Simple declaration
+                  if (nextSemi === -1) {
+                    const rem = inner.slice(i).trim();
+                    if (rem) out.push("  " + rem);
+                    break;
+                  }
+                  const decl = inner
+                    .slice(i, nextSemi + 1)
+                    .replace(/\r?\n\s*/g, " ")
+                    .trim();
+                  out.push("  " + decl);
+                  i = nextSemi + 1;
+                }
+              }
+              const rebuilt = ":root {\n" + out.join("\n") + "\n}\n";
+              processed =
+                processed.slice(0, rootIdx) + rebuilt + processed.slice(j + 1);
+            }
+          }
+        }
+      } catch (e) {
+        /* noop */
       }
 
       return processed;

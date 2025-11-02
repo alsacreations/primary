@@ -229,6 +229,41 @@ export function generateTokensCSS() {
         return match;
       });
 
+      // Ensure the header comment of generated tokens is always coherent
+      // and reflects the current configuration even when `state.tokensContent`
+      // comes from an imported JSON. We replace any leading /* ---- */ block
+      // with a generated header that contains: chosen primary, themeMode,
+      // typoResponsive and spacingResponsive.
+      try {
+        const themeLabel =
+          themeMode === "both"
+            ? "light et dark"
+            : themeMode === "dark"
+            ? "dark uniquement"
+            : "light uniquement";
+        const typoLabel = typoResponsive ? "oui" : "non";
+        const spacingLabel = spacingResponsive ? "oui" : "non";
+        const headerLines = [
+          "/* ----------------------------------",
+          " * Theme-tokens, généré par primary.alsacreations.com",
+          " * Surcouche de theme.css",
+          " * Configuration :",
+          ` * - Couleur primaire : ${primaryColor || "(non précisée)"}`,
+          ` * - Theme : ${themeLabel}`,
+          ` * - Typographie responsive : ${typoLabel}`,
+          ` * - Espacements responsive : ${spacingLabel}`,
+          " * ----------------------------------",
+          " */",
+        ].join("\n");
+
+        // Remove existing leading header block if present
+        processed = processed.replace(/^\s*\/\*[\s\S]*?\*\/\s*/m, "");
+        // Prepend our coherent header
+        processed = headerLines + "\n" + processed;
+      } catch (e) {
+        /* noop */
+      }
+
       // If the user asked for responsive typography but the client-generated
       // tokensContent lacks the main responsive text token, append a small
       // canonical-like typography block so the UI preview reflects the
@@ -853,7 +888,28 @@ export function generateTokensCSS() {
   // Build a full tokens output programmatically for non-canonical configs.
   // This avoids brittle text-substitution on a large template and keeps
   // behaviour deterministic while providing a complete tokens file.
-  const chosen = primaryColor || "info";
+  let chosen = primaryColor || "info";
+  // Avoid using runtime-only palettes (e.g. 'ocean') as the generated
+  // project's primary color when they are only a runtime styling aid.
+  // Heuristic: if the chosen color is runtime-only AND it does not appear
+  // in the loaded theme primitives nor in user customVars, treat it as
+  // not explicitly selected by the user and fall back to the placeholder
+  // 'raspberry' (or 'info' as ultimate fallback).
+  try {
+    const isRuntimeOnly = RUNTIME_ONLY_COLORS.has(chosen);
+    const themeCss = (state && state.themeContent) || "";
+    const customVars = (state && state.config && state.config.customVars) || "";
+    const appearsInTheme = new RegExp(`--color-${chosen}-`, "i").test(themeCss);
+    const appearsInCustom = new RegExp(`--color-${chosen}-`, "i").test(
+      customVars
+    );
+    if (isRuntimeOnly && !appearsInTheme && !appearsInCustom) {
+      chosen =
+        typeof PLACEHOLDER_RASPBERRY !== "undefined" ? "raspberry" : "info";
+    }
+  } catch (e) {
+    /* noop */
+  }
   const lines = [];
 
   // Header adapted from the canonical template

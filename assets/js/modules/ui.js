@@ -545,24 +545,14 @@ export function generateAllFiles() {
     const tokensCSS = generateTokensCSS();
     const stylesCSS = generateStylesCSS();
 
-    // Inject or update an inline <style> with the generated tokens so that
-    // the previewed/generated tokens are applied to the document only when
-    // generateAllFiles() runs. This avoids a flash where a static
-    // `theme-tokens.css` file would override primitives at initial load.
-    try {
-      let tokensEl = document.getElementById("primary-generated-tokens");
-      if (!tokensEl) {
-        tokensEl = document.createElement("style");
-        tokensEl.id = "primary-generated-tokens";
-        // Prefer placing tokens near the end of head so they cascade after
-        // other config layer rules but are still controllable from JS.
-        const head = document.head || document.getElementsByTagName("head")[0];
-        head.appendChild(tokensEl);
-      }
-      tokensEl.textContent = tokensCSS || "";
-    } catch (e) {
-      console.warn("Impossible d'injecter les tokens générés :", e);
-    }
+    // NOTE: Nous n'injectons plus automatiquement les tokens générés dans
+    // le document afin de préserver la distinction entre le theme/runtime
+    // de l'application et les fichiers générés pour l'export. L'injection
+    // automatique provoquait des ré-écritures visuelles (par ex. collapsing
+    // des light-dark en mode 'light') lorsque l'utilisateur changeait la
+    // configuration. Si l'utilisateur souhaite voir un aperçu live des
+    // tokens, fournir un contrôle explicite ou activer le debug via
+    // `?debug=state` qui appelle `applyTokensToDocument()`.
 
     // Masquer les erreurs si la génération réussit
     hideGlobalError();

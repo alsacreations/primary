@@ -8,111 +8,111 @@
       "defaultGradients": false,
       "defaultPalette": false,
       "palette": [
-        { "name": "white", "color": "oklch(100% 0 0)", "slug": "white" },
-        { "name": "black", "color": "oklch(0% 0 0)", "slug": "black" },
-        { "name": "gray-50", "color": "oklch(97% 0 0)", "slug": "gray-50" },
-        { "name": "gray-100", "color": "oklch(92.2% 0 0)", "slug": "gray-100" },
-        { "name": "gray-200", "color": "oklch(87% 0 0)", "slug": "gray-200" },
-        { "name": "gray-300", "color": "oklch(70.8% 0 0)", "slug": "gray-300" },
-        { "name": "gray-400", "color": "oklch(55.6% 0 0)", "slug": "gray-400" },
-        { "name": "gray-500", "color": "oklch(43.9% 0 0)", "slug": "gray-500" },
-        { "name": "gray-600", "color": "oklch(37.1% 0 0)", "slug": "gray-600" },
-        { "name": "gray-700", "color": "oklch(26.9% 0 0)", "slug": "gray-700" },
-        { "name": "gray-800", "color": "oklch(20.5% 0 0)", "slug": "gray-800" },
-        { "name": "gray-900", "color": "oklch(14.5% 0 0)", "slug": "gray-900" },
+        { "name": "white", "color": "oklch(1 0 0)", "slug": "white" },
+        { "name": "black", "color": "oklch(0 0 0)", "slug": "black" },
+        { "name": "gray-50", "color": "oklch(0.97 0 0)", "slug": "gray-50" },
+        { "name": "gray-100", "color": "oklch(0.922 0 0)", "slug": "gray-100" },
+        { "name": "gray-200", "color": "oklch(0.87 0 0)", "slug": "gray-200" },
+        { "name": "gray-300", "color": "oklch(0.708 0 0)", "slug": "gray-300" },
+        { "name": "gray-400", "color": "oklch(0.556 0 0)", "slug": "gray-400" },
+        { "name": "gray-500", "color": "oklch(0.439 0 0)", "slug": "gray-500" },
+        { "name": "gray-600", "color": "oklch(0.371 0 0)", "slug": "gray-600" },
+        { "name": "gray-700", "color": "oklch(0.269 0 0)", "slug": "gray-700" },
+        { "name": "gray-800", "color": "oklch(0.205 0 0)", "slug": "gray-800" },
+        { "name": "gray-900", "color": "oklch(0.145 0 0)", "slug": "gray-900" },
         {
           "name": "raspberry-100",
-          "color": "oklch(98% 0.03 352)",
+          "color": "oklch(0.98 0.03 352)",
           "slug": "raspberry-100"
         },
         {
           "name": "raspberry-200",
-          "color": "oklch(94.5% 0.12 352)",
+          "color": "oklch(0.945 0.12 352)",
           "slug": "raspberry-200"
         },
         {
           "name": "raspberry-300",
-          "color": "oklch(84.5% 0.2 352)",
+          "color": "oklch(0.845 0.2 352)",
           "slug": "raspberry-300"
         },
         {
           "name": "raspberry-400",
-          "color": "oklch(72.8281% 0.1971 352.001)",
+          "color": "oklch(0.728281 0.1971 352.001)",
           "slug": "raspberry-400"
         },
         {
           "name": "raspberry-500",
-          "color": "oklch(64.5% 0.2 352)",
+          "color": "oklch(0.645 0.2 352)",
           "slug": "raspberry-500"
         },
         {
           "name": "raspberry-600",
-          "color": "oklch(54.5% 0.2 352)",
+          "color": "oklch(0.545 0.2 352)",
           "slug": "raspberry-600"
         },
         {
           "name": "raspberry-700",
-          "color": "oklch(44.5% 0.2 352)",
+          "color": "oklch(0.445 0.2 352)",
           "slug": "raspberry-700"
         },
         {
           "name": "error-100",
-          "color": "oklch(97% 0.1 27.52)",
+          "color": "oklch(0.97 0.1 27.52)",
           "slug": "error-100"
         },
         {
           "name": "error-300",
-          "color": "oklch(70.54% 0.19 27.52)",
+          "color": "oklch(0.7054 0.19 27.52)",
           "slug": "error-300"
         },
         {
           "name": "error-500",
-          "color": "oklch(50.54% 0.19 27.52)",
+          "color": "oklch(0.5054 0.19 27.52)",
           "slug": "error-500"
         },
         {
           "name": "success-100",
-          "color": "oklch(94.462% 0.13 150.685)",
+          "color": "oklch(0.94462 0.13 150.685)",
           "slug": "success-100"
         },
         {
           "name": "success-300",
-          "color": "oklch(71.66% 0.13 150.73)",
+          "color": "oklch(0.7166 0.13 150.73)",
           "slug": "success-300"
         },
         {
           "name": "success-500",
-          "color": "oklch(51.66% 0.13 150.73)",
+          "color": "oklch(0.5166 0.13 150.73)",
           "slug": "success-500"
         },
         {
           "name": "warning-100",
-          "color": "oklch(97% 0.08 49.95)",
+          "color": "oklch(0.97 0.08 49.95)",
           "slug": "warning-100"
         },
         {
           "name": "warning-300",
-          "color": "oklch(83.15% 0.17 49.95)",
+          "color": "oklch(0.8315 0.17 49.95)",
           "slug": "warning-300"
         },
         {
           "name": "warning-500",
-          "color": "oklch(63.15% 0.17 49.95)",
+          "color": "oklch(0.6315 0.17 49.95)",
           "slug": "warning-500"
         },
         {
           "name": "info-100",
-          "color": "oklch(97% 0.09 256.37)",
+          "color": "oklch(0.97 0.09 256.37)",
           "slug": "info-100"
         },
         {
           "name": "info-300",
-          "color": "oklch(71.33% 0.18 256.37)",
+          "color": "oklch(0.7133 0.18 256.37)",
           "slug": "info-300"
         },
         {
           "name": "info-500",
-          "color": "oklch(51.33% 0.18 256.37)",
+          "color": "oklch(0.5133 0.18 256.37)",
           "slug": "info-500"
         },
         {
@@ -218,50 +218,12 @@
       ]
     },
     "layout": {
-      "contentSize": "64rem",
-      "wideSize": "84rem"
+      "contentSize": "48rem",
+      "wideSize": "80rem"
     },
     "spacing": {
       "defaultSpacingSizes": false,
       "spacingSizes": [
-        { "name": "spacing-0", "size": "0", "slug": "spacing-0" },
-        { "name": "spacing-1", "size": "1px", "slug": "spacing-1" },
-        { "name": "spacing-2", "size": "0.125rem", "slug": "spacing-2" },
-        { "name": "spacing-4", "size": "0.25rem", "slug": "spacing-4" },
-        { "name": "spacing-8", "size": "0.5rem", "slug": "spacing-8" },
-        { "name": "spacing-12", "size": "0.75rem", "slug": "spacing-12" },
-        { "name": "spacing-16", "size": "1rem", "slug": "spacing-16" },
-        { "name": "spacing-20", "size": "1.25rem", "slug": "spacing-20" },
-        { "name": "spacing-24", "size": "1.5rem", "slug": "spacing-24" },
-        { "name": "spacing-32", "size": "2rem", "slug": "spacing-32" },
-        { "name": "spacing-40", "size": "2.5rem", "slug": "spacing-40" },
-        { "name": "spacing-48", "size": "3rem", "slug": "spacing-48" },
-        { "name": "spacing-56", "size": "3.5rem", "slug": "spacing-56" },
-        { "name": "spacing-64", "size": "4rem", "slug": "spacing-64" },
-        { "name": "spacing-80", "size": "5rem", "slug": "spacing-80" },
-        { "name": "spacing-128", "size": "8rem", "slug": "spacing-128" },
-        { "name": "spacing-160", "size": "10rem", "slug": "spacing-160" },
-        { "name": "gap-xs", "size": "var(--spacing-4)", "slug": "gap-xs" },
-        {
-          "name": "gap-s",
-          "size": "clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16))",
-          "slug": "gap-s"
-        },
-        {
-          "name": "gap-m",
-          "size": "clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32))",
-          "slug": "gap-m"
-        },
-        {
-          "name": "gap-l",
-          "size": "clamp(var(--spacing-24), 0.8864rem + 2.7273vw, var(--spacing-48))",
-          "slug": "gap-l"
-        },
-        {
-          "name": "gap-xl",
-          "size": "clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80))",
-          "slug": "gap-xl"
-        },
         {
           "name": "spacing-xs",
           "size": "var(--spacing-4)",
@@ -286,74 +248,46 @@
           "name": "spacing-xl",
           "size": "clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80))",
           "slug": "spacing-xl"
-        },
-        {
-          "name": "form-control-spacing",
-          "size": "var(--spacing-12) var(--spacing-16)",
-          "slug": "form-control-spacing"
-        },
-        {
-          "name": "form-control-border-width",
-          "size": "1px",
-          "slug": "form-control-border-width"
-        },
-        { "name": "checkable-size", "size": "1.25em", "slug": "checkable-size" }
+        }
       ],
       "units": ["px", "rem", "%", "vh", "vw"]
     },
     "typography": {
       "writingMode": true,
       "defaultFontSizes": false,
-      "fluid": true,
+      "fluid": false,
+      "customFontSize": false,
       "fontSizes": [
-        { "name": "text-10", "size": "0.625rem", "slug": "text-10" },
-        { "name": "text-11", "size": "0.6875rem", "slug": "text-11" },
-        { "name": "text-12", "size": "0.75rem", "slug": "text-12" },
-        { "name": "text-13", "size": "0.8rem", "slug": "text-13" },
-        { "name": "text-14", "size": "0.875rem", "slug": "text-14" },
-        { "name": "text-15", "size": "0.9375rem", "slug": "text-15" },
-        { "name": "text-16", "size": "1rem", "slug": "text-16" },
-        { "name": "text-17", "size": "1.0625rem", "slug": "text-17" },
-        { "name": "text-18", "size": "1.125rem", "slug": "text-18" },
-        { "name": "text-20", "size": "1.25rem", "slug": "text-20" },
-        { "name": "text-24", "size": "1.5rem", "slug": "text-24" },
-        { "name": "text-30", "size": "1.875rem", "slug": "text-30" },
-        { "name": "text-32", "size": "2rem", "slug": "text-32" },
-        { "name": "text-36", "size": "2.25rem", "slug": "text-36" },
-        { "name": "text-40", "size": "2.5rem", "slug": "text-40" },
-        { "name": "text-48", "size": "3rem", "slug": "text-48" },
-        { "name": "text-60", "size": "3.75rem", "slug": "text-60" },
-        { "name": "text-80", "size": "5rem", "slug": "text-80" },
-        { "name": "text-s", "size": "0.875rem", "slug": "text-s" },
+        { "name": "text-s", "size": "var(--text-s)", "slug": "text-s" },
         {
           "name": "text-m",
-          "size": "clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18))",
+          "size": "var(--text-m)",
           "slug": "text-m"
         },
         {
           "name": "text-l",
-          "size": "clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20))",
+          "size": "var(--text-l)",
           "slug": "text-l"
         },
         {
           "name": "text-xl",
-          "size": "clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30))",
+          "size": "var(--text-xl)",
           "slug": "text-xl"
         },
         {
-          "name": "text-2xl",
-          "size": "clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36))",
-          "slug": "text-2xl"
+          "name": "text-2-xl",
+          "size": "var(--text-2xl)",
+          "slug": "text-2-xl"
         },
         {
-          "name": "text-3xl",
-          "size": "clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48))",
-          "slug": "text-3xl"
+          "name": "text-3-xl",
+          "size": "var(--text-3xl)",
+          "slug": "text-3-xl"
         },
         {
-          "name": "text-4xl",
-          "size": "clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80))",
-          "slug": "text-4xl"
+          "name": "text-4-xl",
+          "size": "var(--text-4xl)",
+          "slug": "text-4-xl"
         }
       ],
       "fontFamilies": [
@@ -381,9 +315,6 @@
           "fontFamily": "ui-monospace, monospace"
         }
       ]
-    },
-    "border": {
-      "radius": true
     },
     "useRootPaddingAwareAlignments": true
   },

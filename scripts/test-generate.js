@@ -285,7 +285,7 @@ async function runHeadlessComparisons() {
     "Canonical theme-tokens mismatch vs public/samples/theme-tokens-base-light-dark.css"
   );
   console.log(
-    "✓ canonical theme-tokens match public/samples/theme-tokens-base-light-dark.css"
+    "✓ canonical theme-tokens matches public/samples/theme-tokens-base-light-dark.css"
   );
 
   // 5) theme.json (WordPress) canonical comparison

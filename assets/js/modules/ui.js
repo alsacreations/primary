@@ -422,8 +422,13 @@ export function updateColorChoices() {
   };
 
   // Append theme colors that actually exist in the themeContent (keeps ordering)
+  // Always include 'raspberry' as it's the default placeholder color
   for (const color of themeColors) {
-    if (themeColorsFound.size === 0 || themeColorsFound.has(color)) {
+    if (
+      themeColorsFound.size === 0 ||
+      themeColorsFound.has(color) ||
+      color === "raspberry"
+    ) {
       const choice = buildChoice(color, color, false);
       container.appendChild(choice);
     }

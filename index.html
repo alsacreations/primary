@@ -357,7 +357,7 @@
                     value="static"
                     checked
                   />
-                  <span>Static (fichiers CSS)</span>
+                  <span>Statique (fichiers CSS)</span>
                 </label>
                 <label class="config-radio">
                   <input type="radio" name="technology" value="wordpress" />
@@ -397,32 +397,6 @@
 ├── layouts.css       # Styles des Layouts (Bretzel)
 ├── natives.css       # Styles des éléments natifs (KNACSS)
 └── styles.css        # Styles de base (body, typo, liens, etc.)</code></pre>
-              </div>
-
-              <div>
-                <h4 class="config-legend">Composition de app.css</h4>
-                <pre
-                  class="generated-code"
-                ><code id="app-css-example">/* css/app.css */
-/* L'ordre des layers définit la priorité des styles */
-/* Chaque layer écrase le précédent si conflit */
-@layer config, base, components, utilities;
-
-/* Config */
-@import "reset.css" layer(config);
-@import "theme.css" layer(config);
-@import "theme-tokens.css" layer(config);
-@import "layouts.css" layer(config);
-@import "natives.css" layer(config);
-
-/* Base */
-@import "styles.css" layer(base);
-
-/* Components */
-/* Ici un @import dans le layer(components) */
-
-/* Utilities */
-/* Ici un @import dans le layer(utilities) */</code></pre>
               </div>
             </div>
 

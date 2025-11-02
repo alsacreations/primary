@@ -9,10 +9,10 @@
 export const state = {
   currentStep: 1,
   config: {
-    // Runtime default should match the app's runtime-only palette to avoid
-    // exposing placeholder 'raspberry' tokens in the UI on first load.
-    // Use 'ocean' which is the palette used by `assets/css/theme-tokens.css`.
-    primaryColor: "ocean",
+    // Default to 'raspberry' placeholder so users see a selected color
+    // in the configuration step. This ensures at least one color is
+    // visually highlighted (.is-selected) on initial load.
+    primaryColor: "raspberry",
     themeMode: "both",
     typoResponsive: true,
     spacingResponsive: true,

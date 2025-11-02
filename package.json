@@ -18,7 +18,8 @@
     "stylelint": "^16.0.0",
     "stylelint-config-html": "^1.1.0",
     "stylelint-config-property-sort-order-smacss": "^10.0.0",
-    "stylelint-config-standard": "^36.0.0"
+    "stylelint-config-standard": "^36.0.0",
+    "stylelint-order": "^7.0.0"
   },
   "author": "Alsacréations",
   "license": "MIT",

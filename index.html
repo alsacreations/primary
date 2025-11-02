@@ -105,42 +105,57 @@
             <div data-layout="stack" data-gap="s">
               <p>
                 <strong>Primary</strong> est un outil de génération de fichiers
-                CSS personnalisés pour vos projets Alsacréations. Il permet de
-                configurer et télécharger un kit CSS complet avec tokens,
-                thématisation et layouts.
+                CSS pour les projets Alsacréations, avec configuration et
+                téléchargement d'un kit CSS complet (avec tokens, thématisation
+                et layouts).
               </p>
-              <dl>
-                <dt><strong>1️⃣ Sources</strong></dt>
-                <dd>
-                  Consultez le fichier <code>theme.css</code> contenant toutes
-                  les variables CSS primitives (couleurs, espacements,
-                  typographie). Ajoutez vos variables personnalisées si
-                  nécessaire.
-                </dd>
+              <ol data-layout="stack" data-gap="s">
+                <li>
+                  <strong>Sources</strong> : deux possibilités.
+                  <ul>
+                    <li>
+                      Le fichier statique <code>theme.css</code> contenant les
+                      variables CSS primitives (couleurs, espacements,
+                      typographie). Ajouter ses couleurs personnalisées si
+                      nécessaire.
+                    </li>
+                    <li>
+                      Import d'un ou plusieurs fichiers
+                      <code>.json</code> exportés de Figma, ils seront
+                      automatiquement analysés pour en extraire les styles et
+                      les variables.
+                    </li>
+                  </ul>
+                </li>
 
-                <dt><strong>2️⃣ Configuration</strong></dt>
-                <dd>
-                  Personnalisez votre thème : couleur primaire (blue, red,
-                  green, orange), mode thème (light, dark, ou les deux),
-                  typographie et espacements responsive ou fixes, police de
-                  caractères (système ou Poppins).
-                </dd>
+                <li>
+                  <strong>Configuration</strong> : Personnalisation entière du
+                  thème.
+                  <ul>
+                    <li>Couleur primaire (blue, red, green, orange)</li>
+                    <li>Thème de couleur (light, dark, ou les deux)</li>
+                    <li>Typographie responsive ou fixes</li>
+                    <li>Espacements responsive ou fixes</li>
+                    <li>Police de caractères (système ou Poppins)</li>
+                    <li>
+                      Techno statique ou WordPress (génère automatiquement le
+                      fichier <code>theme.json</code>)
+                    </li>
+                  </ul>
+                </li>
 
-                <dt><strong>3️⃣ Génération</strong></dt>
-                <dd>
-                  Visualisez tous les fichiers CSS générés avec coloration
-                  syntaxique. Téléchargez le kit complet en un clic (fichier
-                  <code>primary-css.zip</code>) contenant : app.css, reset.css,
-                  theme.css, theme-tokens.css, layouts.css, natives.css,
-                  styles.css et la police Poppins si sélectionnée.
-                </dd>
-              </dl>
-
-              <p>
-                <strong>Fichiers toujours à jour :</strong> reset.css,
-                layouts.css et natives.css sont automatiquement récupérés depuis
-                leurs sources officielles.
-              </p>
+                <li>
+                  <strong>Génération</strong> : Visualisation de tous les
+                  fichiers CSS (et JSON) générés. Kit complet téléchargeable en
+                  un clic (fichier <code>primary-css.zip</code>) contenant :
+                  app.css, reset.css, theme.css, theme-tokens.css, (theme.json,)
+                  layouts.css, natives.css, styles.css et la police Poppins si
+                  sélectionnée.
+                  <strong>Fichiers toujours à jour :</strong> reset.css,
+                  layouts.css et natives.css sont automatiquement récupérés
+                  depuis leurs sources officielles.
+                </li>
+              </ol>
             </div>
           </details>
 

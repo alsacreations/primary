@@ -26,6 +26,9 @@ importers:
       stylelint-config-standard:
         specifier: ^36.0.0
         version: 36.0.1(stylelint@16.25.0)
+      stylelint-order:
+        specifier: ^7.0.0
+        version: 7.0.0(stylelint@16.25.0)
 
 packages:
 
@@ -198,8 +201,8 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  chromedriver@141.0.6:
-    resolution: {integrity: sha512-ccfB+3CuQVYGNOR0S3JWstAN/KIP7FUgCW0f2eGV8MJECJY6tSrGw7D7fG61y6XjvrKf3ylqg7KFP2dfboGd8A==}
+  chromedriver@142.0.0:
+    resolution: {integrity: sha512-BlMMPFOKAOYOT23tjtAjvci57gyYcasKqd/3yGKOjGMEbFZa5kfwoNcUzwL/5ugZ932MJX1fW/j8zk5KD5mHBw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -764,6 +767,11 @@ packages:
     peerDependencies:
       postcss: ^8.4.20
 
+  postcss-sorting@9.1.0:
+    resolution: {integrity: sha512-Mn8KJ45HNNG6JBpBizXcyf6LqY/qyqetGcou/nprDnFwBFBLGj0j/sNKV2lj2KMOVOwdXu14aEzqJv8CIV6e8g==}
+    peerDependencies:
+      postcss: ^8.4.20
+
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
@@ -925,6 +933,12 @@ packages:
     peerDependencies:
       stylelint: ^14.0.0 || ^15.0.0 || ^16.0.1
 
+  stylelint-order@7.0.0:
+    resolution: {integrity: sha512-rSWxx0KscYfxU02wEskKXES9lkRzuuONMMNkZ7SUc6uiF3tDKm7e+sE0Ax/SBlG4TUf1sp1R6f3/SlsPGmzthg==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      stylelint: ^16.18.0
+
   stylelint@16.25.0:
     resolution: {integrity: sha512-Li0avYWV4nfv1zPbdnxLYBGq4z8DVZxbRgx4Kn6V+Uftz1rMoF1qiEI3oL4kgWqyYgCgs7gT5maHNZ82Gk03vQ==}
     engines: {node: '>=18.12.0'}
@@ -1008,7 +1022,7 @@ snapshots:
     dependencies:
       '@axe-core/webdriverjs': 4.11.0(selenium-webdriver@4.35.0)
       axe-core: 4.11.0
-      chromedriver: 141.0.6
+      chromedriver: 142.0.0
       colors: 1.4.0
       commander: 9.5.0
       dotenv: 17.2.3
@@ -1179,7 +1193,7 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  chromedriver@141.0.6:
+  chromedriver@142.0.0:
     dependencies:
       '@testim/chrome-version': 1.1.4
       axios: 1.13.0
@@ -1717,6 +1731,10 @@ snapshots:
     dependencies:
       postcss: 8.5.6
 
+  postcss-sorting@9.1.0(postcss@8.5.6):
+    dependencies:
+      postcss: 8.5.6
+
   postcss-value-parser@4.2.0: {}
 
   postcss@8.5.6:
@@ -1895,6 +1913,12 @@ snapshots:
     dependencies:
       postcss: 8.5.6
       postcss-sorting: 8.0.2(postcss@8.5.6)
+      stylelint: 16.25.0
+
+  stylelint-order@7.0.0(stylelint@16.25.0):
+    dependencies:
+      postcss: 8.5.6
+      postcss-sorting: 9.1.0(postcss@8.5.6)
       stylelint: 16.25.0
 
   stylelint@16.25.0:

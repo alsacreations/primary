@@ -52,9 +52,16 @@ function pxToRem(px) {
 }
 
 function sanitizeVarName(name) {
-  return (
-    "--" + String(name).replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase()
-  );
+  let sanitized = String(name)
+    .replace(/\//g, "-")
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+  // Cas spécial : "colors/..." doit devenir "color-..." (singulier)
+  // pour correspondre à la convention de nommage des primitives
+  if (sanitized.startsWith("colors-")) {
+    sanitized = "color-" + sanitized.slice(7);
+  }
+  return "--" + sanitized;
 }
 
 function fontVarName(figmaName) {
@@ -239,11 +246,15 @@ export function generateCanonicalThemeFromFigma({
       // continue processing primitives.variables entries and emit them
       // into themeCss. Token-only names (coming from tokenColors) are
       // still handled later during token synthesis.
+      console.log("[figma-color-debug] Processing color:", name, "→", sName);
       let css = null;
       // Try to resolve an RGB value possibly following alias chains
       const rv = resolveVarRgb(v);
-      if (rv) css = figmaColorToCss(rv);
-      else {
+      console.log("[figma-color-debug] resolveVarRgb result:", rv);
+      if (rv) {
+        css = figmaColorToCss(rv);
+        console.log("[figma-color-debug] Generated OKLCH:", css);
+      } else {
         // fallback: accept direct OKLCH strings in values
         const modes = v.valuesByMode || v.resolvedValuesByMode || {};
         const modeKey = Object.keys(modes || {})[0];

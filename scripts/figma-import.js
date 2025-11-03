@@ -82,7 +82,13 @@ function remOrZero(remValue) {
 
 function sanitizeVarName(name) {
   // Figma names like "color/gray/900" -> --color-gray-900
-  return "--" + name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
+  let sanitized = name.replace(/\//g, "-").replace(/\s+/g, "-").toLowerCase();
+  // Cas spécial : "colors/..." doit devenir "color-..." (singulier)
+  // pour correspondre à la convention de nommage des primitives
+  if (sanitized.startsWith("colors-")) {
+    sanitized = "color-" + sanitized.slice(7);
+  }
+  return "--" + sanitized;
 }
 
 function fontVarName(figmaName) {

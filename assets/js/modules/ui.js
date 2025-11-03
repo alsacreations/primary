@@ -209,10 +209,17 @@ export function updateColorChoices() {
     ];
     const themeColorsFound = new Set();
     try {
-      const rx = /--color-([a-z0-9-]+)-(?:\d+|fade|bright)\s*:/gim;
+      // Pattern 1: couleurs standard --color-{nom}-{numéro|fade|bright}
+      const rx1 = /--color-([a-z0-9-]+)-(?:\d+|fade|bright)\s*:/gim;
       let m;
-      while ((m = rx.exec(state.themeContent || ""))) {
+      while ((m = rx1.exec(state.themeContent || ""))) {
         themeColorsFound.add(m[1]);
+      }
+
+      // Pattern 2: couleurs Figma --color-primary|secondary|tertiary-{nom}
+      const rx2 = /--color-(primary|secondary|tertiary)-([a-z0-9-]+)\s*:/gim;
+      while ((m = rx2.exec(state.themeContent || ""))) {
+        themeColorsFound.add(m[1]); // ajouter "primary", "secondary", "tertiary"
       }
     } catch (e) {
       /* noop */
@@ -284,10 +291,17 @@ export function updateColorChoices() {
   ];
   const themeColorsFound = new Set();
   try {
-    const rx = /--color-([a-z0-9-]+)-(?:\d+|fade|bright)\s*:/gim;
+    // Pattern 1: couleurs standard --color-{nom}-{numéro|fade|bright}
+    const rx1 = /--color-([a-z0-9-]+)-(?:\d+|fade|bright)\s*:/gim;
     let m;
-    while ((m = rx.exec(state.themeContent || ""))) {
+    while ((m = rx1.exec(state.themeContent || ""))) {
       themeColorsFound.add(m[1]);
+    }
+
+    // Pattern 2: couleurs Figma --color-primary|secondary|tertiary-{nom}
+    const rx2 = /--color-(primary|secondary|tertiary)-([a-z0-9-]+)\s*:/gim;
+    while ((m = rx2.exec(state.themeContent || ""))) {
+      themeColorsFound.add(m[1]); // ajouter "primary", "secondary", "tertiary"
     }
   } catch (e) {
     /* noop */
@@ -422,13 +436,8 @@ export function updateColorChoices() {
   };
 
   // Append theme colors that actually exist in the themeContent (keeps ordering)
-  // Always include 'raspberry' as it's the default placeholder color
   for (const color of themeColors) {
-    if (
-      themeColorsFound.size === 0 ||
-      themeColorsFound.has(color) ||
-      color === "raspberry"
-    ) {
+    if (themeColorsFound.size === 0 || themeColorsFound.has(color)) {
       const choice = buildChoice(color, color, false);
       container.appendChild(choice);
     }

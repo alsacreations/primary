@@ -886,47 +886,29 @@ export function generateTokensCSS() {
 
       // Ensure line-height tokens exist when responsive typography is enabled.
       try {
-        const hasLineHeightToken = /--line-height-\d+/i.test(processed);
-        if (typoResponsive && !hasLineHeightToken) {
-          const themeCss = (state && state.themeContent) || "";
-          const lhRx = /(--line-height-\d+)\s*:\s*([^;]+);/gim;
-          let lm;
-          const lhLines = [];
-          while ((lm = lhRx.exec(themeCss))) {
-            const name = lm[1];
-            // Reference the primitive so tokens file exposes the semantic var
-            lhLines.push(`  ${name}: var(${name});`);
-          }
-          if (lhLines.length) {
-            const block =
-              "\n  /* Typographie — Hauteurs de lignes */\n" +
-              lhLines.join("\n") +
-              "\n";
-            if (/\n}\s*$/.test(processed))
-              processed = processed.replace(/\n}\s*$/m, "\n" + block + "}\n");
-            else processed = processed.trimEnd() + "\n" + block + "\n";
-          } else {
-            // Fallback: append a canonical-like line-height block so the UI
-            // preview includes typical line-height tokens when none were
-            // provided by the import. This mirrors the canonical sample.
-            const canonicalLH = [
-              "\n  /* Typographie — Hauteurs de lignes */",
-              "  --line-height-s: clamp(var(--line-height-20), 1.1522rem + 0.4348vw, var(--line-height-24));",
-              "  --line-height-m: clamp(var(--line-height-24), 1.4022rem + 0.4348vw, var(--line-height-28));",
-              "  --line-height-2xl: clamp(var(--line-height-32), 1.9022rem + 0.4348vw, var(--line-height-36));",
-              "  --line-height-5xl: clamp(var(--line-height-40), 1.8152rem + 3.0435vw, var(--line-height-68));",
-              "  --line-height-4xl: clamp(var(--line-height-40), 2.1087rem + 1.7391vw, var(--line-height-56));",
-              "  --line-height-6xl: clamp(var(--line-height-80), 4.5109rem + 2.1739vw, var(--line-height-100));",
-              "\n",
-            ].join("\n");
-            if (/\n}\s*$/.test(processed))
-              processed = processed.replace(
-                /\n}\s*$/m,
-                "\n" + canonicalLH + "}\n"
-              );
-            else processed = processed.trimEnd() + "\n" + canonicalLH + "\n";
-          }
-        } else if (!typoResponsive && !hasLineHeightToken) {
+        // Check if semantic line-height tokens already exist (--line-height-s, --line-height-m, etc.)
+        // NOT primitives (--line-height-20, --line-height-24, etc.)
+        const hasSemanticLineHeightToken = /--line-height-[a-z]/i.test(processed);
+        if (typoResponsive && !hasSemanticLineHeightToken) {
+          // Append canonical-like line-height block so the UI preview includes 
+          // typical line-height tokens when none were provided by the import.
+          const canonicalLH = [
+            "\n  /* Typographie — Hauteurs de lignes */",
+            "  --line-height-s: clamp(var(--line-height-20), 1.1522rem + 0.4348vw, var(--line-height-24));",
+            "  --line-height-m: clamp(var(--line-height-24), 1.4022rem + 0.4348vw, var(--line-height-28));",
+            "  --line-height-2xl: clamp(var(--line-height-32), 1.9022rem + 0.4348vw, var(--line-height-36));",
+            "  --line-height-5xl: clamp(var(--line-height-40), 1.8152rem + 3.0435vw, var(--line-height-68));",
+            "  --line-height-4xl: clamp(var(--line-height-40), 2.1087rem + 1.7391vw, var(--line-height-56));",
+            "  --line-height-6xl: clamp(var(--line-height-80), 4.5109rem + 2.1739vw, var(--line-height-100));",
+            "\n",
+          ].join("\n");
+          if (/\n}\s*$/.test(processed))
+            processed = processed.replace(
+              /\n}\s*$/m,
+              "\n" + canonicalLH + "}\n"
+            );
+          else processed = processed.trimEnd() + "\n" + canonicalLH + "\n";
+        } else if (!typoResponsive && !hasSemanticLineHeightToken) {
           // Fixed typography requested: append simple line-height references
           const fixedLH = [
             "\n  /* Typographie — Hauteurs de lignes */",

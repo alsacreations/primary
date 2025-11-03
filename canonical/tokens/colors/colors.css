@@ -1,0 +1,50 @@
+:root {
+  /* Color Tokens */
+  color-scheme: light dark;
+
+  &[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  &[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  /* Couleur primaire */
+  --primary: var(--color-raspberry-500);
+  --on-primary: var(--color-white);
+
+  /* Couleur d'accent */
+  --accent: light-dark(var(--primary), var(--color-raspberry-300));
+  --accent-invert: light-dark(var(--color-raspberry-300), var(--primary));
+
+  /* Surface du document */
+  --surface: light-dark(var(--color-white), var(--color-gray-900));
+  --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));
+
+  /* Niveaux de profondeur */
+  --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));
+  --layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));
+  --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
+
+  /* Interactions */
+  --link: light-dark(var(--primary), var(--color-raspberry-300));
+  --link-hover: light-dark(var(--color-raspberry-700), var(--primary));
+  --link-active: light-dark(var(--color-raspberry-700), var(--primary));
+
+  /* Couleur de sélection */
+  --selection: light-dark(
+    var(--color-raspberry-300),
+    var(--color-raspberry-500)
+  );
+
+  /* États */
+  --warning: light-dark(var(--color-warning-500), var(--color-warning-300));
+  --error: light-dark(var(--color-error-500), var(--color-error-300));
+  --success: light-dark(var(--color-success-500), var(--color-success-300));
+  --info: light-dark(var(--color-info-500), var(--color-info-300));
+
+  /* Bordures */
+  --border-light: var(--color-gray-600);
+  --border-medium: light-dark(var(--color-gray-300), var(--color-gray-600));
+}

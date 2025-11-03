@@ -225,7 +225,7 @@ body {
   padding: var(--spacing-m);
   overflow: auto;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-4);
+  border-radius: var(--radius-16);
   background: var(--surface);
   color: var(--on-surface);
   font-family: var(--font-mono);
@@ -429,7 +429,7 @@ body {
   padding: var(--spacing-m);
   overflow-x: auto;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-4);
+  border-radius: var(--radius-16);
   background: var(--layer-1);
   color: var(--on-surface);
   font-family: var(--font-mono);
@@ -473,7 +473,7 @@ body {
   padding: var(--spacing-m);
   overflow: auto;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-4);
+  border-radius: var(--radius-16);
   background: var(--surface);
   color: var(--on-surface);
   font-family: var(--font-mono);

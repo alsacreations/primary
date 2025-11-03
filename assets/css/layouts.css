@@ -42,8 +42,8 @@
   gap: var(--spacing-s, 0.5rem);
 
   & > * {
-    flex-grow: 1;
     flex-basis: calc((var(--switcher-min-size) - 100%) * 999);
+    flex-grow: 1;
   }
 }
 
@@ -51,8 +51,8 @@
 [data-layout*="repel"] {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   align-items: start;
+  justify-content: space-between;
   gap: var(--spacing-s, 0.5rem);
 }
 

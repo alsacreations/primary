@@ -12,6 +12,13 @@ export default {
     "selector-max-class": 3, // on limite le nombre de classes
     "selector-max-type": 3, // on limite le nombre de sélecteurs d'éléments
     "no-descending-specificity": null, // on désactive la règle de spécificité descendante
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9]*(-[a-z0-9]+)*(--[a-z0-9]+(-[a-z0-9]+)*)?$",
+      {
+        message:
+          "Expected class selector to be kebab-case or BEM notation (block-name__element-name--modifier-name)",
+      },
+    ], // on accepte kebab-case et BEM
 
     // Sélécteurs spécifiques
     "selector-pseudo-class-no-unknown": [
@@ -90,4 +97,4 @@ export default {
     "alpha-value-notation": "percentage", // on force la notation en pourcentage pour l'alpha
     "hue-degree-notation": "number",
   },
-}
+};

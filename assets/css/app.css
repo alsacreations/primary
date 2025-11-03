@@ -1,5 +1,7 @@
 /* css/app.css */
+
 /* L'ordre des layers définit la priorité des styles */
+
 /* Chaque layer écrase le précédent si conflit */
 @layer config, base, components, utilities;
 
@@ -14,7 +16,9 @@
 @import "styles.css" layer(base);
 
 /* Components */
+
 /* Ici un @import dans le layer(components) */
 
 /* Utilities */
+
 /* Ici un @import dans le layer(utilities) */

@@ -134,6 +134,9 @@ async function generate() {
   const others = [];
   const lineheightPrimitives = [];
 
+  // Stocker la correspondance nom sémantique → nom primitif pour theme-tokens.css
+  const spacingSemanticMap = new Map();
+
   // alias-aware prefixes
   const spacingPrefixes = new Set(["spacing", "space", "gap"]);
   const roundedPrefixes = new Set(["rounded", "radius", "border-radius"]);
@@ -401,7 +404,17 @@ async function generate() {
     spacings
       .sort((a, b) => Number(a.px) - Number(b.px))
       .forEach((s) => {
-        themeCss += `  ${sanitizeVarName(s.name)}: ${pxToRem(s.px)};\n`;
+        const px = Math.round(Number(s.px));
+        const primitiveName = `--spacing-${px}`;
+        const semanticName = sanitizeVarName(s.name);
+
+        // Stocker la correspondance pour theme-tokens.css
+        if (semanticName !== primitiveName) {
+          spacingSemanticMap.set(semanticName, primitiveName);
+        }
+
+        // Émettre uniquement le nom primitif dans theme.css
+        themeCss += `  ${primitiveName}: ${pxToRem(s.px)};\n`;
       });
   }
 
@@ -431,7 +444,7 @@ async function generate() {
 
   // Line-height primitives (from Primitives.json) — normalize to --line-height-<px>
   if (lineheightPrimitives.length) {
-    // Removed unused declaration
+    themeCss += `\n  /* Interlignage (line-height) */\n`;
     lineheightPrimitives
       .sort((a, b) => Number(a.px) - Number(b.px))
       .forEach((lh) => {
@@ -823,6 +836,20 @@ async function generate() {
   };
 
   emitSemanticSpacing();
+
+  // Émettre les tokens sémantiques d'espacement venant de Figma
+  if (spacingSemanticMap.size > 0) {
+    if (!tokensCss.includes("/* Espacements */")) {
+      tokensCss += `\n  /* Espacements */\n`;
+    }
+    // Trier par nom sémantique pour cohérence
+    const sortedSemantics = Array.from(spacingSemanticMap.entries()).sort(
+      (a, b) => a[0].localeCompare(b[0])
+    );
+    for (const [semanticName, primitiveName] of sortedSemantics) {
+      tokensCss += `  ${semanticName}: var(${primitiveName});\n`;
+    }
+  }
 
   // Formulaires — placer ce bloc systématiquement à la fin de :root
   // Utiliser light-dark() uniquement si le projet propose à minima des

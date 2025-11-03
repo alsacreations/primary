@@ -594,18 +594,9 @@ export function generateTokensCSS() {
   const themeMode = cfg.themeMode;
   const typoResponsive = !!cfg.typoResponsive;
   const spacingResponsive = !!cfg.spacingResponsive;
-  // Canonical branch: when the UI is configured with the canonical
-  // combination used by the headless tests, return the verbatim
-  // canonical tokens to guarantee byte-for-byte parity.
-  if (
-    primaryColor === "raspberry" &&
-    themeMode === "both" &&
-    typoResponsive === true &&
-    spacingResponsive === true
-  ) {
-    return CANONICAL_THEME_TOKENS;
-  }
-  // If a client-side canonical generator produced tokens, use them verbatim
+
+  // PRIORITÉ 1: Si un import Figma a produit du contenu, l'utiliser
+  // (même si la config correspond au canonical, on préfère le contenu importé)
   if (state && state.tokensContent && state.tokensContent.trim().length) {
     try {
       // Best-effort post-processing: if theme primitives are present in
@@ -1271,13 +1262,100 @@ export function generateTokensCSS() {
         /* noop */
       }
 
+      // IMPORTANT: Préserver les tokens d'espacement sémantiques personnalisés
+      // qui proviennent de l'import Figma (ex: --spacing-tiny, --spacing-compact)
+      // Ces tokens doivent être conservés même quand l'utilisateur change
+      // spacingResponsive (true/false) car ils sont des nommages métier.
+      try {
+        console.log(
+          "[generators-spacing-preserve] Vérification tokens sémantiques personnalisés"
+        );
+
+        // Chercher tous les tokens --spacing-{nom} (non numériques) dans processed
+        const customSpacingTokensMap = new Map(); // nom → déclaration complète
+        const spacingRx =
+          /(--spacing-([a-z]+(?:-[a-z]+)*)\s*:\s*var\(--spacing-(\d+)\)\s*;)/gi;
+        let match;
+        while ((match = spacingRx.exec(processed))) {
+          const fullDecl = match[1]; // ex: "--spacing-tiny: var(--spacing-2);"
+          const name = match[2]; // ex: "tiny"
+          const value = parseInt(match[3], 10); // ex: 2
+
+          // Ignorer les tokens prédéfinis (xs, s, m, l, xl)
+          if (!["xs", "s", "m", "l", "xl"].includes(name)) {
+            customSpacingTokensMap.set(name, { decl: fullDecl, value });
+            console.log(
+              "[generators-spacing-preserve] Token personnalisé trouvé:",
+              name,
+              "→",
+              value
+            );
+          }
+        }
+
+        console.log(
+          "[generators-spacing-preserve] Total tokens personnalisés:",
+          customSpacingTokensMap.size
+        );
+
+        // Trier les tokens par valeur croissante (tiny → colossal)
+        if (customSpacingTokensMap.size > 0) {
+          const sorted = Array.from(customSpacingTokensMap.entries()).sort(
+            (a, b) => a[1].value - b[1].value
+          );
+
+          console.log(
+            "[generators-spacing-preserve] Tokens triés par valeur:",
+            sorted.map(([name, { value }]) => `${name}(${value})`).join(", ")
+          );
+
+          // 1. Supprimer les tokens personnalisés de leur position actuelle
+          for (const [name, { decl }] of customSpacingTokensMap) {
+            // Échapper les caractères spéciaux pour regex
+            const escapedDecl = decl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            // Supprimer la déclaration (avec espaces/indentation possibles avant)
+            processed = processed.replace(
+              new RegExp(`\\s*${escapedDecl}`, "g"),
+              ""
+            );
+          }
+
+          // 2. Trouver où insérer les tokens triés (après --spacing-xl)
+          const spacingXlMatch = processed.match(/--spacing-xl\s*:[^;]+;/);
+          if (spacingXlMatch) {
+            const insertPos =
+              processed.indexOf(spacingXlMatch[0]) + spacingXlMatch[0].length;
+
+            // Construire le bloc de tokens personnalisés triés
+            const customTokensBlock = sorted
+              .map(([name, { decl }]) => `\n  ${decl}`)
+              .join("");
+
+            // Insérer après --spacing-xl
+            processed =
+              processed.slice(0, insertPos) +
+              customTokensBlock +
+              processed.slice(insertPos);
+
+            console.log(
+              "[generators-spacing-preserve] Tokens réordonnés et insérés après --spacing-xl"
+            );
+          }
+        }
+      } catch (e) {
+        console.error("[generators-spacing-preserve] Erreur:", e);
+      }
+
       return processed;
     } catch (e) {
       // If post-processing fails for any reason, fall back to verbatim
       return state.tokensContent;
     }
   }
-  // If the configuration matches the canonical case, return exact bytes
+
+  // PRIORITÉ 2: Configuration canonique (seulement si pas d'import)
+  // Si la config correspond au cas canonique ET qu'il n'y a pas de contenu importé,
+  // retourner le template canonique pour garantir la parité byte-for-byte avec les tests
   if (
     primaryColor === "raspberry" &&
     themeMode === "both" &&
@@ -1530,6 +1608,63 @@ export function generateTokensCSS() {
     lines.push("  --spacing-m: var(--spacing-16);");
     lines.push("  --spacing-l: var(--spacing-24);");
     lines.push("  --spacing-xl: var(--spacing-32);");
+  }
+
+  // Ajouter les tokens sémantiques d'espacement depuis tokensContent importé (si présents)
+  // Ces tokens proviennent de l'import Figma et doivent être préservés
+  console.log("[generators-spacing] DEBUT - Vérification state:", {
+    hasState: !!state,
+    hasTokensContent: !!(state && state.tokensContent),
+    tokensContentLength:
+      state && state.tokensContent ? state.tokensContent.length : 0,
+    themeFromImport: state ? state.themeFromImport : undefined,
+  });
+
+  const previousTokens = (state && state.tokensContent) || "";
+  console.log("[generators] previousTokens length:", previousTokens.length);
+  console.log("[generators] state.themeFromImport:", state.themeFromImport);
+
+  if (previousTokens && state.themeFromImport) {
+    const spacingSemanticTokens = [];
+    // Chercher --spacing-{nom} qui référencent des primitives --spacing-{nombre}
+    // Regex améliorée pour matcher aussi les tokens sur plusieurs lignes
+    const spacingTokenRx =
+      /--spacing-([a-z]+(?:-[a-z]+)*)\s*:\s*var\(--spacing-\d+\)\s*;/gi;
+    let match;
+    let matchCount = 0;
+    while ((match = spacingTokenRx.exec(previousTokens))) {
+      matchCount++;
+      const name = match[1]; // ex: "tiny", "compact", "big"
+      const fullMatch = match[0]; // ex: "--spacing-tiny: var(--spacing-2);"
+      console.log(
+        `[generators] Found spacing token #${matchCount}:`,
+        fullMatch.trim()
+      );
+
+      // Vérifier que ce n'est pas un token prédéfini (xs, s, m, l, xl)
+      if (!["xs", "s", "m", "l", "xl"].includes(name)) {
+        spacingSemanticTokens.push(`  ${fullMatch.trim()}`);
+      } else {
+        console.log(`  → Skipped (predefined token)`);
+      }
+    }
+
+    console.log("[generators] Total semantic tokens found:", matchCount);
+    console.log(
+      "[generators] Semantic tokens to add:",
+      spacingSemanticTokens.length
+    );
+
+    if (spacingSemanticTokens.length > 0) {
+      // Trier par nom pour cohérence
+      spacingSemanticTokens.sort();
+      spacingSemanticTokens.forEach((token) => lines.push(token));
+      console.log("[generators] Added semantic spacing tokens to output");
+    }
+  } else {
+    console.log(
+      "[generators] No previous tokens or not from import, skipping semantic tokens"
+    );
   }
 
   lines.push("");

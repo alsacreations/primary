@@ -138,6 +138,9 @@ export function generateCanonicalThemeFromFigma({
   const others = [];
   const lineheightPrimitives = [];
 
+  // Stocker la correspondance nom sémantique → nom primitif pour theme-tokens.css
+  const spacingSemanticMap = new Map();
+
   const spacingPrefixes = new Set(["spacing", "space", "gap"]);
   const roundedPrefixes = new Set(["rounded", "radius", "border-radius"]);
 
@@ -735,12 +738,23 @@ export function generateCanonicalThemeFromFigma({
     }
   }
 
+  // Spacing block
   if (spacings.length) {
     themeCss += `\n  /* Espacements */\n`;
     spacings
       .sort((a, b) => Number(a.px) - Number(b.px))
       .forEach((s) => {
-        themeCss += `  ${sanitizeVarName(s.name)}: ${pxToRem(s.px)};\n`;
+        const px = Math.round(Number(s.px));
+        const primitiveName = `--spacing-${px}`;
+        const semanticName = sanitizeVarName(s.name);
+
+        // Stocker la correspondance pour theme-tokens.css
+        if (semanticName !== primitiveName) {
+          spacingSemanticMap.set(semanticName, primitiveName);
+        }
+
+        // Émettre uniquement le nom primitif dans theme.css
+        themeCss += `  ${primitiveName}: ${pxToRem(s.px)};\n`;
       });
   }
 
@@ -768,6 +782,7 @@ export function generateCanonicalThemeFromFigma({
   }
 
   if (lineheightPrimitives.length) {
+    themeCss += `\n  /* Interlignage (line-height) */\n`;
     lineheightPrimitives
       .sort((a, b) => Number(a.px) - Number(b.px))
       .forEach((lh) => {
@@ -1093,6 +1108,20 @@ export function generateCanonicalThemeFromFigma({
     }
   };
   emitSemanticSpacing();
+
+  // Émettre les tokens sémantiques d'espacement venant de Figma
+  if (spacingSemanticMap.size > 0) {
+    if (!tokensCss.includes("/* Espacements */")) {
+      tokensCss += `\n  /* Espacements */\n`;
+    }
+    // Trier par nom sémantique pour cohérence
+    const sortedSemantics = Array.from(spacingSemanticMap.entries()).sort(
+      (a, b) => a[0].localeCompare(b[0])
+    );
+    for (const [semanticName, primitiveName] of sortedSemantics) {
+      tokensCss += `  ${semanticName}: var(${primitiveName});\n`;
+    }
+  }
 
   // Forms block
   tokensCss += `\n  /* Formulaires */\n`;

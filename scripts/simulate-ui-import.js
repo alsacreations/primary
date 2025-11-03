@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 import fs from "fs/promises";
 import path from "path";
-import fgClient from "../assets/js/modules/figma-client-gen.js";
-import * as gen from "../assets/js/modules/generators.js";
-import { state } from "../assets/js/modules/state.js";
 
 const ROOT = path.resolve(".");
 const samplesDir = path.join(ROOT, "public", "samples", "figma-tokens");
+const canonicalDir = path.join(ROOT, "canonical");
 
 async function readJson(name) {
   const p = path.join(samplesDir, name);
   return JSON.parse(await fs.readFile(p, "utf8"));
+}
+
+async function readCss(name) {
+  const p = path.join(canonicalDir, name);
+  return await fs.readFile(p, "utf8");
 }
 
 function sanitizeVarName(name) {
@@ -19,7 +22,52 @@ function sanitizeVarName(name) {
   );
 }
 
+/**
+ * Mock du canonical-loader pour Node.js
+ * Charge directement les fichiers CSS canoniques depuis /canonical/
+ */
+async function mockCanonicalCache() {
+  const [commons, colors, fonts, radius, spacings] = await Promise.all([
+    readCss("primitives/commons/commons.css"),
+    readCss("primitives/colors/colors.css"),
+    readCss("primitives/fonts/fonts.css"),
+    readCss("primitives/radius/radius.css"),
+    readCss("primitives/spacings/spacings.css"),
+  ]);
+
+  // Structure attendue par getCanonicalCache()
+  const mockCache = {
+    primitives: {
+      commons: { raw: commons },
+      colors: { raw: colors },
+      fonts: { raw: fonts },
+      radius: { raw: radius },
+      spacings: { raw: spacings },
+    },
+  };
+
+  return mockCache;
+}
+
 async function main() {
+  // 1. CRITIQUE : Injecter le mock AVANT d'importer figma-client-gen.js
+  const canonicalLoader = await import(
+    "../assets/js/modules/canonical-loader.js"
+  );
+
+  const canonicalCache = await mockCanonicalCache();
+  console.log("[simulate] ✅ Canoniques chargés depuis /canonical/*.css");
+
+  canonicalLoader.__setMockCache(canonicalCache);
+  console.log("[simulate] ✅ Mock canonical cache injecté");
+
+  // 2. MAINTENANT on peut importer figma-client-gen (qui va utiliser le cache mocké)
+  const fgClient = await import("../assets/js/modules/figma-client-gen.js");
+  const gen = await import("../assets/js/modules/generators.js");
+  const { state } = await import("../assets/js/modules/state.js");
+  console.log("[simulate] ✅ Modules importés avec cache actif");
+
+  // 3. Charger les fichiers Figma
   const primitives = await readJson("Primitives.json");
   const fonts = await readJson("Token Font.json");
   const tokenColors = await readJson("Token colors.json");

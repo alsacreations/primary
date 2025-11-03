@@ -7,6 +7,7 @@ import {
   generateTokensCSS,
 } from "./generators.js";
 import { elements } from "./dom.js";
+import { loadAllCanonicals } from "./canonical-loader.js";
 
 export function showGlobalError(message) {
   elements.globalError.textContent = message;
@@ -52,6 +53,22 @@ export function validateCustomVars(css) {
 }
 
 export async function init() {
+  // Charger les canoniques en premier (priorité absolue)
+  try {
+    console.log("[app-init] 🔄 Chargement des canoniques...");
+    const canonicals = await loadAllCanonicals();
+    console.log("[app-init] ✅ Canoniques chargés:", {
+      primitives: Object.keys(canonicals.primitives),
+      tokens: Object.keys(canonicals.tokens),
+      hasThemeJson: !!canonicals.themeJson,
+    });
+  } catch (error) {
+    console.error("[app-init] ❌ Erreur chargement canoniques:", error);
+    showGlobalError(
+      "Impossible de charger les fichiers canoniques. Vérifiez que le dossier /canonical/ est accessible."
+    );
+  }
+
   // Les modules externes (files.js) doivent avoir rempli state.* avant l'appel
   // Attacher les listeners fournis par les modules si disponibles
   if (typeof window.setupEventListenersFromModules === "function") {

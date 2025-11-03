@@ -627,6 +627,10 @@ export function generateTokensCSS() {
       // comes from an imported JSON. We replace any leading /* ---- */ block
       // with a generated header that contains: chosen primary, themeMode,
       // typoResponsive and spacingResponsive.
+      //
+      // EXCEPTION: Si le header existant contient déjà "Couleur primaire : X"
+      // (détectée depuis Figma), on le préserve au lieu d'utiliser primaryColor
+      // du sélecteur HTML.
       try {
         const themeLabel =
           themeMode === "both"
@@ -636,12 +640,27 @@ export function generateTokensCSS() {
             : "light uniquement";
         const typoLabel = typoResponsive ? "oui" : "non";
         const spacingLabel = spacingResponsive ? "oui" : "non";
+
+        // Extraire la couleur primaire du header existant s'il existe
+        const existingHeaderMatch = processed.match(/^\s*\/\*[\s\S]*?\*\/\s*/m);
+        const existingHeader = existingHeaderMatch
+          ? existingHeaderMatch[0]
+          : "";
+        const figmaPrimaryMatch = existingHeader.match(
+          /Couleur primaire\s*:\s*(\w+)/i
+        );
+        const detectedPrimary = figmaPrimaryMatch ? figmaPrimaryMatch[1] : null;
+
+        // Utiliser la couleur détectée depuis Figma si disponible, sinon celle du sélecteur
+        const displayPrimary =
+          detectedPrimary || primaryColor || "(non précisée)";
+
         const headerLines = [
           "/* ----------------------------------",
           " * Theme-tokens, généré par primary.alsacreations.com",
           " * Surcouche de theme.css",
           " * Configuration :",
-          ` * - Couleur primaire : ${primaryColor || "(non précisée)"}`,
+          ` * - Couleur primaire : ${displayPrimary}`,
           ` * - Theme : ${themeLabel}`,
           ` * - Typographie responsive : ${typoLabel}`,
           ` * - Espacements responsive : ${spacingLabel}`,

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test buildThemeHeader()</title>
+  </head>
+  <body>
+    <h1>Test buildThemeHeader()</h1>
+    <pre id="result"></pre>
+
+    <script type="module">
+      import { loadAllCanonicals } from "../assets/js/modules/canonical-loader.js";
+
+      // Copie de buildThemeHeader() pour test
+      function buildThemeHeader(canonicals) {
+        if (!canonicals?.primitives?.commons?.raw) {
+          console.warn("[buildThemeHeader] ⚠️ commons.raw introuvable");
+          return "";
+        }
+
+        const commonsRaw = canonicals.primitives.commons.raw;
+
+        // Extraire tout AVANT ":root {"
+        const rootIndex = commonsRaw.indexOf(":root {");
+        if (rootIndex === -1) {
+          console.warn(
+            "[buildThemeHeader] ⚠️ :root { introuvable dans commons.raw"
+          );
+          return commonsRaw; // Retourner tout le contenu par sécurité
+        }
+
+        // Récupérer les lignes avant :root et nettoyer les espaces de fin
+        const header = commonsRaw.slice(0, rootIndex).trimEnd();
+
+        return header;
+      }
+
+      // Test
+      async function test() {
+        const canonicals = await loadAllCanonicals();
+        console.log("Canonicals chargés:", canonicals);
+
+        const header = buildThemeHeader(canonicals);
+        console.log("Header extrait:");
+        console.log(header);
+
+        document.getElementById("result").textContent = header;
+      }
+
+      test();
+    </script>
+  </body>
+</html>

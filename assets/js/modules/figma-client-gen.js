@@ -2,6 +2,640 @@
 // Exposes generateCanonicalThemeFromFigma({ primitives, fonts, tokenColors })
 // which returns { themeCss, tokensCss }
 
+import { getCanonicalCache } from "./canonical-loader.js";
+
+/**
+ * Extrait l'en-tête du theme.css (avant :root {)
+ * Contient : @custom-media + stylelint comments
+ * @returns {string} Le header avec @custom-media et commentaires stylelint
+ */
+function buildThemeHeader() {
+  const canonicals = getCanonicalCache();
+
+  if (!canonicals?.primitives?.commons?.raw) {
+    console.warn("[buildThemeHeader] ⚠️ commons.raw introuvable");
+    return "";
+  }
+
+  const commonsRaw = canonicals.primitives.commons.raw;
+
+  // Extraire tout AVANT ":root {"
+  const rootIndex = commonsRaw.indexOf(":root {");
+  if (rootIndex === -1) {
+    console.warn("[buildThemeHeader] ⚠️ :root { introuvable dans commons.raw");
+    return commonsRaw; // Retourner tout le contenu par sécurité
+  }
+
+  // Récupérer les lignes avant :root et nettoyer les espaces de fin
+  const header = commonsRaw.slice(0, rootIndex).trimEnd();
+
+  return header;
+}
+
+/**
+ * Extrait le contenu entre :root { et } d'un fichier CSS
+ * @param {string} cssContent - Contenu CSS
+ * @returns {string} Contenu entre :root { et } (sans les accolades)
+ */
+function extractRootContent(cssContent) {
+  const rootStart = cssContent.indexOf(":root {");
+  if (rootStart === -1) return "";
+
+  const contentStart = rootStart + ":root {".length;
+  const closingBrace = cssContent.lastIndexOf("}");
+
+  if (closingBrace === -1) return "";
+
+  // Ne pas trim pour préserver l'indentation des lignes
+  let content = cssContent.slice(contentStart, closingBrace);
+
+  // Supprimer uniquement le premier saut de ligne si présent
+  if (content.startsWith("\n")) {
+    content = content.slice(1);
+  }
+
+  // Supprimer les espaces/sauts de ligne à la fin
+  content = content.trimEnd();
+
+  return content;
+}
+
+/**
+ * Collecte toutes les primitives canoniques avec leurs commentaires
+ * @returns {Array<{comment: string, content: string}>} Sections ordonnées
+ */
+function collectCanonicalPrimitives() {
+  const canonicals = getCanonicalCache();
+
+  if (!canonicals?.primitives) {
+    console.warn("[collectCanonicalPrimitives] ⚠️ Primitives introuvables");
+    return [];
+  }
+
+  const sections = [];
+  const { commons, colors, spacings, radius, fonts } = canonicals.primitives;
+
+  // 1. Extraire les sections de commons (breakpoints, transitions, z-index)
+  if (commons?.raw) {
+    const commonsContent = extractRootContent(commons.raw);
+    const lines = commonsContent.split("\n");
+    let currentSection = { comment: "", content: [] };
+
+    for (const line of lines) {
+      if (line.trim().startsWith("/*") && line.trim().endsWith("*/")) {
+        // Nouveau commentaire de section
+        if (currentSection.content.length > 0) {
+          // Sauvegarder la section précédente
+          sections.push({
+            comment: currentSection.comment,
+            content: currentSection.content.join("\n"),
+          });
+        }
+        currentSection = { comment: line.trim(), content: [] };
+      } else if (line.trim().length > 0) {
+        // Ligne de contenu
+        currentSection.content.push(line);
+      }
+    }
+
+    // Sauvegarder la dernière section de commons
+    if (currentSection.content.length > 0) {
+      sections.push({
+        comment: currentSection.comment,
+        content: currentSection.content.join("\n"),
+      });
+    }
+  }
+
+  // 2. Couleurs (globales) - extraire uniquement la section "Couleurs (globales)"
+  if (colors?.raw) {
+    const colorsContent = extractRootContent(colors.raw);
+    const lines = colorsContent.split("\n");
+    let inGlobalColors = false;
+    const globalColorLines = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // Détecter le début de la section "Couleurs (globales)"
+      if (trimmed === "/* Couleurs (globales) */") {
+        inGlobalColors = true;
+        continue;
+      }
+
+      // Détecter le début d'une autre section (commentaire suivant)
+      if (
+        inGlobalColors &&
+        trimmed.startsWith("/*") &&
+        trimmed.endsWith("*/")
+      ) {
+        break; // Fin de la section globales
+      }
+
+      // Collecter les lignes de la section globales
+      if (inGlobalColors && trimmed.length > 0) {
+        globalColorLines.push(line);
+      }
+    }
+
+    if (globalColorLines.length > 0) {
+      sections.push({
+        comment: "/* Couleurs (globales) */",
+        content: globalColorLines.join("\n"),
+      });
+    }
+  }
+
+  // 3. Espacements
+  if (spacings?.raw) {
+    const spacingsContent = extractRootContent(spacings.raw);
+    const lines = spacingsContent.split("\n");
+    // Filtrer le commentaire et les lignes vides, garder l'indentation originale
+    const contentLines = lines.filter((line) => {
+      const trimmed = line.trim();
+      return trimmed.length > 0 && trimmed !== "/* Espacements */";
+    });
+    sections.push({
+      comment: "/* Espacements */",
+      content: contentLines.join("\n"),
+    });
+  }
+
+  // 4. Border radius
+  if (radius?.raw) {
+    const radiusContent = extractRootContent(radius.raw);
+    const lines = radiusContent.split("\n");
+    // Filtrer le commentaire et les lignes vides, garder l'indentation originale
+    const contentLines = lines.filter((line) => {
+      const trimmed = line.trim();
+      return trimmed.length > 0 && trimmed !== "/* Border radius */";
+    });
+    sections.push({
+      comment: "/* Border radius */",
+      content: contentLines.join("\n"),
+    });
+  }
+
+  // 5. Typographie (3 sections : familles, graisses, tailles+line-height)
+  if (fonts?.raw) {
+    const fontsContent = extractRootContent(fonts.raw);
+    const lines = fontsContent.split("\n");
+    let currentSection = { comment: "", content: [] };
+
+    for (const line of lines) {
+      if (line.trim().startsWith("/*") && line.trim().endsWith("*/")) {
+        // Nouveau commentaire de section
+        if (currentSection.content.length > 0) {
+          sections.push({
+            comment: currentSection.comment,
+            content: currentSection.content.join("\n"),
+          });
+        }
+        currentSection = { comment: line.trim(), content: [] };
+      } else if (line.trim().length > 0) {
+        currentSection.content.push(line);
+      }
+    }
+
+    // Sauvegarder la dernière section de fonts
+    if (currentSection.content.length > 0) {
+      sections.push({
+        comment: currentSection.comment,
+        content: currentSection.content.join("\n"),
+      });
+    }
+  }
+
+  return sections;
+}
+
+/**
+ * Génère les 7 nuances de Raspberry (placeholder)
+ * @returns {string} CSS des couleurs raspberry
+ */
+function generateRaspberryColors() {
+  return `  --color-raspberry-100: oklch(0.95 0.05 10);
+  --color-raspberry-200: oklch(0.85 0.1 10);
+  --color-raspberry-300: oklch(0.75 0.15 10);
+  --color-raspberry-400: oklch(0.65 0.18 10);
+  --color-raspberry-500: oklch(0.55 0.2 10);
+  --color-raspberry-600: oklch(0.45 0.18 10);
+  --color-raspberry-700: oklch(0.35 0.15 10);`;
+}
+
+/**
+ * Parse les variables CSS personnalisées depuis le textarea
+ * @param {string} customVarsText - Contenu du textarea
+ * @returns {string} CSS formaté des variables personnalisées
+ */
+function parseCustomColors(customVarsText) {
+  if (!customVarsText || !customVarsText.trim()) {
+    return "";
+  }
+
+  const lines = customVarsText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && line.startsWith("--"));
+
+  return lines.map((line) => `  ${line}`).join("\n");
+}
+
+/**
+ * Extrapole des nuances de couleurs à partir des couleurs custom
+ * @param {string} customVarsText - Contenu du textarea avec variables custom
+ * @returns {string} CSS des couleurs extrapolées
+ */
+function extrapolateCustomColors(customVarsText) {
+  if (!customVarsText || !customVarsText.trim()) {
+    return "";
+  }
+
+  // Extraire les couleurs définies dans le textarea
+  const colorVarRegex = /--(color-[a-z0-9-]+):\s*oklch\(([^)]+)\)/gi;
+  const matches = [...customVarsText.matchAll(colorVarRegex)];
+
+  if (matches.length === 0) {
+    return "";
+  }
+
+  const extrapolated = [];
+
+  // Pour chaque couleur trouvée, générer 5 nuances (si pas déjà une nuance)
+  matches.forEach((match) => {
+    const varName = match[1]; // Ex: "color-brand"
+    const oklchValues = match[2]; // Ex: "0.55 0.2 10"
+
+    // Ignorer si c'est déjà une nuance (ex: color-brand-500)
+    if (/-\d{3}$/.test(varName)) {
+      return;
+    }
+
+    // Parser les valeurs OKLCH
+    const [l, c, h] = oklchValues.split(/\s+/).map(Number);
+
+    if (isNaN(l) || isNaN(c) || isNaN(h)) {
+      return;
+    }
+
+    // Générer 5 nuances
+    const shades = [
+      { suffix: "100", lightness: Math.min(0.95, l + 0.3) },
+      { suffix: "300", lightness: Math.min(0.9, l + 0.15) },
+      { suffix: "500", lightness: l },
+      { suffix: "700", lightness: Math.max(0.2, l - 0.15) },
+      { suffix: "900", lightness: Math.max(0.1, l - 0.3) },
+    ];
+
+    shades.forEach(({ suffix, lightness }) => {
+      const shadeName = `--${varName}-${suffix}`;
+      const shadeValue = `oklch(${formatNumber(lightness)} ${c} ${h})`;
+      extrapolated.push(`  ${shadeName}: ${shadeValue};`);
+    });
+  });
+
+  return extrapolated.join("\n");
+}
+
+/**
+ * Collecte les sections de couleurs selon le contexte
+ * @param {Object} options - Options de collecte
+ * @param {boolean} options.hasFigmaImport - Présence d'un import Figma
+ * @param {string} options.customColors - Contenu du textarea custom
+ * @param {boolean} options.shouldExtrapolate - Activer l'extrapolation
+ * @param {Array} options.figmaColors - Couleurs importées depuis Figma
+ * @returns {Array<{comment: string, content: string}>} Sections de couleurs
+ */
+function collectFigmaColors({
+  hasFigmaImport = false,
+  customColors = "",
+  shouldExtrapolate = false,
+  figmaColors = [],
+} = {}) {
+  const sections = [];
+
+  // 1. Raspberry placeholder (UNIQUEMENT si pas d'import Figma)
+  if (!hasFigmaImport) {
+    sections.push({
+      comment: "/* Couleur projet placeholder : raspberry */",
+      content: generateRaspberryColors(),
+    });
+  }
+
+  // 2. Couleurs personnalisées (depuis textarea)
+  const customContent = parseCustomColors(customColors);
+  if (customContent) {
+    sections.push({
+      comment: "/* Couleurs personnalisées */",
+      content: customContent,
+    });
+  }
+
+  // 3. Couleurs personnalisées extrapolées (UNIQUEMENT depuis custom, PAS Figma)
+  if (shouldExtrapolate && customColors) {
+    const extrapolatedContent = extrapolateCustomColors(customColors);
+    if (extrapolatedContent) {
+      sections.push({
+        comment: "/* Couleurs personnalisées extrapolées */",
+        content: extrapolatedContent,
+      });
+    }
+  }
+
+  // 4. Couleurs du projet (depuis Figma)
+  if (hasFigmaImport && figmaColors && figmaColors.length > 0) {
+    const figmaContent = figmaColors
+      .map((color) => `  ${color.name}: ${color.value};`)
+      .join("\n");
+
+    if (figmaContent) {
+      sections.push({
+        comment: "/* Couleurs du projet */",
+        content: figmaContent,
+      });
+    }
+  }
+
+  return sections;
+}
+
+/**
+ * Fusionne toutes les sections dans le bon ordre pour générer theme.css
+ * @param {Object} options - Options de fusion
+ * @param {string} options.header - Header avec @custom-media et stylelint
+ * @param {Array} options.canonicalPrimitives - Sections canoniques
+ * @param {Array} options.colorSections - Sections de couleurs (raspberry, custom, extrapolated, figma)
+ * @returns {string} Contenu complet du theme.css
+ */
+function mergeSections({ header, canonicalPrimitives, colorSections } = {}) {
+  const output = [];
+
+  // 1. Header (@custom-media + stylelint)
+  if (header) {
+    output.push(header);
+    output.push(""); // Ligne vide après le header
+  }
+
+  // 2. Ouverture du :root
+  output.push(":root {");
+
+  // 3. Sections canoniques (breakpoints, transitions, z-index, colors globales, spacings, radius, fonts)
+  if (canonicalPrimitives && canonicalPrimitives.length > 0) {
+    canonicalPrimitives.forEach((section) => {
+      if (section.comment) {
+        output.push(""); // Ligne vide avant le commentaire
+        output.push(`  ${section.comment}`);
+      }
+      if (section.content) {
+        output.push(section.content);
+      }
+    });
+  }
+
+  // 4. Sections de couleurs projet (raspberry/custom/extrapolated/figma)
+  if (colorSections && colorSections.length > 0) {
+    colorSections.forEach((section) => {
+      if (section.comment) {
+        output.push(""); // Ligne vide avant le commentaire
+        output.push(`  ${section.comment}`);
+      }
+      if (section.content) {
+        output.push(section.content);
+      }
+    });
+  }
+
+  // 5. Fermeture du :root
+  output.push("}");
+
+  // Joindre toutes les lignes avec retours à la ligne
+  return output.join("\n");
+}
+
+/**
+ * Extrait et convertit les couleurs projet depuis Figma JSON
+ * Gère 2 cas :
+ * 1. Couleurs avec aliasName (Token colors.json) → Extraire primitive référencée
+ * 2. Couleurs directes (Primitives.json) → Convertir directement en CSS
+ * @param {Array} figmaVariables - Variables COLOR importées depuis JSON
+ * @returns {Array<{name: string, value: string}>} Primitives de couleurs formatées
+ */
+function extractFigmaColors(figmaVariables = []) {
+  const primitiveMap = new Map(); // Pour éviter les doublons
+
+  // Liste des couleurs canoniques globales à exclure
+  const canonicalGlobalColors = new Set([
+    "--color-white",
+    "--color-black",
+    "--color-gray-50",
+    "--color-gray-100",
+    "--color-gray-200",
+    "--color-gray-300",
+    "--color-gray-400",
+    "--color-gray-500",
+    "--color-gray-600",
+    "--color-gray-700",
+    "--color-gray-800",
+    "--color-gray-900",
+    "--color-error-100",
+    "--color-error-200",
+    "--color-error-300",
+    "--color-error-500",
+    "--color-error-700",
+    "--color-error-900",
+    "--color-success-100",
+    "--color-success-300",
+    "--color-success-500",
+    "--color-success-700",
+    "--color-success-900",
+    "--color-warning-100",
+    "--color-warning-300",
+    "--color-warning-500",
+    "--color-warning-700",
+    "--color-warning-900",
+    "--color-info-100",
+    "--color-info-300",
+    "--color-info-500",
+    "--color-info-700",
+    "--color-info-900",
+  ]);
+
+  for (const v of figmaVariables) {
+    // On cherche uniquement les tokens COLOR
+    if (v.type !== "COLOR") continue;
+
+    const resolvedModes = v.resolvedValuesByMode || {};
+
+    // Pour chaque mode (light/dark), extraire les couleurs
+    for (const [modeKey, modeData] of Object.entries(resolvedModes)) {
+      if (!modeData) continue;
+
+      const aliasName = modeData.aliasName; // Ex: "color/pink/700" (Token colors.json)
+      const resolvedValue = modeData.resolvedValue; // RGB object
+
+      if (!resolvedValue) continue;
+
+      let cssVarName;
+
+      if (aliasName) {
+        // CAS 1 : Token avec alias (Token colors.json)
+        // "color/pink/700" → "--color-pink-700"
+        cssVarName = sanitizeVarName(aliasName);
+      } else {
+        // CAS 2 : Couleur directe (Primitives.json)
+        // "colors/primary/Neptune" → "--color-primary-neptune"
+        cssVarName = sanitizeVarName(v.name);
+      }
+
+      // Exclure les canoniques globales (gray, error, success, warning, info)
+      if (canonicalGlobalColors.has(cssVarName)) continue;
+
+      // Si cette primitive n'existe pas encore dans la Map, l'ajouter
+      if (!primitiveMap.has(cssVarName)) {
+        const css = figmaColorToCss(resolvedValue);
+        if (css) {
+          primitiveMap.set(cssVarName, css);
+        }
+      }
+    }
+  }
+
+  // Convertir la Map en tableau
+  const colors = [];
+  for (const [name, value] of primitiveMap.entries()) {
+    colors.push({ name, value });
+  }
+
+  return colors;
+}
+
+/**
+ * Génère les tokens sémantiques de couleurs depuis Token colors.json
+ * Convertit les VARIABLE_ALIAS en light-dark() ou var() selon les modes
+ * @param {Array} tokenColorsVariables - Variables depuis Token colors.json
+ * @returns {Array<string>} Lignes CSS des tokens sémantiques
+ */
+function generateSemanticColorTokens(tokenColorsVariables = []) {
+  const lines = [];
+  const needColorScheme = false; // Sera true si on détecte des light-dark()
+
+  for (const v of tokenColorsVariables) {
+    if (v.type !== "COLOR") continue;
+
+    const name = sanitizeVarName(v.name || "");
+    const resolvedModes = v.resolvedValuesByMode || {};
+    const modeKeys = Object.keys(resolvedModes);
+
+    if (modeKeys.length === 0) continue;
+
+    // Extraire les aliasName pour chaque mode
+    const aliases = modeKeys.map((key) => {
+      const data = resolvedModes[key];
+      return data?.aliasName ? sanitizeVarName(data.aliasName) : null;
+    });
+
+    // Vérifier si tous les modes pointent vers la même primitive
+    const uniqueAliases = [...new Set(aliases.filter(Boolean))];
+
+    if (uniqueAliases.length === 0) continue;
+
+    if (uniqueAliases.length === 1) {
+      // Même primitive pour tous les modes → var()
+      lines.push(`  ${name}: var(${uniqueAliases[0]});`);
+    } else {
+      // Différentes primitives selon le mode → light-dark()
+      const lightAlias = aliases[0];
+      const darkAlias = aliases[1];
+      if (lightAlias && darkAlias) {
+        lines.push(
+          `  ${name}: light-dark(var(${lightAlias}), var(${darkAlias}));`
+        );
+      }
+    }
+  }
+
+  return lines;
+}
+
+/**
+ * Génère le fichier theme.css complet (primitives)
+ * @param {Object} options - Options de génération
+ * @param {Array} options.figmaPrimitives - Variables primitives importées depuis Figma (Primitives.json)
+ * @param {Array} options.figmaTokenColors - Variables token colors importées depuis Figma (Token colors.json)
+ * @param {string} options.customColors - Contenu du textarea custom
+ * @param {boolean} options.shouldExtrapolate - Activer l'extrapolation des couleurs custom
+ * @returns {{themeCss: string, figmaColors: Array}} Contenu CSS et couleurs extraites
+ */
+function generateThemeCss({
+  figmaPrimitives = [],
+  figmaTokenColors = [],
+  customColors = "",
+  shouldExtrapolate = false,
+} = {}) {
+  const canonicals = getCanonicalCache();
+
+  if (!canonicals) {
+    console.error("[generateThemeCss] ⚠️ Canoniques non chargés");
+    return { themeCss: "", figmaColors: [] };
+  }
+
+  // 1. Construire le header (@custom-media + stylelint)
+  const header = buildThemeHeader();
+
+  // 2. Collecter les primitives canoniques (breakpoints, transitions, z-index, colors globales, spacings, radius, fonts)
+  const canonicalPrimitives = collectCanonicalPrimitives();
+
+  // 3. Extraire et convertir les couleurs projet depuis TOUTES les sources Figma
+  // Cas 1 : Couleurs directes depuis Primitives.json (colors/primary/Neptune)
+  // Cas 2 : Couleurs référencées depuis Token colors.json (aliasName)
+  const colorsFromPrimitives = extractFigmaColors(figmaPrimitives);
+  const colorsFromTokens = extractFigmaColors(figmaTokenColors);
+
+  // Fusionner les deux sources (Map pour éviter doublons)
+  const figmaColorsMap = new Map();
+  [...colorsFromPrimitives, ...colorsFromTokens].forEach((color) => {
+    if (!figmaColorsMap.has(color.name)) {
+      figmaColorsMap.set(color.name, color.value);
+    }
+  });
+
+  const figmaColors = Array.from(figmaColorsMap.entries()).map(
+    ([name, value]) => ({ name, value })
+  );
+  const hasFigmaImport = figmaColors.length > 0;
+
+  console.log(
+    `[generateThemeCss] 🎨 ${figmaColors.length} primitives extraites (${colorsFromPrimitives.length} depuis Primitives.json + ${colorsFromTokens.length} depuis Token colors.json)`
+  );
+  if (figmaColors.length > 0) {
+    console.log(
+      "[generateThemeCss] Primitives :",
+      figmaColors.map((c) => c.name).join(", ")
+    );
+  }
+
+  // 4. Collecter les sections de couleurs projet
+  const colorSections = collectFigmaColors({
+    hasFigmaImport,
+    customColors,
+    shouldExtrapolate,
+    figmaColors,
+  });
+
+  console.log(
+    `[generateThemeCss] 📦 ${colorSections.length} sections de couleurs collectées`
+  );
+
+  // 5. Fusionner toutes les sections
+  const themeCss = mergeSections({
+    header,
+    canonicalPrimitives,
+    colorSections,
+  });
+
+  return { themeCss, figmaColors };
+}
+
 function srgbToLinear(v) {
   return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
 }
@@ -83,6 +717,8 @@ export function generateCanonicalThemeFromFigma({
   // from semantic tokens and aliases; when false, skip emitting the
   // "Couleurs personnalisées (projet) - primitives synthétisées" block.
   synthesizeProjectPrimitives = true,
+  // Couleurs personnalisées depuis textarea (optionnel)
+  customColors = "",
 } = {}) {
   // Debug: in-browser callers sometimes pass unexpected arrays due to
   // classification bugs or caching; log counts to help diagnose missing
@@ -130,691 +766,132 @@ export function generateCanonicalThemeFromFigma({
   fonts = fonts || { variables: [] };
   tokenColors = tokenColors || { variables: [] };
 
-  let themeCss = `/* ----------------------------------\n * Theme du projet (valeurs primitives)\n * ----------------------------------\n */\n:root {\n`;
-  themeCss += `  /* Breakpoints (en dur) */\n`;
-  themeCss += `  --md: 48rem; /* 768px */\n`;
-  themeCss += `  --lg: 64rem; /* 1024px */\n`;
-  themeCss += `  --xl: 80rem; /* 1280px */\n`;
-  themeCss += `  --xxl: 96rem; /* 1536px */\n\n`;
+  // NOUVEAU : Génération propre avec fonctions helper
+  console.log("[figma-gen] 🚀 Génération avec nouvelles fonctions helper");
 
-  const colors = [];
-  const primitivesAsSemantics = [];
-  const preSynth = Object.create(null);
-  const spacings = [];
-  const roundeds = [];
-  const others = [];
-  const lineheightPrimitives = [];
+  // Générer theme.css (primitives) avec la nouvelle architecture
+  // ATTENTION : On utilise let car le code legacy modifie themeCss après (fonts primitives)
+  const { themeCss: generatedThemeCss, figmaColors } = generateThemeCss({
+    figmaPrimitives: primitives.variables || [],
+    figmaTokenColors: tokenColors.variables || [],
+    customColors: customColors || "",
+    shouldExtrapolate: synthesizeProjectPrimitives,
+  });
 
-  // Stocker la correspondance nom sémantique → nom primitif pour theme-tokens.css
-  const spacingSemanticMap = new Map();
+  let themeCss = generatedThemeCss;
 
-  const spacingPrefixes = new Set(["spacing", "space", "gap"]);
-  const roundedPrefixes = new Set(["rounded", "radius", "border-radius"]);
+  // Continue avec la génération de tokensCss (à refactoriser plus tard)
+  // NOTE: PROJECT_SEMANTICS sera peuplé par la génération de tokensCss ci-dessous
+  PROJECT_SEMANTICS.length = 0;
 
-  // Build quick lookup indices for resolving aliases transitively across
-  // primitives and tokenColors. Some Figma exports use variable aliases that
-  // point to other variables; to ensure parity with the Node generator we
-  // must follow alias chains and materialize primitives when a resolved RGB
-  // value can be found further down the chain.
-  const idIndex = Object.create(null);
-  const nameIndex = Object.create(null);
-  const collectVar = (v) => {
-    if (!v || !v.id) return;
-    idIndex[v.id] = v;
-    if (v.name) {
-      nameIndex[String(v.name)] = v;
-      try {
-        const s = sanitizeVarName(v.name);
-        nameIndex[s] = v;
-        nameIndex[String(v.name).toLowerCase()] = v;
-        nameIndex[s.toLowerCase()] = v;
-      } catch (e) {
-        /* noop */
-      }
-    }
-  };
-  for (const v of primitives.variables || []) collectVar(v);
-  for (const v of tokenColors.variables || []) collectVar(v);
+  // Détecter la couleur primaire depuis figmaColors
+  let detectedPrimaryColor = null;
 
-  // Compute set of token names (sanitized) to avoid emitting semantic tokens
-  // directly into themeCss. Semantic tokens must remain in tokensCss. We
-  // include token names and any aliasNames referenced by tokenColors.
-  const tokenNameSet = new Set();
-  for (const tv of tokenColors.variables || []) {
-    if (tv.name) tokenNameSet.add(sanitizeVarName(tv.name));
-    const modes = tv.resolvedValuesByMode || {};
-    for (const mk of Object.keys(modes || {})) {
-      const entry = modes[mk] || {};
-      if (entry && entry.aliasName)
-        tokenNameSet.add(sanitizeVarName(entry.aliasName));
-    }
-  }
-
-  const resolveVarRgb = (v, visited = new Set()) => {
-    if (!v || visited.has(v)) return null;
-    visited.add(v);
-    const modes = v.resolvedValuesByMode || v.valuesByMode || {};
-    const modeKey = Object.keys(modes || {})[0];
-    const entry = modes[modeKey];
-    if (!entry) return null;
-    const rv = entry.resolvedValue || entry;
-    if (rv && typeof rv === "object" && typeof rv.r === "number") return rv;
-    // follow aliasName or alias id
-    if (entry.aliasName) {
-      const candidates = [
-        entry.aliasName,
-        String(entry.aliasName).toLowerCase(),
-        sanitizeVarName(entry.aliasName),
-        sanitizeVarName(entry.aliasName).toLowerCase(),
-      ];
-      for (const c of candidates) {
-        if (c && nameIndex[c]) return resolveVarRgb(nameIndex[c], visited);
-      }
-    }
-    if (entry.alias && idIndex[entry.alias]) {
-      return resolveVarRgb(idIndex[entry.alias], visited);
-    }
-    return null;
-  };
-
-  for (const v of primitives.variables || []) {
-    const name = v.name || "";
-    const sName = sanitizeVarName(name);
-    // Heuristic: treat as color when type is COLOR, or the name contains
-    // "color" (many exports use 'color/...' names), or the per-mode values
-    // clearly look like color strings/objects. Some Figma exports omit
-    // v.type, so this improves robustness.
-    const likelyColor =
-      v.type === "COLOR" ||
-      String(name).toLowerCase().includes("color") ||
-      Object.values(v.valuesByMode || v.resolvedValuesByMode || {}).some(
-        (entry) => {
-          if (!entry) return false;
-          if (typeof entry === "string")
-            return /^(#|rgb|hsl|oklch|oklab)/i.test(entry.trim());
-          const rv = entry.resolvedValue || entry;
-          return typeof rv === "object" && typeof rv.r === "number";
-        }
-      );
-
-    if (likelyColor) {
-      // Emit primitives that were explicitly provided in the import.
-      // Previously we skipped emitting a primitive when its sanitized
-      // name appeared in tokenNames; that caused legitimate project
-      // primitives to be omitted if tokenColors referenced the same
-      // name. To avoid removing user-provided primitives, always
-      // continue processing primitives.variables entries and emit them
-      // into themeCss. Token-only names (coming from tokenColors) are
-      // still handled later during token synthesis.
-      console.log("[figma-color-debug] Processing color:", name, "→", sName);
-      let css = null;
-      // Try to resolve an RGB value possibly following alias chains
-      const rv = resolveVarRgb(v);
-      console.log("[figma-color-debug] resolveVarRgb result:", rv);
-      if (rv) {
-        css = figmaColorToCss(rv);
-        console.log("[figma-color-debug] Generated OKLCH:", css);
-      } else {
-        // fallback: accept direct OKLCH strings in values
-        const modes = v.valuesByMode || v.resolvedValuesByMode || {};
-        const modeKey = Object.keys(modes || {})[0];
-        const entry = modes[modeKey];
-        if (
-          entry &&
-          typeof entry === "string" &&
-          entry.trim().toLowerCase().startsWith("oklch(")
-        )
-          css = entry.trim();
-      }
-      if (css) {
-        // Collect any alias-based sub-primitives referenced by this
-        // semantic variable (e.g. aliasName: "color/blue/400") so we can
-        // synthesize the underlying primitive `--color-blue-400` even when
-        // that variable isn't present separately in the import.
-        try {
-          // Prefer resolvedValuesByMode when available: some exports put
-          // aliases in valuesByMode while resolvedValuesByMode contains the
-          // actual resolved RGB + aliasName. Use resolvedValuesByMode first.
-          const modes = v.resolvedValuesByMode || v.valuesByMode || {};
-          for (const mk of Object.keys(modes || {})) {
-            const entry = modes[mk] || {};
-            const rv = (entry && (entry.resolvedValue || entry)) || null;
-            if (
-              entry &&
-              entry.aliasName &&
-              rv &&
-              typeof rv === "object" &&
-              typeof rv.r === "number"
-            ) {
-              try {
-                const aliasVar = sanitizeVarName(entry.aliasName);
-                if (!preSynth[aliasVar])
-                  preSynth[aliasVar] = figmaColorToCss(rv);
-              } catch (e) {
-                /* noop */
-              }
-            }
-          }
-        } catch (e) {
-          /* noop */
-        }
-
-        // If the sanitized name does not follow the primitive naming
-        // convention (i.e. it doesn't start with "--color-"), treat this
-        // entry as a semantic token that must live in tokensCss rather than
-        // as a raw primitive in themeCss. Collect it for later injection
-        // into PROJECT_SEMANTICS so it appears in theme-tokens.css.
-        if (!sName.startsWith("--color-")) {
-          // Preserve the original variable object so we can decide later
-          // whether to emit a light-dark(...) semantic or a single value
-          // depending on available modes.
-          primitivesAsSemantics.push({ name: sName, varObj: v, css });
-        } else {
-          colors.push({ name, css });
-        }
-      } else {
-        // Debug: report skipped color primitives and nearby data to help
-        // diagnose why the browser-side generation does not emit them.
-        try {
-          const modes = v.valuesByMode || v.resolvedValuesByMode || {};
-          console.log("[figma-gen-skip] skipped color primitive", name, {
-            type: v.type,
-            modesCount: Object.keys(modes).length,
-            sampleModeKey: Object.keys(modes)[0],
-            sampleEntry: modes[Object.keys(modes)[0]] || null,
-          });
-          try {
-            if (
-              typeof window !== "undefined" &&
-              window.__PRIMARY_STATE &&
-              window.__PRIMARY_STATE._debug
-            ) {
-              window.__PRIMARY_STATE._logs = window.__PRIMARY_STATE._logs || [];
-              window.__PRIMARY_STATE._logs.push({
-                tag: "figma-gen-skip",
-                name,
-                modesCount: Object.keys(modes).length,
-                sampleModeKey: Object.keys(modes)[0],
-                sampleEntry: modes[Object.keys(modes)[0]] || null,
-                ts: Date.now(),
-              });
-            }
-          } catch (e) {
-            /* noop */
-          }
-        } catch (e) {
-          /* noop */
-        }
-        continue; // skip non-resolvable color primitives
-      }
-    } else if (v.type === "FLOAT" || v.type === "NUMBER") {
-      const modeKey = Object.keys(v.valuesByMode || {})[0];
-      const px = v.valuesByMode[modeKey];
-      const first = (name.split("/")[0] || "").toLowerCase();
-      if (spacingPrefixes.has(first)) spacings.push({ name, px });
-      else if (roundedPrefixes.has(first)) roundeds.push({ name, px });
-      else if (/(^line[- ]?height$|^leading$)/i.test(first))
-        lineheightPrimitives.push({ name, px });
-      else if (name.toLowerCase().startsWith("fontsize/")) {
-        // skip
-      } else others.push({ name, px });
-    }
-  }
-
-  const sortByName = (a, b) => a.name.localeCompare(b.name, "en");
-
-  if (colors.length) {
-    const groups = {
-      gray: [],
-      error: [],
-      success: [],
-      warning: [],
-      info: [],
-      others: [],
-    };
-    for (const c of colors) {
-      const parts = c.name.split("/").map((p) => p.toLowerCase());
-      const semantic = parts[1] || "";
-      if (semantic === "gray") groups.gray.push(c);
-      else if (semantic === "error") groups.error.push(c);
-      else if (semantic === "success") groups.success.push(c);
-      else if (semantic === "warning") groups.warning.push(c);
-      else if (semantic === "info") groups.info.push(c);
-      else groups.others.push(c);
-    }
-
-    themeCss += `\n  /* Couleurs globales */\n`;
-    const emitGroup = (arr) => {
-      const numericSuffix = (varName) => {
-        const n = sanitizeVarName(varName);
-        const m = n.match(/-(\d+)$/);
-        return m ? Number(m[1]) : null;
-      };
-      arr
-        .sort((a, b) => {
-          const aa = numericSuffix(a.name);
-          const bb = numericSuffix(b.name);
-          if (aa !== null && bb !== null) return aa - bb;
-          if (aa !== null) return -1;
-          if (bb !== null) return 1;
-          return sanitizeVarName(a.name).localeCompare(
-            sanitizeVarName(b.name),
-            "en"
-          );
-        })
-        .forEach((c) => {
-          themeCss += `  ${sanitizeVarName(c.name)}: ${c.css};\n`;
-        });
-    };
-
-    const hasWhite = colors.some(
-      (c) => sanitizeVarName(c.name) === "--color-white"
+  if (figmaColors.length > 0) {
+    console.log(
+      `[detectPrimaryColor] 🔍 Analyse de ${figmaColors.length} couleurs`
     );
-    const hasBlack = colors.some(
-      (c) => sanitizeVarName(c.name) === "--color-black"
+    console.log(
+      `[detectPrimaryColor] Noms:`,
+      figmaColors.map((c) => c.name)
     );
-    if (!hasWhite) themeCss += `  --color-white: oklch(1 0 0);\n`;
-    if (!hasBlack) themeCss += `  --color-black: oklch(0 0 0);\n`;
 
-    emitGroup(groups.gray);
-    emitGroup(groups.error);
-    emitGroup(groups.success);
-    emitGroup(groups.warning);
-    emitGroup(groups.info);
-    emitGroup(groups.others);
+    // Stratégie : chercher une couleur "primary" en priorité
+    const primaryColor = figmaColors.find((c) => c.name.includes("-primary-"));
+    const targetColor = primaryColor || figmaColors[0];
 
-    const colorMap = {};
-    colors.forEach((c) => {
-      colorMap[sanitizeVarName(c.name)] = c.css;
-    });
-    if (!hasWhite) colorMap["--color-white"] = "oklch(1 0 0)";
-    if (!hasBlack) colorMap["--color-black"] = "oklch(0 0 0)";
+    console.log(`[detectPrimaryColor] Couleur cible:`, targetColor.name);
 
-    // tokenColors synthesis
-    try {
-      const tokenColorsVars = (tokenColors && tokenColors.variables) || [];
-      const modeMap = tokenColors.modes || {};
-      let lightModeId = null;
-      let darkModeId = null;
-      for (const k of Object.keys(modeMap)) {
-        if (modeMap[k] === "light") lightModeId = k;
-        if (modeMap[k] === "dark") darkModeId = k;
+    // Extraire le nom de base (sans suffixes type -light, -dark, -medium, -extralight)
+    // Ex: "--color-primary-neptune" → "neptune"
+    // Ex: "--color-primary-neptune-light" → "neptune"
+    const name = targetColor.name;
+    const parts = name.split("-");
+
+    console.log(`[detectPrimaryColor] Parts:`, parts);
+
+    // Trouver la partie principale (après "color" et category "primary/secondary/tertiary")
+    const colorIndex = parts.indexOf("color");
+    console.log(
+      `[detectPrimaryColor] colorIndex:`,
+      colorIndex,
+      `parts.length:`,
+      parts.length
+    );
+
+    if (colorIndex !== -1 && parts.length > colorIndex + 2) {
+      // Prendre la partie après la catégorie (primary/secondary/tertiary)
+      const baseName = parts[colorIndex + 2];
+      console.log(`[detectPrimaryColor] baseName candidat:`, baseName);
+
+      // Exclure les suffixes connus
+      if (!["light", "dark", "medium", "extralight"].includes(baseName)) {
+        detectedPrimaryColor = baseName;
+        console.log(
+          `[detectPrimaryColor] ✅ Détecté: "${detectedPrimaryColor}" depuis "${name}"`
+        );
+      } else {
+        console.log(
+          `[detectPrimaryColor] ❌ "${baseName}" est un suffixe, ignoré`
+        );
       }
-      const modeKeys = Object.keys(modeMap);
-      if (!lightModeId && modeKeys.length) lightModeId = modeKeys[0];
-      if (!darkModeId && modeKeys.length > 1) darkModeId = modeKeys[1];
-
-      const projectSemantics = [];
-      // Tracker des noms sémantiques déjà déclarés via tokenColors
-      // afin d'éviter que des primitives "as semantics" les écrasent.
-      const declaredSemanticNames = new Set();
-      const synthesizedMap = {};
-      let needColorScheme = false;
-
-      for (const v of tokenColorsVars) {
-        const rawName = (v.name || "").toLowerCase().replace(/\s+/g, "-");
-        const primLightName = `--color-${rawName}-light`;
-        const primDarkName = `--color-${rawName}-dark`;
-        const rvLight =
-          v.resolvedValuesByMode && v.resolvedValuesByMode[lightModeId];
-        const rvDark = darkModeId
-          ? v.resolvedValuesByMode && v.resolvedValuesByMode[darkModeId]
-          : null;
-        let lightPrim = null;
-        let lightRaw = null;
-        if (rvLight && rvLight.aliasName) {
-          const aliasVar = sanitizeVarName(rvLight.aliasName);
-          lightPrim = aliasVar;
-          if (!colorMap[aliasVar]) {
-            // try to resolve the alias transitively (follow alias chains)
-            const aliasTarget = nameIndex && nameIndex[rvLight.aliasName];
-            const resolved = aliasTarget ? resolveVarRgb(aliasTarget) : null;
-            if (resolved) {
-              const raw = figmaColorToCss(resolved);
-              if (synthesizeProjectPrimitives) {
-                synthesizedMap[aliasVar] = raw;
-                colorMap[aliasVar] = raw;
-              } else {
-                lightRaw = raw;
-                lightPrim = null; // prefer raw when not synthesizing
-              }
-            } else if (rvLight && rvLight.resolvedValue) {
-              const raw = figmaColorToCss(rvLight.resolvedValue);
-              if (synthesizeProjectPrimitives) {
-                synthesizedMap[aliasVar] = raw;
-                colorMap[aliasVar] = raw;
-              } else {
-                lightRaw = raw;
-                lightPrim = null;
-              }
-            }
-          }
-        } else if (rvLight && rvLight.resolvedValue) {
-          lightPrim = primLightName;
-          const raw = figmaColorToCss(rvLight.resolvedValue);
-          if (synthesizeProjectPrimitives) {
-            if (!colorMap[lightPrimName]) {
-              synthesizedMap[lightPrimName] = raw;
-              colorMap[lightPrimName] = raw;
-            }
-          } else {
-            // don't synthesize prim var; keep raw for semantic output
-            lightRaw = raw;
-            lightPrim = null;
-          }
-        }
-
-        let darkPrim = null;
-        let darkRaw = null;
-        if (rvDark && rvDark.aliasName) {
-          const aliasVar = sanitizeVarName(rvDark.aliasName);
-          darkPrim = aliasVar;
-          if (!colorMap[aliasVar]) {
-            const aliasTarget = nameIndex && nameIndex[rvDark.aliasName];
-            const resolved = aliasTarget ? resolveVarRgb(aliasTarget) : null;
-            if (resolved) {
-              const raw = figmaColorToCss(resolved);
-              if (synthesizeProjectPrimitives) {
-                synthesizedMap[aliasVar] = raw;
-                colorMap[aliasVar] = raw;
-              } else {
-                darkRaw = raw;
-                darkPrim = null;
-              }
-            } else if (rvDark && rvDark.resolvedValue) {
-              const raw = figmaColorToCss(rvDark.resolvedValue);
-              if (synthesizeProjectPrimitives) {
-                synthesizedMap[aliasVar] = raw;
-                colorMap[aliasVar] = raw;
-              } else {
-                darkRaw = raw;
-                darkPrim = null;
-              }
-            }
-          }
-        } else if (rvDark && rvDark.resolvedValue) {
-          darkPrim = primDarkName;
-          const raw = figmaColorToCss(rvDark.resolvedValue);
-          if (synthesizeProjectPrimitives) {
-            if (!colorMap[primDarkName]) {
-              synthesizedMap[primDarkName] = raw;
-              colorMap[primDarkName] = raw;
-            }
-          } else {
-            darkRaw = raw;
-            darkPrim = null;
-          }
-        }
-
-        // Build the semantic entry. Prefer var(...) when a primitive var is
-        // available; otherwise fall back to inline OKLCH values (light/dark
-        // or single value) depending on what we resolved above.
-        if (darkPrim) {
-          needColorScheme = true;
-          projectSemantics.push(
-            `  --${rawName}: light-dark(var(${lightPrim}), var(${darkPrim}));`
-          );
-        } else if (lightPrim) {
-          projectSemantics.push(`  --${rawName}: var(${lightPrim});`);
-        } else if (lightRaw || darkRaw) {
-          if (darkRaw) {
-            needColorScheme = true;
-            projectSemantics.push(
-              `  --${rawName}: light-dark(${lightRaw}, ${darkRaw});`
-            );
-          } else {
-            projectSemantics.push(`  --${rawName}: ${lightRaw};`);
-          }
-        }
-      }
-      // Merge pre-synthesized primitives collected from semantic variables
-      // earlier into the synthesizedMap so they will be emitted in the
-      // "Couleurs personnalisées (projet) - primitives synthétisées" block.
-      try {
-        for (const k of Object.keys(preSynth || {})) {
-          if (!synthesizedMap[k]) synthesizedMap[k] = preSynth[k];
-        }
-      } catch (e) {
-        /* noop */
-      }
-      if (synthesizeProjectPrimitives) {
-        const synthKeys = Object.keys(synthesizedMap || {});
-        if (synthKeys.length) {
-          synthKeys.sort((a, b) => {
-            const na = a.replace(/^--/, "");
-            const nb = b.replace(/^--/, "");
-            const ma = na.match(/^(.*?)-(\d+)$/);
-            const mb = nb.match(/^(.*?)-(\d+)$/);
-            const baseA = ma ? ma[1] : na;
-            const baseB = mb ? mb[1] : nb;
-            if (baseA !== baseB) return baseA.localeCompare(baseB, "en");
-            if (ma && mb) return Number(ma[2]) - Number(mb[2]);
-            if (ma) return -1;
-            if (mb) return 1;
-            return na.localeCompare(nb, "en");
-          });
-          themeCss += `\n  /* Couleurs personnalisées (projet) - primitives synthétisées */\n`;
-          for (const k of synthKeys) {
-            themeCss += `  ${k}: ${synthesizedMap[k]};\n`;
-          }
-        }
-      }
-      // Si des sémantiques ont été construites depuis tokenColors,
-      // extraire leurs noms pour protéger leur priorité.
-      try {
-        for (const ln of projectSemantics) {
-          const m = String(ln || "").match(/^\s*--([a-z0-9-]+)/i);
-          if (m && m[1]) declaredSemanticNames.add(`--${m[1]}`);
-        }
-      } catch (e) {
-        /* noop */
-      }
-      // If any primitives were detected as semantic tokens, add them to
-      // the project semantics so they appear in tokensCss (and not in themeCss)
-      if (primitivesAsSemantics.length) {
-        // Determine mode ids from tokenColors.modes if present so we can
-        // emit light-dark(...) when both light and dark variants exist.
-        const modeMapOuter =
-          tokenColors && tokenColors.modes ? tokenColors.modes : {};
-        let lightModeIdOuter = null;
-        let darkModeIdOuter = null;
-        for (const k of Object.keys(modeMapOuter)) {
-          if (modeMapOuter[k] === "light") lightModeIdOuter = k;
-          if (modeMapOuter[k] === "dark") darkModeIdOuter = k;
-        }
-        const modeKeysOuter = Object.keys(modeMapOuter);
-        if (!lightModeIdOuter && modeKeysOuter.length)
-          lightModeIdOuter = modeKeysOuter[0];
-        if (!darkModeIdOuter && modeKeysOuter.length > 1)
-          darkModeIdOuter = modeKeysOuter[1];
-
-        const semLines = [];
-        let anyNeedColorScheme = false;
-        for (const p of primitivesAsSemantics) {
-          // Ne pas émettre une sémantique si une définition explicite
-          // pour ce nom a déjà été produite par tokenColors (priorité).
-          try {
-            if (declaredSemanticNames.has(p.name)) continue;
-          } catch (e) {
-            /* noop */
-          }
-          const vobj = p.varObj;
-          const modes = vobj.resolvedValuesByMode || vobj.valuesByMode || {};
-          // If multiple mode entries exist, prefer using explicit mode ids
-          // (from tokenColors.modes) when available; otherwise fall back to
-          // the stable ordering of mode keys (first = light, second = dark)
-          // to match the Node generator's fallback behavior. Avoid trying to
-          // infer light/dark by comparing OKLCH lightness — that's guessing
-          // and can produce incorrect inversions (eg. surface vs on-surface).
-          const modeKeys = Object.keys(modes || {});
-          let rvLight = null;
-          let rvDark = null;
-          if (modeKeys.length >= 2) {
-            if (lightModeIdOuter && darkModeIdOuter) {
-              rvLight = modes[lightModeIdOuter];
-              rvDark = modes[darkModeIdOuter];
-            } else {
-              // Stable fallback: treat first key as light, second as dark
-              rvLight = modes[modeKeys[0]];
-              rvDark = modes[modeKeys[1]];
-            }
-          } else if (modeKeys.length === 1) {
-            rvLight = modes[modeKeys[0]];
-            rvDark = null;
-          } else {
-            rvLight = null;
-            rvDark = null;
-          }
-
-          const mapResolvedToPrimitive = (entry) => {
-            if (!entry) return { prim: null, raw: null };
-            if (entry.aliasName) {
-              const aliasVar = sanitizeVarName(entry.aliasName);
-              if (colorMap[aliasVar]) return { prim: aliasVar, raw: null };
-              const aliasTarget = nameIndex && nameIndex[entry.aliasName];
-              const resolved = aliasTarget ? resolveVarRgb(aliasTarget) : null;
-              if (resolved)
-                return { prim: null, raw: figmaColorToCss(resolved) };
-            }
-            if (
-              entry.resolvedValue &&
-              typeof entry.resolvedValue === "object" &&
-              typeof entry.resolvedValue.r === "number"
-            ) {
-              const raw = figmaColorToCss(entry.resolvedValue);
-              for (const k of Object.keys(colorMap || {})) {
-                if (colorMap[k] === raw) return { prim: k, raw: null };
-              }
-              return { prim: null, raw };
-            }
-            return { prim: null, raw: null };
-          };
-
-          try {
-            const L = mapResolvedToPrimitive(rvLight);
-            const D = rvDark
-              ? mapResolvedToPrimitive(rvDark)
-              : { prim: null, raw: null };
-            if (D.prim) {
-              anyNeedColorScheme = true;
-              semLines.push(
-                `  ${p.name}: light-dark(var(${L.prim || D.prim}), var(${
-                  D.prim
-                }));`
-              );
-            } else if (L.prim) {
-              // If the original variable object had multiple modes but we
-              // resolved only a single primitive for light, warn so the
-              // caller can inspect (helps debugging cases where dark variant
-              // is missing or wasn't discovered due to ordering).
-              try {
-                const modes = p.varObj && p.varObj.resolvedValuesByMode;
-                const hasMultipleModes = modes && Object.keys(modes).length > 1;
-                if (hasMultipleModes && !D.prim) {
-                  console.warn(
-                    `[figma-gen] semantic "${p.name}": multiple modes present but dark variant not resolved; emitting single var(${L.prim})`
-                  );
-                }
-              } catch (e) {
-                /* noop */
-              }
-              semLines.push(`  ${p.name}: var(${L.prim});`);
-            } else if (D.raw) {
-              anyNeedColorScheme = true;
-              semLines.push(
-                `  ${p.name}: light-dark(${L.raw || "var(--color-white)"}, ${
-                  D.raw
-                });`
-              );
-            } else if (L.raw) {
-              semLines.push(`  ${p.name}: ${L.raw};`);
-            } else {
-              semLines.push(`  ${p.name}: ${p.css || "var(--color-white)"};`);
-            }
-          } catch (e) {
-            semLines.push(`  ${p.name}: ${p.css || "var(--color-white)"};`);
-          }
-        }
-        PROJECT_SEMANTICS.push({
-          lines: semLines,
-          needColorScheme: anyNeedColorScheme,
-        });
-      }
-      if (projectSemantics.length) {
-        // Store synthesized semantic lines for later injection into tokensCss
-        PROJECT_SEMANTICS.push({ lines: projectSemantics, needColorScheme });
-      }
-    } catch (e) {
-      // ignore
+    } else {
+      console.log(`[detectPrimaryColor] ❌ Structure de nom invalide`);
     }
-  }
-
-  // Spacing block
-  if (spacings.length) {
-    themeCss += `\n  /* Espacements */\n`;
-    spacings
-      .sort((a, b) => Number(a.px) - Number(b.px))
-      .forEach((s) => {
-        const px = Math.round(Number(s.px));
-        const primitiveName = `--spacing-${px}`;
-        const semanticName = sanitizeVarName(s.name);
-
-        // Stocker la correspondance pour theme-tokens.css
-        if (semanticName !== primitiveName) {
-          spacingSemanticMap.set(semanticName, primitiveName);
-        }
-
-        // Émettre uniquement le nom primitif dans theme.css
-        themeCss += `  ${primitiveName}: ${pxToRem(s.px)};\n`;
-      });
-  }
-
-  if (roundeds.length) {
-    themeCss += `\n  /* Border radius */\n`;
-    roundeds
-      .sort((a, b) => Number(a.px) - Number(b.px))
-      .forEach((r) => {
-        const px = Math.round(Number(r.px));
-        // Cas spéciaux : 0 -> none, >= 9999 -> full
-        let name;
-        let value;
-        if (px === 0) {
-          name = `--radius-none`;
-          value = "0";
-        } else if (px >= 9999) {
-          name = `--radius-full`;
-          value = "9999px";
-        } else {
-          name = `--radius-${px}`;
-          value = pxToRem(r.px);
-        }
-        themeCss += `  ${name}: ${value};\n`;
-      });
-  }
-
-  if (lineheightPrimitives.length) {
-    themeCss += `\n  /* Interlignage (line-height) */\n`;
-    lineheightPrimitives
-      .sort((a, b) => Number(a.px) - Number(b.px))
-      .forEach((lh) => {
-        const px = Math.round(Number(lh.px));
-        const name = `--line-height-${px}`;
-        themeCss += `  ${name}: ${pxToRem(lh.px)};\n`;
-      });
-  }
-
-  if (others.length) {
-    themeCss += `\n  /* Others */\n`;
-    others.sort(sortByName).forEach((o) => {
-      themeCss += `  ${sanitizeVarName(o.name)}: ${o.px};\n`;
-    });
+  } else {
+    console.log(`[detectPrimaryColor] ⚠️ Aucune couleur Figma importée`);
   }
 
   // Continue with fonts primitives processing from fonts.variables
-  // Build tokensCss similar to Node logic
-  let tokensCss = `/* ----------------------------------\n * Theme-tokens\n * Surcouche de theme.css\n * ----------------------------------\n */\n:root {\n`;
+  // Build tokensCss similar to Node logic with dynamic header
+  const primaryColorLine = detectedPrimaryColor
+    ? `\n * - Couleur primaire : ${detectedPrimaryColor}`
+    : "";
 
-  // project semantics injection
+  let tokensCss = `/* ----------------------------------
+ * Theme-tokens, généré par primary.alsacreations.com
+ * Surcouche de theme.css
+ * Configuration :${primaryColorLine}
+ * - Theme : light et dark
+ * - Typographie responsive : oui
+ * - Espacements responsive : oui
+ * ----------------------------------
+ */
+
+:root {
+`;
+
+  // Générer les tokens sémantiques de couleurs depuis tokenColors
+  const semanticColorLines = generateSemanticColorTokens(
+    tokenColors.variables || []
+  );
+  const hasSemanticColors = semanticColorLines.length > 0;
+
+  // Détection du besoin de color-scheme (si des light-dark() sont présents)
+  const needsColorScheme =
+    hasSemanticColors &&
+    semanticColorLines.some((line) => line.includes("light-dark("));
+
+  console.log(
+    `[generateTokensCss] 🎨 ${semanticColorLines.length} tokens sémantiques générés`
+  );
+  if (needsColorScheme) {
+    console.log("[generateTokensCss] ✅ color-scheme: light dark détecté");
+  }
+
+  // Injecter color-scheme si nécessaire
+  if (needsColorScheme) {
+    const cs = `  color-scheme: light dark;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n\n`;
+    tokensCss = tokensCss.replace(":root {\n", `:root {\n${cs}`);
+  }
+
+  // Injecter les tokens sémantiques de couleurs
+  if (hasSemanticColors) {
+    tokensCss += `\n  /* Couleurs personnalisées (projet) */\n`;
+    tokensCss += semanticColorLines.join("\n") + "\n";
+  }
+
+  // Legacy: support PROJECT_SEMANTICS si présent (pour compatibilité)
   let projectNeedColorScheme = false;
   if (PROJECT_SEMANTICS && PROJECT_SEMANTICS.length) {
     const all = PROJECT_SEMANTICS.reduce(
@@ -826,19 +903,21 @@ export function generateCanonicalThemeFromFigma({
       { lines: [], needColorScheme: false }
     );
     projectNeedColorScheme = Boolean(all.needColorScheme);
-    if (all.needColorScheme) {
+    if (all.needColorScheme && !needsColorScheme) {
       const cs = `  color-scheme: light dark;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n\n`;
       tokensCss = tokensCss.replace(":root {\n", `:root {\n${cs}`);
     }
     if (all.lines.length) {
-      tokensCss += `\n  /* Couleurs personnalisées (projet) */\n`;
+      tokensCss += `\n  /* Couleurs legacy (PROJECT_SEMANTICS) */\n`;
       tokensCss += all.lines.join("\n") + "\n";
     }
   }
 
-  // font sizes and line heights
+  // font sizes, line heights, and spacings
   const fontSizes = [];
   const lineHeights = [];
+  const spacings = [];
+  const spacingSemanticMap = new Map();
   for (const v of fonts.variables || []) {
     const name = v.name || "";
     const first = (name.split("/")[0] || "").toLowerCase();
@@ -1017,10 +1096,7 @@ export function generateCanonicalThemeFromFigma({
     missingZ.forEach((l) => (themeCss += l + "\n"));
   }
 
-  themeCss += `\n}\n`;
-  themeCss = themeCss.replace(/\n{3,}/g, "\n\n");
-
-  // build primitiveNames set
+  // Build primitiveNames set from generated themeCss
   const primitiveNames = new Set();
   const varRe = /^\s*(--[a-z0-9-]+)\s*:/gim;
   let vm;
@@ -1084,11 +1160,17 @@ export function generateCanonicalThemeFromFigma({
 
   // spacing semantics
   const spacingMap = new Map();
-  for (const s of spacings)
-    spacingMap.set(Math.round(Number(s.px)), {
-      name: sanitizeVarName(s.name),
-      rem: Number(s.px) / 16,
-    });
+  // Extraire les spacings depuis primitiveNames (déjà parsés du themeCss)
+  for (const name of primitiveNames) {
+    const match = name.match(/^--spacing-(\d+)$/);
+    if (match) {
+      const px = parseInt(match[1], 10);
+      spacingMap.set(px, {
+        name: name,
+        rem: px / 16,
+      });
+    }
+  }
   const findSpacingVar = (n) => {
     const candidates = [`--spacing-${n}`, `--space-${n}`, `--gap-${n}`];
     return candidates.find((c) => primitiveNames.has(c)) || null;

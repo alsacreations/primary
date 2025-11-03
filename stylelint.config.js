@@ -95,5 +95,6 @@ export default {
     "color-function-notation": "modern", // on force la notation moderne pour les fonctions de couleurs
     "alpha-value-notation": "percentage", // on force la notation en pourcentage pour l'alpha
     "hue-degree-notation": "number",
+    "lightness-notation": null, // on autorise la notation décimale (0-1) pour la lightness
   },
 };

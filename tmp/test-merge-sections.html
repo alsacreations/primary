@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test mergeSections() - Génération theme.css</title>
+    <style>
+      body {
+        max-width: 80rem;
+        margin: 0 auto;
+        padding: 2rem;
+        font-family: system-ui, sans-serif;
+      }
+
+      pre {
+        padding: 1rem;
+        overflow-x: auto;
+        border-radius: 0.5rem;
+        background: #f5f5f5;
+      }
+
+      .test-case {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        background: #fff8dc;
+      }
+
+      button {
+        margin-right: 1rem;
+        padding: 0.5rem 1rem;
+        border: 0;
+        border-radius: 0.25rem;
+        background: #0066cc;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #0052a3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test mergeSections() - Génération theme.css</h1>
+
+    <div class="test-case">
+      <h2>Scénario 1 : Sans import Figma (Raspberry + Canoniques)</h2>
+      <button onclick="runTest1()">Générer</button>
+      <button onclick="copyToClipboard('result1')">Copier</button>
+      <pre id="result1"></pre>
+    </div>
+
+    <div class="test-case">
+      <h2>Scénario 2 : Avec import Figma (pas de Raspberry)</h2>
+      <button onclick="runTest2()">Générer</button>
+      <button onclick="copyToClipboard('result2')">Copier</button>
+      <pre id="result2"></pre>
+    </div>
+
+    <div class="test-case">
+      <h2>Scénario 3 : Figma + Custom + Extrapolation</h2>
+      <button onclick="runTest3()">Générer</button>
+      <button onclick="copyToClipboard('result3')">Copier</button>
+      <pre id="result3"></pre>
+    </div>
+
+    <script type="module">
+      import {
+        loadAllCanonicals,
+        getCanonicalCache,
+      } from "../assets/js/modules/canonical-loader.js";
+
+      // Import des fonctions de génération depuis figma-client-gen.js
+      // (On va les recréer ici pour le test)
+
+      function formatNumber(n) {
+        const s = Number(n).toFixed(4);
+        return s.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+      }
+
+      function extractRootContent(cssContent) {
+        const rootStart = cssContent.indexOf(":root {");
+        if (rootStart === -1) return "";
+        const contentStart = rootStart + ":root {".length;
+        const closingBrace = cssContent.lastIndexOf("}");
+        if (closingBrace === -1) return "";
+        return cssContent.slice(contentStart, closingBrace).trim();
+      }
+
+      function buildThemeHeader(canonicals) {
+        if (!canonicals?.primitives?.commons?.raw) return "";
+        const commonsRaw = canonicals.primitives.commons.raw;
+        const rootIndex = commonsRaw.indexOf(":root {");
+        if (rootIndex === -1) return commonsRaw;
+        return commonsRaw.slice(0, rootIndex).trimEnd();
+      }
+
+      function collectCanonicalPrimitives(canonicals) {
+        if (!canonicals?.primitives) return [];
+        const sections = [];
+        const { commons, colors, spacings, radius, fonts } =
+          canonicals.primitives;
+
+        // 1. Commons sections
+        if (commons?.raw) {
+          const commonsContent = extractRootContent(commons.raw);
+          const lines = commonsContent.split("\n");
+          let currentSection = { comment: "", content: [] };
+
+          for (const line of lines) {
+            if (line.trim().startsWith("/*") && line.trim().endsWith("*/")) {
+              if (currentSection.content.length > 0) {
+                sections.push({
+                  comment: currentSection.comment,
+                  content: currentSection.content.join("\n"),
+                });
+              }
+              currentSection = { comment: line.trim(), content: [] };
+            } else if (line.trim().length > 0) {
+              currentSection.content.push(line);
+            }
+          }
+
+          if (currentSection.content.length > 0) {
+            sections.push({
+              comment: currentSection.comment,
+              content: currentSection.content.join("\n"),
+            });
+          }
+        }
+
+        // 2. Colors (globales)
+        if (colors?.raw) {
+          const colorsContent = extractRootContent(colors.raw);
+          const lines = colorsContent.split("\n");
+          let inGlobalColors = false;
+          const globalColorLines = [];
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed === "/* Couleurs (globales) */") {
+              inGlobalColors = true;
+              continue;
+            }
+            if (
+              inGlobalColors &&
+              trimmed.startsWith("/*") &&
+              trimmed.endsWith("*/")
+            ) {
+              break;
+            }
+            if (inGlobalColors && trimmed.length > 0) {
+              globalColorLines.push(line);
+            }
+          }
+
+          if (globalColorLines.length > 0) {
+            sections.push({
+              comment: "/* Couleurs (globales) */",
+              content: globalColorLines.join("\n"),
+            });
+          }
+        }
+
+        // 3. Spacings
+        if (spacings?.raw) {
+          const spacingsContent = extractRootContent(spacings.raw);
+          const lines = spacingsContent.split("\n");
+          const contentLines = lines.filter((line) => {
+            const trimmed = line.trim();
+            return trimmed.length > 0 && trimmed !== "/* Espacements */";
+          });
+          sections.push({
+            comment: "/* Espacements */",
+            content: contentLines.join("\n"),
+          });
+        }
+
+        // 4. Radius
+        if (radius?.raw) {
+          const radiusContent = extractRootContent(radius.raw);
+          const lines = radiusContent.split("\n");
+          const contentLines = lines.filter((line) => {
+            const trimmed = line.trim();
+            return trimmed.length > 0 && trimmed !== "/* Border radius */";
+          });
+          sections.push({
+            comment: "/* Border radius */",
+            content: contentLines.join("\n"),
+          });
+        }
+
+        // 5. Fonts
+        if (fonts?.raw) {
+          const fontsContent = extractRootContent(fonts.raw);
+          const lines = fontsContent.split("\n");
+          let currentSection = { comment: "", content: [] };
+
+          for (const line of lines) {
+            if (line.trim().startsWith("/*") && line.trim().endsWith("*/")) {
+              if (currentSection.content.length > 0) {
+                sections.push({
+                  comment: currentSection.comment,
+                  content: currentSection.content.join("\n"),
+                });
+              }
+              currentSection = { comment: line.trim(), content: [] };
+            } else if (line.trim().length > 0) {
+              currentSection.content.push(line);
+            }
+          }
+
+          if (currentSection.content.length > 0) {
+            sections.push({
+              comment: currentSection.comment,
+              content: currentSection.content.join("\n"),
+            });
+          }
+        }
+
+        return sections;
+      }
+
+      function generateRaspberryColors() {
+        return `  --color-raspberry-100: oklch(0.95 0.05 10);
+  --color-raspberry-200: oklch(0.85 0.1 10);
+  --color-raspberry-300: oklch(0.75 0.15 10);
+  --color-raspberry-400: oklch(0.65 0.18 10);
+  --color-raspberry-500: oklch(0.55 0.2 10);
+  --color-raspberry-600: oklch(0.45 0.18 10);
+  --color-raspberry-700: oklch(0.35 0.15 10);`;
+      }
+
+      function parseCustomColors(customVarsText) {
+        if (!customVarsText?.trim()) return "";
+        const lines = customVarsText
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0 && line.startsWith("--"));
+        return lines.map((line) => `  ${line}`).join("\n");
+      }
+
+      function extrapolateCustomColors(customVarsText) {
+        if (!customVarsText?.trim()) return "";
+        const colorVarRegex = /--(color-[a-z0-9-]+):\s*oklch\(([^)]+)\)/gi;
+        const matches = [...customVarsText.matchAll(colorVarRegex)];
+        if (matches.length === 0) return "";
+
+        const extrapolated = [];
+        matches.forEach((match) => {
+          const varName = match[1];
+          const oklchValues = match[2];
+          if (/-\d{3}$/.test(varName)) return;
+
+          const [l, c, h] = oklchValues.split(/\s+/).map(Number);
+          if (isNaN(l) || isNaN(c) || isNaN(h)) return;
+
+          const shades = [
+            { suffix: "100", lightness: Math.min(0.95, l + 0.3) },
+            { suffix: "300", lightness: Math.min(0.9, l + 0.15) },
+            { suffix: "500", lightness: l },
+            { suffix: "700", lightness: Math.max(0.2, l - 0.15) },
+            { suffix: "900", lightness: Math.max(0.1, l - 0.3) },
+          ];
+
+          shades.forEach(({ suffix, lightness }) => {
+            const shadeName = `--${varName}-${suffix}`;
+            const shadeValue = `oklch(${formatNumber(lightness)} ${c} ${h})`;
+            extrapolated.push(`  ${shadeName}: ${shadeValue};`);
+          });
+        });
+
+        return extrapolated.join("\n");
+      }
+
+      function collectFigmaColors({
+        hasFigmaImport,
+        customColors,
+        shouldExtrapolate,
+        figmaColors,
+      } = {}) {
+        const sections = [];
+
+        if (!hasFigmaImport) {
+          sections.push({
+            comment: "/* Couleur projet placeholder : raspberry */",
+            content: generateRaspberryColors(),
+          });
+        }
+
+        const customContent = parseCustomColors(customColors);
+        if (customContent) {
+          sections.push({
+            comment: "/* Couleurs personnalisées */",
+            content: customContent,
+          });
+        }
+
+        if (shouldExtrapolate && customColors) {
+          const extrapolatedContent = extrapolateCustomColors(customColors);
+          if (extrapolatedContent) {
+            sections.push({
+              comment: "/* Couleurs personnalisées extrapolées */",
+              content: extrapolatedContent,
+            });
+          }
+        }
+
+        if (hasFigmaImport && figmaColors?.length > 0) {
+          const figmaContent = figmaColors
+            .map((color) => `  ${color.name}: ${color.value};`)
+            .join("\n");
+          if (figmaContent) {
+            sections.push({
+              comment: "/* Couleurs du projet */",
+              content: figmaContent,
+            });
+          }
+        }
+
+        return sections;
+      }
+
+      function mergeSections({
+        header,
+        canonicalPrimitives,
+        colorSections,
+      } = {}) {
+        const output = [];
+
+        if (header) {
+          output.push(header);
+          output.push("");
+        }
+
+        output.push(":root {");
+
+        if (canonicalPrimitives?.length > 0) {
+          canonicalPrimitives.forEach((section) => {
+            if (section.comment) {
+              output.push("");
+              output.push(`  ${section.comment}`);
+            }
+            if (section.content) {
+              output.push(section.content);
+            }
+          });
+        }
+
+        if (colorSections?.length > 0) {
+          colorSections.forEach((section) => {
+            if (section.comment) {
+              output.push("");
+              output.push(`  ${section.comment}`);
+            }
+            if (section.content) {
+              output.push(section.content);
+            }
+          });
+        }
+
+        output.push("}");
+        return output.join("\n");
+      }
+
+      // Tests
+      window.runTest1 = function () {
+        const canonicals = getCanonicalCache();
+        const header = buildThemeHeader(canonicals);
+        const canonicalPrimitives = collectCanonicalPrimitives(canonicals);
+        const colorSections = collectFigmaColors({ hasFigmaImport: false });
+
+        const result = mergeSections({
+          header,
+          canonicalPrimitives,
+          colorSections,
+        });
+        document.getElementById("result1").textContent = result;
+      };
+
+      window.runTest2 = function () {
+        const canonicals = getCanonicalCache();
+        const header = buildThemeHeader(canonicals);
+        const canonicalPrimitives = collectCanonicalPrimitives(canonicals);
+        const colorSections = collectFigmaColors({
+          hasFigmaImport: true,
+          figmaColors: [
+            { name: "--color-ocean-500", value: "oklch(0.5 0.2 270)" },
+            { name: "--color-forest-500", value: "oklch(0.6 0.15 150)" },
+          ],
+        });
+
+        const result = mergeSections({
+          header,
+          canonicalPrimitives,
+          colorSections,
+        });
+        document.getElementById("result2").textContent = result;
+      };
+
+      window.runTest3 = function () {
+        const canonicals = getCanonicalCache();
+        const header = buildThemeHeader(canonicals);
+        const canonicalPrimitives = collectCanonicalPrimitives(canonicals);
+        const colorSections = collectFigmaColors({
+          hasFigmaImport: true,
+          customColors: "--color-sunset: oklch(0.65 0.18 45);",
+          shouldExtrapolate: true,
+          figmaColors: [
+            { name: "--color-ocean-500", value: "oklch(0.5 0.2 270)" },
+          ],
+        });
+
+        const result = mergeSections({
+          header,
+          canonicalPrimitives,
+          colorSections,
+        });
+        document.getElementById("result3").textContent = result;
+      };
+
+      window.copyToClipboard = function (elementId) {
+        const text = document.getElementById(elementId).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          alert("Copié dans le presse-papier !");
+        });
+      };
+
+      // Charger les canoniques au démarrage
+      await loadAllCanonicals();
+      console.log("✅ Canoniques chargés");
+    </script>
+  </body>
+</html>

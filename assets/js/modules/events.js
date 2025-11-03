@@ -426,6 +426,7 @@ function finalizeGeneratedTheme(
             const smallOut = fgClient.generateCanonicalThemeFromFigma({
               primitives: { variables: [pv] },
               synthesizeProjectPrimitives: false,
+              customColors: state.config.customVars || "",
             });
             const smallCss = smallOut.themeCss || "";
             const rxLine = new RegExp(`^\\s*${m}\\s*:\\s*(.*);?$`, "m");
@@ -610,7 +611,28 @@ function attachJsonImportHandlers() {
             // is a color primitive or a semantic token (tokenColors).
             const nm = String(v.name || "").toLowerCase();
 
-            if (v.type === "COLOR" || nm.startsWith("color/")) {
+            // CORRECTION : Les COLOR avec aliases → tokenColors (tokens sémantiques)
+            // Les COLOR sans aliases → primitives (couleurs brutes)
+            if (v.type === "COLOR") {
+              // Vérifier si c'est un token sémantique (avec aliases)
+              const hasAliases =
+                v.resolvedValuesByMode &&
+                Object.values(v.resolvedValuesByMode).some(
+                  (rv) => rv && rv.aliasName
+                );
+
+              if (hasAliases) {
+                // Token sémantique (ex: accent-pink → color/pink/700)
+                tokenColors.variables.push(v);
+              } else {
+                // Primitive brute (ex: color/raspberry/500: oklch(...))
+                primitives.variables.push(v);
+              }
+              continue;
+            }
+
+            // Primitives nommées "color/xxx" (fallback)
+            if (nm.startsWith("color/")) {
               primitives.variables.push(v);
               continue;
             }
@@ -674,6 +696,7 @@ function attachJsonImportHandlers() {
             tokenColors,
             // Project primitives must always be generated.
             synthesizeProjectPrimitives: true,
+            customColors: state.config.customVars || "",
           });
           // Même si out.themeCss est absent, considérer que l'origine
           // est un import utilisateur : cela évite que l'UI réinjecte des placeholders.

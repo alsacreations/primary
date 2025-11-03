@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test collectCanonicalPrimitives()</title>
+    <style>
+      pre {
+        padding: 1rem;
+        overflow-x: auto;
+        border-radius: 0.5rem;
+        background: #f5f5f5;
+      }
+
+      .section {
+        margin-bottom: 2rem;
+        padding-left: 1rem;
+        border-left: 4px solid #0066cc;
+      }
+
+      .comment {
+        color: #008800;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test collectCanonicalPrimitives()</h1>
+    <div id="result"></div>
+
+    <script type="module">
+      import { loadAllCanonicals } from "../assets/js/modules/canonical-loader.js";
+
+      // Copie des fonctions pour test
+      function extractRootContent(cssContent) {
+        const rootStart = cssContent.indexOf(":root {");
+        if (rootStart === -1) return "";
+
+        const contentStart = rootStart + ":root {".length;
+        const closingBrace = cssContent.lastIndexOf("}");
+
+        if (closingBrace === -1) return "";
+
+        return cssContent.slice(contentStart, closingBrace).trim();
+      }
+
+      function collectCanonicalPrimitives(canonicals) {
+        if (!canonicals?.primitives) {
+          console.warn(
+            "[collectCanonicalPrimitives] ⚠️ Primitives introuvables"
+          );
+          return [];
+        }
+
+        const sections = [];
+        const { commons, colors, spacings, radius, fonts } =
+          canonicals.primitives;
+
+        // 1. Extraire les sections de commons (breakpoints, transitions, z-index)
+        if (commons?.raw) {
+          const commonsContent = extractRootContent(commons.raw);
+          const lines = commonsContent.split("\n");
+          let currentSection = { comment: "", content: [] };
+
+          for (const line of lines) {
+            if (line.trim().startsWith("/*") && line.trim().endsWith("*/")) {
+              // Nouveau commentaire de section
+              if (currentSection.content.length > 0) {
+                // Sauvegarder la section précédente
+                sections.push({
+                  comment: currentSection.comment,
+                  content: currentSection.content.join("\n"),
+                });
+              }
+              currentSection = { comment: line.trim(), content: [] };
+            } else if (line.trim().length > 0) {
+              // Ligne de contenu
+              currentSection.content.push(line);
+            }
+          }
+
+          // Sauvegarder la dernière section de commons
+          if (currentSection.content.length > 0) {
+            sections.push({
+              comment: currentSection.comment,
+              content: currentSection.content.join("\n"),
+            });
+          }
+        }
+
+        // 2. Couleurs (globales) - extraire uniquement la section "Couleurs (globales)"
+        if (colors?.raw) {
+          const colorsContent = extractRootContent(colors.raw);
+          const lines = colorsContent.split("\n");
+          let inGlobalColors = false;
+          const globalColorLines = [];
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+
+            // Détecter le début de la section "Couleurs (globales)"
+            if (trimmed === "/* Couleurs (globales) */") {
+              inGlobalColors = true;
+              continue;
+            }
+
+            // Détecter le début d'une autre section (commentaire suivant)
+            if (
+              inGlobalColors &&
+              trimmed.startsWith("/*") &&
+              trimmed.endsWith("*/")
+            ) {
+              break; // Fin de la section globales
+            }
+
+            // Collecter les lignes de la section globales
+            if (inGlobalColors && trimmed.length > 0) {
+              globalColorLines.push(line);
+            }
+          }
+
+          if (globalColorLines.length > 0) {
+            sections.push({
+              comment: "/* Couleurs (globales) */",
+              content: globalColorLines.join("\n"),
+            });
+          }
+        }
+
+        // 3. Espacements
+        if (spacings?.raw) {
+          const spacingsContent = extractRootContent(spacings.raw);
+          sections.push({
+            comment: "/* Espacements */",
+            content: spacingsContent,
+          });
+        }
+
+        // 4. Border radius
+        if (radius?.raw) {
+          const radiusContent = extractRootContent(radius.raw);
+          sections.push({
+            comment: "/* Border radius */",
+            content: radiusContent,
+          });
+        }
+
+        // 5. Typographie (3 sections : familles, graisses, tailles+line-height)
+        if (fonts?.raw) {
+          const fontsContent = extractRootContent(fonts.raw);
+          const lines = fontsContent.split("\n");
+          let currentSection = { comment: "", content: [] };
+
+          for (const line of lines) {
+            if (line.trim().startsWith("/*") && line.trim().endsWith("*/")) {
+              // Nouveau commentaire de section
+              if (currentSection.content.length > 0) {
+                sections.push({
+                  comment: currentSection.comment,
+                  content: currentSection.content.join("\n"),
+                });
+              }
+              currentSection = { comment: line.trim(), content: [] };
+            } else if (line.trim().length > 0) {
+              currentSection.content.push(line);
+            }
+          }
+
+          // Sauvegarder la dernière section de fonts
+          if (currentSection.content.length > 0) {
+            sections.push({
+              comment: currentSection.comment,
+              content: currentSection.content.join("\n"),
+            });
+          }
+        }
+
+        return sections;
+      }
+
+      // Test
+      async function test() {
+        const canonicals = await loadAllCanonicals();
+        console.log("Canonicals chargés:", canonicals);
+
+        const sections = collectCanonicalPrimitives(canonicals);
+        console.log("Sections collectées:", sections);
+
+        const resultDiv = document.getElementById("result");
+
+        sections.forEach((section, index) => {
+          const sectionDiv = document.createElement("div");
+          sectionDiv.className = "section";
+
+          const title = document.createElement("h2");
+          title.textContent = `Section ${index + 1}`;
+          sectionDiv.appendChild(title);
+
+          const commentDiv = document.createElement("div");
+          commentDiv.className = "comment";
+          commentDiv.textContent = section.comment || "(pas de commentaire)";
+          sectionDiv.appendChild(commentDiv);
+
+          const pre = document.createElement("pre");
+          pre.textContent = section.content;
+          sectionDiv.appendChild(pre);
+
+          resultDiv.appendChild(sectionDiv);
+        });
+      }
+
+      test();
+    </script>
+  </body>
+</html>

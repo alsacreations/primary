@@ -1365,14 +1365,32 @@ export function generateCanonicalThemeFromFigma({
       const maxPx = Math.round(lh.maxRem * 16);
       const minName = `--${prefix}-${minPx}`;
       const maxName = `--${prefix}-${maxPx}`;
-      const minPart = primitiveNames.has(minName)
-        ? `var(${minName})`
-        : `${formatNumber(lh.minRem)}rem`;
-      const maxPart = primitiveNames.has(maxName)
-        ? `var(${maxName})`
-        : `${formatNumber(lh.maxRem)}rem`;
-      const middle = preferredValue(lh.minRem, lh.maxRem);
-      tokensCss += `  ${lh.varName}: clamp(${minPart}, ${middle}, ${maxPart});\n`;
+
+      // Si minRem === maxRem (valeur fixe, non responsive)
+      // Référencer directement la primitive au lieu de générer un clamp()
+      if (lh.minRem === lh.maxRem) {
+        const primitiveName = primitiveNames.has(minName) ? minName : null;
+        if (primitiveName) {
+          // Ne générer un token que si le nom est différent de la primitive
+          if (lh.varName !== primitiveName) {
+            tokensCss += `  ${lh.varName}: var(${primitiveName});\n`;
+          }
+          // Sinon, ne rien générer (évite les références circulaires)
+        } else {
+          // Pas de primitive trouvée, utiliser la valeur directe
+          tokensCss += `  ${lh.varName}: ${formatNumber(lh.minRem)}rem;\n`;
+        }
+      } else {
+        // Valeurs différentes (responsive) : générer un clamp()
+        const minPart = primitiveNames.has(minName)
+          ? `var(${minName})`
+          : `${formatNumber(lh.minRem)}rem`;
+        const maxPart = primitiveNames.has(maxName)
+          ? `var(${maxName})`
+          : `${formatNumber(lh.maxRem)}rem`;
+        const middle = preferredValue(lh.minRem, lh.maxRem);
+        tokensCss += `  ${lh.varName}: clamp(${minPart}, ${middle}, ${maxPart});\n`;
+      }
     }
   }
 

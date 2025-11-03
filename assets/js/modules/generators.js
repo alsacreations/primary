@@ -888,9 +888,11 @@ export function generateTokensCSS() {
       try {
         // Check if semantic line-height tokens already exist (--line-height-s, --line-height-m, etc.)
         // NOT primitives (--line-height-20, --line-height-24, etc.)
-        const hasSemanticLineHeightToken = /--line-height-[a-z]/i.test(processed);
+        const hasSemanticLineHeightToken = /--line-height-[a-z]/i.test(
+          processed
+        );
         if (typoResponsive && !hasSemanticLineHeightToken) {
-          // Append canonical-like line-height block so the UI preview includes 
+          // Append canonical-like line-height block so the UI preview includes
           // typical line-height tokens when none were provided by the import.
           const canonicalLH = [
             "\n  /* Typographie — Hauteurs de lignes */",

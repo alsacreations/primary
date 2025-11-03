@@ -581,7 +581,8 @@ function attachJsonImportHandlers() {
             parsed.variables.length
           ) {
             // Keep raw parsed object for better canonical generation
-            rawParsed.push(parsed);
+            // Attach filename as hint for classification
+            rawParsed.push({ ...parsed, __fileName: f.name });
           } else {
             const vars = collectVarsFromJson(parsed);
             if (vars && vars.length) collected.push(...vars);
@@ -605,6 +606,11 @@ function attachJsonImportHandlers() {
               tokenColors.modes || (tokenColors.modes = {}),
               p.modes
             );
+          // Extract filename hint for classification
+          const fileName = (p.__fileName || "").toLowerCase();
+          const isColorFile = fileName.includes("color");
+          const isFontFile = fileName.includes("font");
+          
           for (const v of p.variables || []) {
             // heuristics to classify — prefer explicit COLOR/type first,
             // then inspect per-mode resolved values to decide if the entry
@@ -613,6 +619,7 @@ function attachJsonImportHandlers() {
 
             // CORRECTION : Les COLOR avec aliases → tokenColors (tokens sémantiques)
             // Les COLOR sans aliases → primitives (couleurs brutes)
+            // HINT : Fichier avec "color" dans le nom → priorité tokenColors si aliases
             if (v.type === "COLOR") {
               // Vérifier si c'est un token sémantique (avec aliases)
               const hasAliases =
@@ -621,8 +628,9 @@ function attachJsonImportHandlers() {
                   (rv) => rv && rv.aliasName
                 );
 
-              if (hasAliases) {
+              if (hasAliases || isColorFile) {
                 // Token sémantique (ex: accent-pink → color/pink/700)
+                // OU fichier explicitement nommé avec "color"
                 tokenColors.variables.push(v);
               } else {
                 // Primitive brute (ex: color/raspberry/500: oklch(...))
@@ -660,7 +668,9 @@ function attachJsonImportHandlers() {
               }
             }
 
+            // HINT : Fichier avec "font" dans le nom → forcer vers fonts
             if (
+              isFontFile ||
               nm.includes("font") ||
               nm.includes("text") ||
               nm.includes("fontsize") ||

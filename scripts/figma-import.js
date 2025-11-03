@@ -411,10 +411,21 @@ async function generate() {
     roundeds
       .sort((a, b) => Number(a.px) - Number(b.px))
       .forEach((r) => {
-        // normalize rounded/* -> --radius-<px>
         const px = Math.round(Number(r.px));
-        const name = `--radius-${px}`;
-        themeCss += `  ${name}: ${pxToRem(r.px)};\n`;
+        // Cas spéciaux : 0 -> none, >= 9999 -> full
+        let name;
+        let value;
+        if (px === 0) {
+          name = `--radius-none`;
+          value = "0";
+        } else if (px >= 9999) {
+          name = `--radius-full`;
+          value = "9999px";
+        } else {
+          name = `--radius-${px}`;
+          value = pxToRem(r.px);
+        }
+        themeCss += `  ${name}: ${value};\n`;
       });
   }
 
@@ -832,18 +843,20 @@ async function generate() {
   // choose a sensible fallback for --radius-m if it's not present in theme primitives
   (function () {
     const radiusCandidates = [
-      "--radius-m",
-      "--radius-16",
+      "--radius-none",
+      "--radius-4",
       "--radius-8",
-      "--radius-0",
-      "--radius-9999",
+      "--radius-12",
+      "--radius-16",
+      "--radius-24",
+      "--radius-full",
     ];
     let chosen = radiusCandidates.find((r) => primitiveNames.has(r));
     if (!chosen) {
       // fallback to any emitted --radius-<number> if available
       chosen = Array.from(primitiveNames).find((n) => /^--radius-\d+$/.test(n));
     }
-    if (!chosen) chosen = "--radius-0";
+    if (!chosen) chosen = "--radius-none";
     tokensCss += `  --form-control-border-radius: var(${chosen});\n`;
   })();
   tokensCss += `  --checkables-border-color: var(--color-gray-400);\n`;

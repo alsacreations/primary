@@ -181,7 +181,7 @@ const CANONICAL_THEME_TOKENS = `/* ----------------------------------
   --form-control-spacing: var(--spacing-12) var(--spacing-16);
   --form-control-border-width: 1px;
   --form-control-border-color: var(--color-gray-400);
-  --form-control-border-radius: var(--radius-m);
+  --form-control-border-radius: var(--radius-16);
   --checkables-border-color: var(--color-gray-400);
   --checkable-size: 1.25em;
 }
@@ -1549,7 +1549,7 @@ export function generateTokensCSS() {
   lines.push("  --form-control-spacing: var(--spacing-12) var(--spacing-16);");
   lines.push("  --form-control-border-width: 1px;");
   lines.push("  --form-control-border-color: var(--color-gray-400);");
-  lines.push("  --form-control-border-radius: var(--radius-m);");
+  lines.push("  --form-control-border-radius: var(--radius-16);");
   lines.push("  --checkables-border-color: var(--color-gray-400);");
   lines.push("  --checkable-size: 1.25em;");
 

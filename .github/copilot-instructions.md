@@ -414,7 +414,7 @@ body {
   /* 4. Décoration */
   background: var(--surface);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-16);
 
   /* 5. Animations */
   transition: transform 0.2s ease;

@@ -207,7 +207,7 @@ body {
 .source-display {
   padding: var(--spacing-m);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-16);
   background: var(--layer-1);
 }
 
@@ -225,7 +225,7 @@ body {
   padding: var(--spacing-m);
   overflow: auto;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-4);
   background: var(--surface);
   color: var(--on-surface);
   font-family: var(--font-mono);
@@ -266,7 +266,7 @@ body {
   margin: 0;
   padding: var(--spacing-m);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-16);
   background: var(--layer-1);
 }
 
@@ -285,7 +285,7 @@ body {
   padding: var(--spacing-s);
   transition: border-color 0.2s ease;
   border: 2px solid transparent;
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-16);
   background: var(--surface);
   cursor: pointer;
   gap: var(--gap-xs);
@@ -331,7 +331,7 @@ body {
   width: 3rem;
   height: 3rem;
   border: 2px solid var(--border-light);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-16);
   box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
 }
 
@@ -347,7 +347,7 @@ body {
   flex: 1 1 0;
   min-width: 0;
   border: 1px solid var(--border-light);
-  border-radius: calc(var(--radius-s));
+  border-radius: var(--radius-4);
   box-shadow: none;
 }
 
@@ -365,7 +365,7 @@ body {
   padding: var(--spacing-s);
   transition: background-color 0.2s ease;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-4);
   background: var(--surface);
   cursor: pointer;
   gap: var(--gap-s);
@@ -429,7 +429,7 @@ body {
   padding: var(--spacing-m);
   overflow-x: auto;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-4);
   background: var(--layer-1);
   color: var(--on-surface);
   font-family: var(--font-mono);
@@ -449,7 +449,7 @@ body {
   padding: var(--spacing-xs) var(--spacing-s);
   transition: opacity 0.2s ease, background-color 0.2s ease;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-4);
   opacity: 70%;
   background: var(--surface);
   color: var(--on-surface);
@@ -473,7 +473,7 @@ body {
   padding: var(--spacing-m);
   overflow: auto;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-4);
   background: var(--surface);
   color: var(--on-surface);
   font-family: var(--font-mono);
@@ -520,7 +520,7 @@ dl {
   margin: var(--gap-m) 0;
   padding: var(--gap-m);
   border: 1px solid var(--error, oklch(35.54% 0.19 27.52));
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-16);
   background: var(--error, oklch(50.54% 0.19 27.52));
   color: var(--on-error, oklch(100% 0 0));
   font-size: var(--text-s);

@@ -881,6 +881,8 @@ export function generateCanonicalThemeFromFigma({
   synthesizeProjectPrimitives = true,
   // Couleurs personnalisées depuis textarea (optionnel)
   customColors = "",
+  // Mode thème depuis l'UI : "light", "dark", ou "both"
+  themeMode = "both",
 } = {}) {
   // Debug: in-browser callers sometimes pass unexpected arrays due to
   // classification bugs or caching; log counts to help diagnose missing
@@ -1454,7 +1456,8 @@ export function generateCanonicalThemeFromFigma({
 
   // Forms block
   tokensCss += `\n  /* Formulaires */\n`;
-  if (projectNeedColorScheme) {
+  // Utiliser themeMode pour déterminer si on génère light-dark()
+  if (themeMode === "both") {
     tokensCss += `  --form-control-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );\n`;
     tokensCss += `  --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));\n`;
   } else {
@@ -1463,7 +1466,11 @@ export function generateCanonicalThemeFromFigma({
   }
   tokensCss += `  --form-control-spacing: var(--spacing-12) var(--spacing-16);\n`;
   tokensCss += `  --form-control-border-width: 1px;\n`;
-  tokensCss += `  --form-control-border-color: var(--color-gray-400);\n`;
+  if (themeMode === "both") {
+    tokensCss += `  --form-control-border-color: light-dark(var(--color-gray-400), var(--color-gray-600));\n`;
+  } else {
+    tokensCss += `  --form-control-border-color: var(--color-gray-400);\n`;
+  }
   // choose radius fallback
   (function () {
     const radiusCandidates = [
@@ -1481,7 +1488,11 @@ export function generateCanonicalThemeFromFigma({
     if (!chosen) chosen = "--radius-none";
     tokensCss += `  --form-control-border-radius: var(${chosen});\n`;
   })();
-  tokensCss += `  --checkables-border-color: var(--color-gray-400);\n`;
+  if (themeMode === "both") {
+    tokensCss += `  --checkables-border-color: light-dark(var(--color-gray-400), var(--color-gray-600));\n`;
+  } else {
+    tokensCss += `  --checkables-border-color: var(--color-gray-400);\n`;
+  }
   tokensCss += `  --checkable-size: 1.25em;\n`;
 
   tokensCss += `\n}\n`;

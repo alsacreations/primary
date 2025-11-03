@@ -697,6 +697,7 @@ function attachJsonImportHandlers() {
             // Project primitives must always be generated.
             synthesizeProjectPrimitives: true,
             customColors: state.config.customVars || "",
+            themeMode: state.config.themeMode || "both",
           });
           // Même si out.themeCss est absent, considérer que l'origine
           // est un import utilisateur : cela évite que l'UI réinjecte des placeholders.

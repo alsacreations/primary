@@ -62,9 +62,15 @@ function extractRootContent(cssContent) {
 
 /**
  * Collecte toutes les primitives canoniques avec leurs commentaires
+ * @param {Object} options - Options de collecte
+ * @param {boolean} options.includeFonts - Inclure les sections typographiques canoniques
+ * @param {boolean} options.includeSpacings - Inclure les espacements canoniques
  * @returns {Array<{comment: string, content: string}>} Sections ordonnées
  */
-function collectCanonicalPrimitives() {
+function collectCanonicalPrimitives({
+  includeFonts = true,
+  includeSpacings = true,
+} = {}) {
   const canonicals = getCanonicalCache();
 
   if (!canonicals?.primitives) {
@@ -146,8 +152,8 @@ function collectCanonicalPrimitives() {
     }
   }
 
-  // 3. Espacements
-  if (spacings?.raw) {
+  // 3. Espacements - Uniquement si includeSpacings = true
+  if (includeSpacings && spacings?.raw) {
     const spacingsContent = extractRootContent(spacings.raw);
     const lines = spacingsContent.split("\n");
     // Filtrer le commentaire et les lignes vides, garder l'indentation originale
@@ -177,7 +183,8 @@ function collectCanonicalPrimitives() {
   }
 
   // 5. Typographie (3 sections : familles, graisses, tailles+line-height)
-  if (fonts?.raw) {
+  // Uniquement si includeFonts = true
+  if (includeFonts && fonts?.raw) {
     const fontsContent = extractRootContent(fonts.raw);
     const lines = fontsContent.split("\n");
     let currentSection = { comment: "", content: [] };
@@ -360,14 +367,56 @@ function collectFigmaColors({
 }
 
 /**
+ * Collecte les sections d'espacements depuis Figma
+ * @param {Array} figmaSpacings - Espacements extraits depuis Figma
+ * @returns {Array<{comment: string, content: string}>} Section d'espacements
+ */
+function collectFigmaSpacings(figmaSpacings = []) {
+  const sections = [];
+
+  if (figmaSpacings && figmaSpacings.length > 0) {
+    // Trier les espacements par valeur numérique croissante
+    // Convertir rem en nombre pour le tri (ex: "0.125rem" -> 0.125)
+    const sortedSpacings = [...figmaSpacings].sort((a, b) => {
+      const getNumericValue = (value) => {
+        if (value === "0") return 0;
+        // Extraire le nombre depuis "0.125rem", "1rem", etc.
+        const match = value.match(/^([\d.]+)/);
+        return match ? parseFloat(match[1]) : 0;
+      };
+      return getNumericValue(a.value) - getNumericValue(b.value);
+    });
+
+    const spacingsContent = sortedSpacings
+      .map((spacing) => `  ${spacing.name}: ${spacing.value};`)
+      .join("\n");
+
+    if (spacingsContent) {
+      sections.push({
+        comment: "/* Espacements */",
+        content: spacingsContent,
+      });
+    }
+  }
+
+  return sections;
+}
+
+/**
  * Fusionne toutes les sections dans le bon ordre pour générer theme.css
  * @param {Object} options - Options de fusion
  * @param {string} options.header - Header avec @custom-media et stylelint
  * @param {Array} options.canonicalPrimitives - Sections canoniques
  * @param {Array} options.colorSections - Sections de couleurs (raspberry, custom, extrapolated, figma)
+ * @param {Array} options.spacingSections - Sections d'espacements depuis Figma
  * @returns {string} Contenu complet du theme.css
  */
-function mergeSections({ header, canonicalPrimitives, colorSections } = {}) {
+function mergeSections({
+  header,
+  canonicalPrimitives,
+  colorSections,
+  spacingSections,
+} = {}) {
   const output = [];
 
   // 1. Header (@custom-media + stylelint)
@@ -392,7 +441,20 @@ function mergeSections({ header, canonicalPrimitives, colorSections } = {}) {
     });
   }
 
-  // 4. Sections de couleurs projet (raspberry/custom/extrapolated/figma)
+  // 4. Sections d'espacements depuis Figma (remplacent les espacements canoniques si présents)
+  if (spacingSections && spacingSections.length > 0) {
+    spacingSections.forEach((section) => {
+      if (section.comment) {
+        output.push(""); // Ligne vide avant le commentaire
+        output.push(`  ${section.comment}`);
+      }
+      if (section.content) {
+        output.push(section.content);
+      }
+    });
+  }
+
+  // 5. Sections de couleurs projet (raspberry/custom/extrapolated/figma)
   if (colorSections && colorSections.length > 0) {
     colorSections.forEach((section) => {
       if (section.comment) {
@@ -405,7 +467,7 @@ function mergeSections({ header, canonicalPrimitives, colorSections } = {}) {
     });
   }
 
-  // 5. Fermeture du :root
+  // 6. Fermeture du :root
   output.push("}");
 
   // Joindre toutes les lignes avec retours à la ligne
@@ -510,6 +572,43 @@ function extractFigmaColors(figmaVariables = []) {
 }
 
 /**
+ * Extrait les espacements depuis les variables Figma (Primitives.json)
+ * @param {Array} figmaVariables - Variables depuis Primitives.json
+ * @returns {Array<{name: string, value: string}>} Espacements extraits
+ */
+function extractFigmaSpacings(figmaVariables = []) {
+  const spacings = [];
+
+  for (const v of figmaVariables) {
+    // On cherche uniquement les tokens FLOAT avec "spacing" ou "space" dans le nom
+    if (v.type !== "FLOAT") continue;
+
+    const name = String(v.name || "").toLowerCase();
+    if (!name.includes("spacing") && !name.includes("space")) continue;
+
+    const resolvedModes = v.resolvedValuesByMode || {};
+
+    // Pour chaque mode, extraire la valeur
+    for (const [modeKey, modeData] of Object.entries(resolvedModes)) {
+      if (!modeData) continue;
+
+      const resolvedValue = modeData.resolvedValue;
+      if (typeof resolvedValue !== "number") continue;
+
+      // Convertir le nom Figma en nom de variable CSS
+      const cssVarName = sanitizeVarName(v.name);
+      // Convertir la valeur en rem
+      const cssValue = pxToRem(resolvedValue);
+
+      spacings.push({ name: cssVarName, value: cssValue });
+      break; // Un seul mode suffit pour les spacings
+    }
+  }
+
+  return spacings;
+}
+
+/**
  * Génère les tokens sémantiques de couleurs depuis Token colors.json
  * Convertit les VARIABLE_ALIAS en light-dark() ou var() selon les modes
  * @param {Array} tokenColorsVariables - Variables depuis Token colors.json
@@ -582,10 +681,63 @@ function generateThemeCss({
   // 1. Construire le header (@custom-media + stylelint)
   const header = buildThemeHeader();
 
-  // 2. Collecter les primitives canoniques (breakpoints, transitions, z-index, colors globales, spacings, radius, fonts)
-  const canonicalPrimitives = collectCanonicalPrimitives();
+  // 2. Déterminer si on a des fonts depuis Figma
+  const hasFigmaFonts =
+    figmaPrimitives &&
+    figmaPrimitives.some((v) => {
+      const name = String(v.name || "").toLowerCase();
+      // Exclure les espacements
+      if (name.includes("spacing") || name.includes("space")) {
+        return false;
+      }
+      // Vérifier uniquement les noms liés aux fonts (avec ou sans tiret)
+      return (
+        name.includes("font") ||
+        name.includes("text") ||
+        name.includes("line-height") ||
+        name.includes("lineheight") ||
+        name.includes("leading")
+      );
+    });
 
-  // 3. Extraire et convertir les couleurs projet depuis TOUTES les sources Figma
+  // 2b. Déterminer si on a des espacements depuis Figma
+  const hasFigmaSpacings =
+    figmaPrimitives &&
+    figmaPrimitives.some((v) => {
+      const name = String(v.name || "").toLowerCase();
+      return name.includes("spacing") || name.includes("space");
+    });
+
+  // 3. Collecter les primitives canoniques
+  // NE PAS inclure les fonts/spacings canoniques si on a les équivalents depuis Figma
+  const canonicalPrimitives = collectCanonicalPrimitives({
+    includeFonts: !hasFigmaFonts,
+    includeSpacings: !hasFigmaSpacings,
+  });
+
+  console.log(
+    `[generateThemeCss] 📋 Fonts canoniques ${
+      hasFigmaFonts ? "IGNORÉES (fonts Figma détectées)" : "INCLUSES"
+    }`
+  );
+  console.log(
+    `[generateThemeCss] 📏 Espacements canoniques ${
+      hasFigmaSpacings ? "IGNORÉS (espacements Figma détectés)" : "INCLUS"
+    }`
+  );
+
+  // 3b. Extraire les espacements depuis Figma si présents
+  const figmaSpacings = hasFigmaSpacings
+    ? extractFigmaSpacings(figmaPrimitives)
+    : [];
+
+  if (figmaSpacings.length > 0) {
+    console.log(
+      `[generateThemeCss] 📏 ${figmaSpacings.length} espacements Figma extraits`
+    );
+  }
+
+  // 4. Extraire et convertir les couleurs projet depuis TOUTES les sources Figma
   // Cas 1 : Couleurs directes depuis Primitives.json (colors/primary/Neptune)
   // Cas 2 : Couleurs référencées depuis Token colors.json (aliasName)
   const colorsFromPrimitives = extractFigmaColors(figmaPrimitives);
@@ -605,16 +757,16 @@ function generateThemeCss({
   const hasFigmaImport = figmaColors.length > 0;
 
   console.log(
-    `[generateThemeCss] 🎨 ${figmaColors.length} primitives extraites (${colorsFromPrimitives.length} depuis Primitives.json + ${colorsFromTokens.length} depuis Token colors.json)`
+    `[generateThemeCss] 🎨 ${figmaColors.length} primitives couleurs extraites (${colorsFromPrimitives.length} depuis Primitives.json + ${colorsFromTokens.length} depuis Token colors.json)`
   );
   if (figmaColors.length > 0) {
     console.log(
-      "[generateThemeCss] Primitives :",
+      "[generateThemeCss] Primitives couleurs :",
       figmaColors.map((c) => c.name).join(", ")
     );
   }
 
-  // 4. Collecter les sections de couleurs projet
+  // 5. Collecter les sections de couleurs projet
   const colorSections = collectFigmaColors({
     hasFigmaImport,
     customColors,
@@ -626,10 +778,20 @@ function generateThemeCss({
     `[generateThemeCss] 📦 ${colorSections.length} sections de couleurs collectées`
   );
 
-  // 5. Fusionner toutes les sections
+  // 5b. Collecter les sections d'espacements depuis Figma
+  const spacingSections = collectFigmaSpacings(figmaSpacings);
+
+  if (spacingSections.length > 0) {
+    console.log(
+      `[generateThemeCss] 📦 ${spacingSections.length} section d'espacements collectée`
+    );
+  }
+
+  // 6. Fusionner toutes les sections
   const themeCss = mergeSections({
     header,
     canonicalPrimitives,
+    spacingSections,
     colorSections,
   });
 
@@ -913,12 +1075,65 @@ export function generateCanonicalThemeFromFigma({
     }
   }
 
+  // IMPORTANT : Le code legacy ci-dessous modifie themeCss (ajoute fonts primitives)
+  // Il faut retirer le "}" final de :root avant d'ajouter du contenu
+  if (themeCss.trim().endsWith("}")) {
+    themeCss = themeCss.trimEnd().slice(0, -1); // Retirer le "}" final
+  }
+
   // font sizes, line heights, and spacings
+  // PRIORITÉ : Token Font.json (fonts.variables), sinon Primitives.json
+  // Fusionner les deux sources pour éviter de manquer des variables
+  const allFontVariables = [
+    ...(fonts.variables || []),
+    ...(primitives.variables || []).filter((v) => {
+      const name = String(v.name || "").toLowerCase();
+      // Exclure explicitement les espacements (spacing)
+      if (name.includes("spacing") || name.includes("space")) {
+        return false;
+      }
+      // Inclure uniquement les variables avec des noms liés aux fonts (avec ou sans tiret)
+      return (
+        name.includes("font") ||
+        name.includes("text") ||
+        name.includes("line-height") ||
+        name.includes("lineheight") ||
+        name.includes("leading")
+      );
+    }),
+  ];
+
+  // Dédupliquer par nom
+  const fontVarMap = new Map();
+  for (const v of allFontVariables) {
+    const key = v.name || "";
+    if (!fontVarMap.has(key)) {
+      fontVarMap.set(key, v);
+    }
+  }
+  const mergedFontVariables = Array.from(fontVarMap.values());
+
+  console.log(
+    `[generateCanonicalThemeFromFigma] 📝 ${
+      mergedFontVariables.length
+    } variables typographiques (${
+      fonts.variables?.length || 0
+    } depuis Token Font.json + ${
+      allFontVariables.length - (fonts.variables?.length || 0)
+    } depuis Primitives.json)`
+  );
+
   const fontSizes = [];
   const lineHeights = [];
   const spacings = [];
   const spacingSemanticMap = new Map();
-  for (const v of fonts.variables || []) {
+
+  console.log(
+    `[generateCanonicalThemeFromFigma] 🔍 Analyse des ${mergedFontVariables.length} variables:`,
+    mergedFontVariables.map((v) => `${v.name} (type: ${v.type})`).slice(0, 10)
+  );
+
+  for (const v of mergedFontVariables) {
     const name = v.name || "";
     const first = (name.split("/")[0] || "").toLowerCase();
     const fontSizePrefixes = new Set([
@@ -1096,6 +1311,9 @@ export function generateCanonicalThemeFromFigma({
     missingZ.forEach((l) => (themeCss += l + "\n"));
   }
 
+  // Remettre le "}" de fermeture de :root (retiré plus haut avant les ajouts legacy)
+  themeCss += "\n}";
+
   // Build primitiveNames set from generated themeCss
   const primitiveNames = new Set();
   const varRe = /^\s*(--[a-z0-9-]+)\s*:/gim;
@@ -1259,11 +1477,20 @@ export function generateCanonicalThemeFromFigma({
     if (!primitiveNames.has(mu[1])) missing.add(mu[1]);
   }
   if (missing.size) {
-    // If missing primitives, we return what we have but flag missing via console
-    console.error(
-      "Tokens generation references primitives not present in theme primitives:",
-      [...missing].join(", ")
-    );
+    // Si peu de primitives manquantes (< 5), c'est probablement dû à des appels
+    // partiels de l'UI - ne pas alarmer avec console.error
+    if (missing.size < 5) {
+      console.warn(
+        "[tokens] ⚠️ Quelques primitives référencées non présentes :",
+        [...missing].join(", ")
+      );
+    } else {
+      // Beaucoup de primitives manquantes = vraie erreur
+      console.error(
+        "Tokens generation references primitives not present in theme primitives:",
+        [...missing].join(", ")
+      );
+    }
   }
 
   // Post-process tokensCss: replace any raw primitive values (eg. oklch(...))

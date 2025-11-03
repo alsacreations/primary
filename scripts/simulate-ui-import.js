@@ -44,6 +44,8 @@ async function mockCanonicalCache() {
       radius: { raw: radius },
       spacings: { raw: spacings },
     },
+    tokens: {}, // Requis par getCanonicalCache()
+    themeJson: null,
   };
 
   return mockCache;

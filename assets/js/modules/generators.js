@@ -2065,7 +2065,9 @@ export function generateThemeJSON() {
     const semRx = /--([a-z0-9-]+):\s*([^;]+);/gim;
     let sm;
     while ((sm = semRx.exec(tokensCSS))) {
-      semantic[sm[1]] = sm[2].trim();
+      // Normaliser : remplacer retours à ligne et espaces multiples par un seul espace
+      const normalizedValue = sm[2].trim().replace(/\s+/g, " ");
+      semantic[sm[1]] = normalizedValue;
     }
 
     // Resolve light-dark according to themeMode for single-mode exports

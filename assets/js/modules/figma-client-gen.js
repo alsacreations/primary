@@ -864,8 +864,24 @@ function sanitizeVarName(name) {
 
 function fontVarName(figmaName) {
   const parts = String(figmaName).split("/");
+  const first = (parts[0] || "").toLowerCase();
   const last = parts[parts.length - 1];
-  return "--" + String(last).replace(/\s+/g, "-").toLowerCase();
+  const cleaned = String(last).replace(/\s+/g, "-").toLowerCase();
+
+  // Ajouter le préfixe approprié si absent
+  const fontSizePrefixes = ["fontsize", "font-size", "text", "textsize"];
+  const lineHeightPrefixes = ["lineheight", "line-height", "leading"];
+
+  // Si le nom nettoyé est juste un nombre, ajouter le préfixe basé sur la catégorie
+  if (/^\d+$/.test(cleaned)) {
+    if (fontSizePrefixes.includes(first)) {
+      return `--text-${cleaned}`;
+    } else if (lineHeightPrefixes.includes(first)) {
+      return `--line-height-${cleaned}`;
+    }
+  }
+
+  return "--" + cleaned;
 }
 
 // Local storage for synthesized project semantics when generating

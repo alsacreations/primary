@@ -1046,7 +1046,6 @@ export function generateCanonicalThemeFromFigma({
   tokenColors = tokenColors || { variables: [] };
 
   // NOUVEAU : Génération propre avec fonctions helper
-  console.log("[figma-gen] 🚀 Génération avec nouvelles fonctions helper");
 
   // Générer theme.css (primitives) avec la nouvelle architecture
   // ATTENTION : On utilise let car le code legacy modifie themeCss après (fonts primitives)
@@ -1084,46 +1083,24 @@ export function generateCanonicalThemeFromFigma({
     const primaryColor = figmaColors.find((c) => c.name.includes("-primary-"));
     const targetColor = primaryColor || figmaColors[0];
 
-    console.log(`[detectPrimaryColor] Couleur cible:`, targetColor.name);
-
     // Extraire le nom de base (sans suffixes type -light, -dark, -medium, -extralight)
     // Ex: "--color-primary-neptune" → "neptune"
     // Ex: "--color-primary-neptune-light" → "neptune"
     const name = targetColor.name;
     const parts = name.split("-");
 
-    console.log(`[detectPrimaryColor] Parts:`, parts);
-
     // Trouver la partie principale (après "color" et category "primary/secondary/tertiary")
     const colorIndex = parts.indexOf("color");
-    console.log(
-      `[detectPrimaryColor] colorIndex:`,
-      colorIndex,
-      `parts.length:`,
-      parts.length
-    );
 
     if (colorIndex !== -1 && parts.length > colorIndex + 2) {
       // Prendre la partie après la catégorie (primary/secondary/tertiary)
       const baseName = parts[colorIndex + 2];
-      console.log(`[detectPrimaryColor] baseName candidat:`, baseName);
 
       // Exclure les suffixes connus
       if (!["light", "dark", "medium", "extralight"].includes(baseName)) {
         detectedPrimaryColor = baseName;
-        console.log(
-          `[detectPrimaryColor] ✅ Détecté: "${detectedPrimaryColor}" depuis "${name}"`
-        );
-      } else {
-        console.log(
-          `[detectPrimaryColor] ❌ "${baseName}" est un suffixe, ignoré`
-        );
       }
-    } else {
-      console.log(`[detectPrimaryColor] ❌ Structure de nom invalide`);
     }
-  } else {
-    console.log(`[detectPrimaryColor] ⚠️ Aucune couleur Figma importée`);
   }
 
   // Continue with fonts primitives processing from fonts.variables

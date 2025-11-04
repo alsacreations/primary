@@ -365,7 +365,7 @@ body {
   padding: var(--spacing-s);
   transition: background-color 0.2s ease;
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-4);
+  border-radius: var(--radius-16);
   background: var(--surface);
   cursor: pointer;
   gap: var(--gap-s);

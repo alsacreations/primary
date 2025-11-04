@@ -871,6 +871,103 @@ function fontVarName(figmaName) {
 // caused a ReferenceError in the browser environment.
 const PROJECT_SEMANTICS = [];
 
+/**
+ * Regroupe et trie les tokens de couleurs par catégories sémantiques
+ * @param {string[]} colorLines - Lignes de tokens (ex: "  --primary: var(--color-blue-500);")
+ * @returns {string} - Tokens regroupés et commentés par catégorie
+ */
+function organizeColorTokens(colorLines) {
+  const categories = {
+    primary: {
+      comment: "/* Couleur primaire */",
+      tokens: [],
+      patterns: [/^--primary:/, /^--on-primary:/],
+    },
+    accent: {
+      comment: "/* Couleur d'accent */",
+      tokens: [],
+      patterns: [/^--accent:/, /^--accent-invert:/],
+    },
+    surface: {
+      comment: "/* Surface du document */",
+      tokens: [],
+      patterns: [/^--surface:/, /^--on-surface:/],
+    },
+    layers: {
+      comment: "/* Niveaux de profondeur */",
+      tokens: [],
+      patterns: [/^--layer/],
+    },
+    interactions: {
+      comment: "/* Interactions */",
+      tokens: [],
+      patterns: [/^--link/],
+    },
+    states: {
+      comment: "/* États */",
+      tokens: [],
+      patterns: [/^--warning:/, /^--error:/, /^--success:/, /^--info:/],
+    },
+    borders: {
+      comment: "/* Bordures */",
+      tokens: [],
+      patterns: [/^--border/],
+    },
+    other: {
+      comment: "/* Autres couleurs */",
+      tokens: [],
+      patterns: [],
+    },
+  };
+
+  // Classifier chaque token
+  for (const line of colorLines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("/*")) continue;
+
+    let classified = false;
+    for (const [key, category] of Object.entries(categories)) {
+      if (key === "other") continue;
+      for (const pattern of category.patterns) {
+        if (pattern.test(trimmed)) {
+          category.tokens.push(line);
+          classified = true;
+          break;
+        }
+      }
+      if (classified) break;
+    }
+
+    if (!classified) {
+      categories.other.tokens.push(line);
+    }
+  }
+
+  // Construire la sortie avec commentaires par catégorie
+  const output = [];
+  const order = [
+    "primary",
+    "accent",
+    "surface",
+    "layers",
+    "interactions",
+    "states",
+    "borders",
+    "other",
+  ];
+
+  for (const key of order) {
+    const category = categories[key];
+    if (category.tokens.length > 0) {
+      if (output.length > 0) output.push(""); // Ligne vide entre catégories
+      output.push(category.comment);
+      output.push(...category.tokens);
+    }
+  }
+
+  return output.join("\n");
+}
+
 export function generateCanonicalThemeFromFigma({
   primitives,
   fonts,
@@ -1051,8 +1148,10 @@ export function generateCanonicalThemeFromFigma({
 
   // Injecter les tokens sémantiques de couleurs
   if (hasSemanticColors) {
-    tokensCss += `\n  /* Couleurs personnalisées (projet) */\n`;
-    tokensCss += semanticColorLines.join("\n") + "\n";
+    // Regrouper et organiser les tokens par catégories sémantiques
+    const organizedTokens = organizeColorTokens(semanticColorLines);
+    tokensCss += `\n  /* Color Tokens */\n`;
+    tokensCss += organizedTokens + "\n";
   }
 
   // Legacy: support PROJECT_SEMANTICS si présent (pour compatibilité)
@@ -1331,7 +1430,8 @@ export function generateCanonicalThemeFromFigma({
 
   // tokensCss typography
   if (fontSizes.length) {
-    tokensCss += `\n  /* Typographie — Tailles de police */\n`;
+    // Générer les tokens dans un buffer temporaire
+    const fontSizeTokens = [];
     for (const f of fontSizes) {
       const partsFtok = f.varName.slice(2).split("-");
       let prefix =
@@ -1354,12 +1454,19 @@ export function generateCanonicalThemeFromFigma({
       console.log(
         `[figma-gen-font] ${f.varName} → min:${f.minRem} (${minPx}px) max:${f.maxRem} (${maxPx}px)`
       );
-      tokensCss += line;
+      fontSizeTokens.push(line);
+    }
+
+    // N'ajouter le commentaire que si au moins un token a été généré
+    if (fontSizeTokens.length > 0) {
+      tokensCss += `\n  /* Typographie — Tailles de police */\n`;
+      tokensCss += fontSizeTokens.join("");
     }
   }
 
   if (lineHeights.length) {
-    tokensCss += `\n  /* Typographie — Hauteurs de lignes */\n`;
+    // Générer les tokens dans un buffer temporaire
+    const lineHeightTokens = [];
     for (const lh of lineHeights) {
       const partsLtok = lh.varName.slice(2).split("-");
       let prefix =
@@ -1379,12 +1486,14 @@ export function generateCanonicalThemeFromFigma({
         if (primitiveName) {
           // Ne générer un token que si le nom est différent de la primitive
           if (lh.varName !== primitiveName) {
-            tokensCss += `  ${lh.varName}: var(${primitiveName});\n`;
+            lineHeightTokens.push(`  ${lh.varName}: var(${primitiveName});\n`);
           }
           // Sinon, ne rien générer (évite les références circulaires)
         } else {
           // Pas de primitive trouvée, utiliser la valeur directe
-          tokensCss += `  ${lh.varName}: ${formatNumber(lh.minRem)}rem;\n`;
+          lineHeightTokens.push(
+            `  ${lh.varName}: ${formatNumber(lh.minRem)}rem;\n`
+          );
         }
       } else {
         // Valeurs différentes (responsive) : générer un clamp()
@@ -1395,8 +1504,16 @@ export function generateCanonicalThemeFromFigma({
           ? `var(${maxName})`
           : `${formatNumber(lh.maxRem)}rem`;
         const middle = preferredValue(lh.minRem, lh.maxRem);
-        tokensCss += `  ${lh.varName}: clamp(${minPart}, ${middle}, ${maxPart});\n`;
+        lineHeightTokens.push(
+          `  ${lh.varName}: clamp(${minPart}, ${middle}, ${maxPart});\n`
+        );
       }
+    }
+
+    // N'ajouter le commentaire que si au moins un token a été généré
+    if (lineHeightTokens.length > 0) {
+      tokensCss += `\n  /* Typographie — Hauteurs de lignes */\n`;
+      tokensCss += lineHeightTokens.join("");
     }
   }
 

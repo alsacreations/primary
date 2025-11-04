@@ -902,7 +902,31 @@ export function generateTokensCSS() {
         const hasSemanticLineHeightToken = /--line-height-[a-z]/i.test(
           processed
         );
-        if (typoResponsive && !hasSemanticLineHeightToken) {
+        // Vérifier aussi la présence du commentaire pour éviter les doublons
+        const hasLineHeightComment =
+          /\/\*\s*Typographie\s*[—-]\s*Hauteurs de lignes\s*\*\//i.test(
+            processed
+          );
+        console.log(
+          "[generators-lh] hasSemanticLineHeightToken:",
+          hasSemanticLineHeightToken
+        );
+        console.log(
+          "[generators-lh] hasLineHeightComment:",
+          hasLineHeightComment
+        );
+        console.log(
+          "[generators-lh] processed preview (300 chars):",
+          processed.substring(0, 300)
+        );
+        if (
+          typoResponsive &&
+          !hasSemanticLineHeightToken &&
+          !hasLineHeightComment
+        ) {
+          console.log(
+            "[generators-lh] ⚠️ Ajout du bloc line-height par défaut"
+          );
           // Append canonical-like line-height block so the UI preview includes
           // typical line-height tokens when none were provided by the import.
           const canonicalLH = [
@@ -921,7 +945,14 @@ export function generateTokensCSS() {
               "\n" + canonicalLH + "}\n"
             );
           else processed = processed.trimEnd() + "\n" + canonicalLH + "\n";
-        } else if (!typoResponsive && !hasSemanticLineHeightToken) {
+        } else if (
+          !typoResponsive &&
+          !hasSemanticLineHeightToken &&
+          !hasLineHeightComment
+        ) {
+          console.log(
+            "[generators-lh] ⚠️ Ajout du bloc line-height fixe par défaut"
+          );
           // Fixed typography requested: append simple line-height references
           const fixedLH = [
             "\n  /* Typographie — Hauteurs de lignes */",

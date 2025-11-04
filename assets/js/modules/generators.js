@@ -597,7 +597,18 @@ export function generateTokensCSS() {
 
   // PRIORITÉ 1: Si un import Figma a produit du contenu, l'utiliser
   // (même si la config correspond au canonical, on préfère le contenu importé)
+  console.log(
+    "[generateTokensCSS] state.tokensContent length:",
+    state?.tokensContent?.length || 0
+  );
+  console.log(
+    "[generateTokensCSS] state.themeFromImport:",
+    state?.themeFromImport
+  );
   if (state && state.tokensContent && state.tokensContent.trim().length) {
+    console.log(
+      "[generateTokensCSS] ✅ Utilisation de state.tokensContent (import Figma)"
+    );
     try {
       // Best-effort post-processing: if theme primitives are present in
       // the current state.themeContent, replace raw color literals in the
@@ -1558,59 +1569,139 @@ export function generateTokensCSS() {
   }
 
   lines.push("");
-  // typography
-  lines.push("  /* Typographie - Tailles de police */");
-  lines.push("  --text-s: var(--text-14);");
-  if (typoResponsive) {
-    lines.push(
-      "  --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));"
+
+  // Si import Figma, les tokens de typo sont déjà dans tokensContent
+  // et seront utilisés via la priorité 1 de generateTokensCSS() ligne 600
+  // On ne génère donc des tokens par défaut que si pas d'import
+  if (state && state.themeFromImport) {
+    console.log(
+      "[generators-typo] Import Figma: tokens déjà dans tokensContent, skip"
     );
-    lines.push(
-      "  --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));"
-    );
-    lines.push(
-      "  --text-xl: clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30));"
-    );
-    lines.push(
-      "  --text-2xl: clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36));"
-    );
-    lines.push(
-      "  --text-3xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));"
-    );
-    lines.push(
-      "  --text-4xl: clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80));"
-    );
+    // Ne rien générer ici, generateTokensCSS() utilisera state.tokensContent directement
   } else {
-    lines.push("  --text-m: var(--text-16);");
-    lines.push("  --text-l: var(--text-18);");
-    lines.push("  --text-xl: var(--text-20);");
-    lines.push("  --text-2xl: var(--text-24);");
-    lines.push("  --text-3xl: var(--text-30);");
-    lines.push("  --text-4xl: var(--text-48);");
-  }
+    // Génération des tokens par défaut (canonical ou config)
+    lines.push("  /* Typographie - Tailles de police */");
+    const tokensContentForTypo = (state && state.tokensContent) || "";
+    const typoSemanticTokens = [];
+
+    if (tokensContentForTypo) {
+      console.log("[generators-typo] Extraction tokens depuis tokensContent");
+      // Chercher --text-{nom} qui référencent des primitives ou des clamp()
+      const typoTokenRx = /--(text-[a-z0-9]+)\s*:\s*([^;]+);/gi;
+      let match;
+      const foundTokens = new Set();
+
+      while ((match = typoTokenRx.exec(tokensContentForTypo))) {
+        const name = match[1]; // ex: "text-m", "text-xl", "text-4xl"
+        const value = match[2].trim(); // ex: "clamp(...)" ou "var(--text-16)"
+        const fullMatch = match[0].trim(); // ex: "--text-m: clamp(...);"
+
+        // Ignorer les primitives (text-14, text-16, etc.)
+        if (/^text-\d+$/.test(name)) {
+          continue;
+        }
+
+        // Éviter les doublons
+        if (foundTokens.has(name)) {
+          continue;
+        }
+
+        foundTokens.add(name);
+        typoSemanticTokens.push({ name, value, fullMatch });
+        console.log(`[generators-typo] Found token: ${name} = ${value}`);
+      }
+    }
+
+    // Si on a des tokens depuis l'import, les utiliser
+    if (typoSemanticTokens.length > 0) {
+      console.log(
+        `[generators-typo] Using ${typoSemanticTokens.length} tokens from import`
+      );
+      // Trier par nom pour cohérence (text-s, text-m, text-l, text-xl, text-2xl, etc.)
+      typoSemanticTokens.sort((a, b) => {
+        const orderMap = {
+          "text-xs": 1,
+          "text-s": 2,
+          "text-m": 3,
+          "text-l": 4,
+          "text-xl": 5,
+          "text-2xl": 6,
+          "text-3xl": 7,
+          "text-4xl": 8,
+          "text-5xl": 9,
+          "text-6xl": 10,
+        };
+        return (orderMap[a.name] || 99) - (orderMap[b.name] || 99);
+      });
+
+      typoSemanticTokens.forEach(({ fullMatch }) => {
+        lines.push(`  ${fullMatch}`);
+      });
+    } else {
+      // Tokens par défaut si pas d'import
+      console.log("[generators-typo] Using default tokens");
+      lines.push("  --text-s: var(--text-14);");
+      if (typoResponsive) {
+        lines.push(
+          "  --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));"
+        );
+        lines.push(
+          "  --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));"
+        );
+        lines.push(
+          "  --text-xl: clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30));"
+        );
+        lines.push(
+          "  --text-2xl: clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36));"
+        );
+        lines.push(
+          "  --text-3xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));"
+        );
+        lines.push(
+          "  --text-4xl: clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80));"
+        );
+      } else {
+        lines.push("  --text-m: var(--text-16);");
+        lines.push("  --text-l: var(--text-18);");
+        lines.push("  --text-xl: var(--text-20);");
+        lines.push("  --text-2xl: var(--text-24);");
+        lines.push("  --text-3xl: var(--text-30);");
+        lines.push("  --text-4xl: var(--text-48);");
+      }
+    } // Ferme le if (tokensContentForTypo)
+  } // Ferme le else principal
 
   lines.push("");
-  // spacing
-  lines.push("  /* Espacements */");
-  lines.push("  --spacing-xs: var(--spacing-4);");
-  if (spacingResponsive) {
-    lines.push(
-      "  --spacing-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));"
+
+  // Si import Figma, les tokens d'espacement sont déjà dans tokensContent
+  if (state && state.themeFromImport) {
+    console.log(
+      "[generators-spacing] Import Figma: tokens déjà dans tokensContent, skip"
     );
-    lines.push(
-      "  --spacing-m: clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32));"
-    );
-    lines.push(
-      "  --spacing-l: clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48));"
-    );
-    lines.push(
-      "  --spacing-xl: clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80));"
-    );
+    // Ne rien générer ici, generateTokensCSS() utilisera state.tokensContent directement
   } else {
-    lines.push("  --spacing-s: var(--spacing-8);");
-    lines.push("  --spacing-m: var(--spacing-16);");
-    lines.push("  --spacing-l: var(--spacing-24);");
-    lines.push("  --spacing-xl: var(--spacing-32);");
+    // Génération des tokens d'espacement par défaut
+    lines.push("  /* Espacements */");
+    lines.push("  --spacing-xs: var(--spacing-4);");
+    if (spacingResponsive) {
+      lines.push(
+        "  --spacing-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));"
+      );
+      lines.push(
+        "  --spacing-m: clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32));"
+      );
+      lines.push(
+        "  --spacing-l: clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48));"
+      );
+      lines.push(
+        "  --spacing-xl: clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80));"
+      );
+    } else {
+      lines.push("  --spacing-s: var(--spacing-8);");
+      lines.push("  --spacing-m: var(--spacing-16);");
+      lines.push("  --spacing-l: var(--spacing-24);");
+      lines.push("  --spacing-xl: var(--spacing-32);");
+    }
   }
 
   // Ajouter les tokens sémantiques d'espacement depuis tokensContent importé (si présents)

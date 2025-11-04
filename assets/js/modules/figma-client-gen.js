@@ -1350,7 +1350,11 @@ export function generateCanonicalThemeFromFigma({
         ? `var(${maxName})`
         : `${formatNumber(f.maxRem)}rem`;
       const middle = preferredValue(f.minRem, f.maxRem);
-      tokensCss += `  ${f.varName}: clamp(${minPart}, ${middle}, ${maxPart});\n`;
+      const line = `  ${f.varName}: clamp(${minPart}, ${middle}, ${maxPart});\n`;
+      console.log(
+        `[figma-gen-font] ${f.varName} → min:${f.minRem} (${minPx}px) max:${f.maxRem} (${maxPx}px)`
+      );
+      tokensCss += line;
     }
   }
 

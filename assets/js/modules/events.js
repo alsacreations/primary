@@ -645,6 +645,20 @@ function attachJsonImportHandlers() {
               continue;
             }
 
+            // PRIORITÉ : Fichier avec "font" dans le nom → forcer vers fonts
+            // AVANT de vérifier les aliases (car les tokens de typo ont des aliases)
+            if (
+              isFontFile ||
+              nm.includes("font") ||
+              nm.includes("text") ||
+              nm.includes("fontsize") ||
+              nm.includes("lineheight") ||
+              v.type === "FONT"
+            ) {
+              fonts.variables.push(v);
+              continue;
+            }
+
             if (v.resolvedValuesByMode) {
               const vals = Object.values(v.resolvedValuesByMode || {});
               // If any resolved value looks like a concrete color, treat as primitive
@@ -668,20 +682,8 @@ function attachJsonImportHandlers() {
               }
             }
 
-            // HINT : Fichier avec "font" dans le nom → forcer vers fonts
-            if (
-              isFontFile ||
-              nm.includes("font") ||
-              nm.includes("text") ||
-              nm.includes("fontsize") ||
-              nm.includes("lineheight") ||
-              v.type === "FONT"
-            ) {
-              fonts.variables.push(v);
-            } else {
-              // default to primitives for unknown numeric/color types
-              primitives.variables.push(v);
-            }
+            // default to primitives for unknown numeric/color types
+            primitives.variables.push(v);
           }
         }
 
@@ -728,7 +730,24 @@ function attachJsonImportHandlers() {
             }
             state.themeContent = String(generated || "");
           }
-          if (out && out.tokensCss) state.tokensContent = out.tokensCss;
+          if (out && out.tokensCss) {
+            console.log(
+              "[events] Setting state.tokensContent from Figma import"
+            );
+            console.log("[events] tokensCss length:", out.tokensCss.length);
+            // Chercher et afficher la section typo
+            const typoMatch = out.tokensCss.match(
+              /\/\* Typographie[^*]*\*\/[\s\S]{0,800}/
+            );
+            if (typoMatch) {
+              console.log("[events] Section typo trouvée:", typoMatch[0]);
+            } else {
+              console.log(
+                "[events] ⚠️ Aucune section typo trouvée dans tokensCss"
+              );
+            }
+            state.tokensContent = out.tokensCss;
+          }
           updateThemePreview();
           updateColorChoices();
           // Re-générer les fichiers (tokens) maintenant que themeContent est finalisé

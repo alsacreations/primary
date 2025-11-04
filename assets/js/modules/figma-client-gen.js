@@ -70,6 +70,7 @@ function extractRootContent(cssContent) {
 function collectCanonicalPrimitives({
   includeFonts = true,
   includeSpacings = true,
+  includeColors = true,
 } = {}) {
   const canonicals = getCanonicalCache();
 
@@ -113,8 +114,8 @@ function collectCanonicalPrimitives({
     }
   }
 
-  // 2. Couleurs (globales) - extraire uniquement la section "Couleurs (globales)"
-  if (colors?.raw) {
+  // 2. Couleurs (globales) - extraire uniquement si includeColors = true
+  if (includeColors && colors?.raw) {
     const colorsContent = extractRootContent(colors.raw);
     const lines = colorsContent.split("\n");
     let inGlobalColors = false;
@@ -708,25 +709,7 @@ function generateThemeCss({
       return name.includes("spacing") || name.includes("space");
     });
 
-  // 3. Collecter les primitives canoniques
-  // NE PAS inclure les fonts/spacings canoniques si on a les équivalents depuis Figma
-  const canonicalPrimitives = collectCanonicalPrimitives({
-    includeFonts: !hasFigmaFonts,
-    includeSpacings: !hasFigmaSpacings,
-  });
-
-  console.log(
-    `[generateThemeCss] 📋 Fonts canoniques ${
-      hasFigmaFonts ? "IGNORÉES (fonts Figma détectées)" : "INCLUSES"
-    }`
-  );
-  console.log(
-    `[generateThemeCss] 📏 Espacements canoniques ${
-      hasFigmaSpacings ? "IGNORÉS (espacements Figma détectés)" : "INCLUS"
-    }`
-  );
-
-  // 3b. Extraire les espacements depuis Figma si présents
+  // 3. Extraire les espacements depuis Figma si présents
   const figmaSpacings = hasFigmaSpacings
     ? extractFigmaSpacings(figmaPrimitives)
     : [];
@@ -756,6 +739,25 @@ function generateThemeCss({
   );
   const hasFigmaImport = figmaColors.length > 0;
 
+  // 5. Collecter les primitives canoniques
+  // NE PAS inclure les fonts/spacings canoniques si on a les équivalents depuis Figma
+  // Les couleurs globales (white, black, gray, error, etc.) sont TOUJOURS incluses
+  const canonicalPrimitives = collectCanonicalPrimitives({
+    includeFonts: !hasFigmaFonts,
+    includeSpacings: !hasFigmaSpacings,
+    includeColors: true, // Toujours inclure les couleurs globales
+  });
+
+  console.log(
+    `[generateThemeCss] 📋 Fonts canoniques ${
+      hasFigmaFonts ? "IGNORÉES (fonts Figma détectées)" : "INCLUSES"
+    }`
+  );
+  console.log(
+    `[generateThemeCss] 📏 Espacements canoniques ${
+      hasFigmaSpacings ? "IGNORÉS (espacements Figma détectés)" : "INCLUS"
+    }`
+  );
   console.log(
     `[generateThemeCss] 🎨 ${figmaColors.length} primitives couleurs extraites (${colorsFromPrimitives.length} depuis Primitives.json + ${colorsFromTokens.length} depuis Token colors.json)`
   );
@@ -766,7 +768,7 @@ function generateThemeCss({
     );
   }
 
-  // 5. Collecter les sections de couleurs projet
+  // 6. Collecter les sections de couleurs projet
   const colorSections = collectFigmaColors({
     hasFigmaImport,
     customColors,
@@ -778,7 +780,7 @@ function generateThemeCss({
     `[generateThemeCss] 📦 ${colorSections.length} sections de couleurs collectées`
   );
 
-  // 5b. Collecter les sections d'espacements depuis Figma
+  // 7. Collecter les sections d'espacements depuis Figma
   const spacingSections = collectFigmaSpacings(figmaSpacings);
 
   if (spacingSections.length > 0) {
@@ -787,7 +789,7 @@ function generateThemeCss({
     );
   }
 
-  // 6. Fusionner toutes les sections
+  // 8. Fusionner toutes les sections
   const themeCss = mergeSections({
     header,
     canonicalPrimitives,
@@ -1032,8 +1034,13 @@ export function generateCanonicalThemeFromFigma({
 
   // Générer theme.css (primitives) avec la nouvelle architecture
   // ATTENTION : On utilise let car le code legacy modifie themeCss après (fonts primitives)
+  // Fusionner primitives + fonts pour la détection hasFigmaFonts
+  const allFigmaVariables = [
+    ...(primitives.variables || []),
+    ...(fonts.variables || []),
+  ];
   const { themeCss: generatedThemeCss, figmaColors } = generateThemeCss({
-    figmaPrimitives: primitives.variables || [],
+    figmaPrimitives: allFigmaVariables,
     figmaTokenColors: tokenColors.variables || [],
     customColors: customColors || "",
     shouldExtrapolate: synthesizeProjectPrimitives,
@@ -1426,14 +1433,24 @@ export function generateCanonicalThemeFromFigma({
     });
   }
 
+  // Ajouter les primitives typo uniquement si pas déjà présentes dans themeCss
+  // (pour éviter les doublons avec les primitives canoniques ou celles ajoutées avant)
   if (fontPrimitives.length) {
-    const seen = new Set();
-    fontPrimitives.sort((a, b) => a.px - b.px);
-    themeCss += `\n  /* Typographie — Tailles de police */\n`;
-    for (const p of fontPrimitives) {
-      if (seen.has(p.name)) continue;
-      seen.add(p.name);
-      themeCss += `  ${p.name}: ${p.rem};\n`;
+    const hasFontSection =
+      /\/\*\s*Typographie\s*[—-]\s*Tailles de police\s*\*\//i.test(themeCss);
+    if (!hasFontSection) {
+      const seen = new Set();
+      fontPrimitives.sort((a, b) => a.px - b.px);
+      themeCss += `\n  /* Typographie — Tailles de police */\n`;
+      for (const p of fontPrimitives) {
+        if (seen.has(p.name)) continue;
+        seen.add(p.name);
+        themeCss += `  ${p.name}: ${p.rem};\n`;
+      }
+    } else {
+      console.log(
+        "[figma-gen] ⚠️ Section typo déjà présente, skip ajout primitives fontPrimitives"
+      );
     }
   }
 
@@ -1466,14 +1483,23 @@ export function generateCanonicalThemeFromFigma({
         themeCss += `  ${w.name}: ${w.value};\n`;
   }
 
+  // Ajouter les primitives line-height uniquement si pas déjà présentes
   if (linePrimitives.length) {
-    const seenLine = new Set();
-    linePrimitives.sort((a, b) => a.px - b.px);
-    themeCss += `\n  /* Typographie — Hauteurs de lignes */\n`;
-    for (const p of linePrimitives) {
-      if (seenLine.has(p.name)) continue;
-      seenLine.add(p.name);
-      themeCss += `  ${p.name}: ${p.rem};\n`;
+    const hasLineHeightSection =
+      /\/\*\s*Typographie\s*[—-]\s*Hauteurs de lignes\s*\*\//i.test(themeCss);
+    if (!hasLineHeightSection) {
+      const seenLine = new Set();
+      linePrimitives.sort((a, b) => a.px - b.px);
+      themeCss += `\n  /* Typographie — Hauteurs de lignes */\n`;
+      for (const p of linePrimitives) {
+        if (seenLine.has(p.name)) continue;
+        seenLine.add(p.name);
+        themeCss += `  ${p.name}: ${p.rem};\n`;
+      }
+    } else {
+      console.log(
+        "[figma-gen] ⚠️ Section line-height déjà présente, skip ajout primitives linePrimitives"
+      );
     }
   }
 

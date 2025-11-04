@@ -1262,7 +1262,13 @@ export function generateCanonicalThemeFromFigma({
       const desktopVal =
         v.resolvedValuesByMode[desktopKey] &&
         v.resolvedValuesByMode[desktopKey].resolvedValue;
-      if (typeof mobileVal === "number" && typeof desktopVal === "number")
+      // Ne créer un token sémantique que si les valeurs mobile/desktop diffèrent
+      // Si égales, c'est une primitive fixe qui restera dans primitives[]
+      if (
+        typeof mobileVal === "number" &&
+        typeof desktopVal === "number" &&
+        mobileVal !== desktopVal
+      )
         fontSizes.push({
           varName,
           minRem: mobileVal / 16,
@@ -1285,7 +1291,13 @@ export function generateCanonicalThemeFromFigma({
       const desktopVal =
         v.resolvedValuesByMode[desktopKey] &&
         v.resolvedValuesByMode[desktopKey].resolvedValue;
-      if (typeof mobileVal === "number" && typeof desktopVal === "number")
+      // Ne créer un token sémantique que si les valeurs mobile/desktop diffèrent
+      // Si égales, c'est une primitive fixe qui restera dans primitives[]
+      if (
+        typeof mobileVal === "number" &&
+        typeof desktopVal === "number" &&
+        mobileVal !== desktopVal
+      )
         lineHeights.push({
           varName,
           minRem: mobileVal / 16,
@@ -1299,6 +1311,82 @@ export function generateCanonicalThemeFromFigma({
 
   const fontPrimitives = [];
   const linePrimitives = [];
+
+  // Extraire les primitives fixes (valeurs uniques) depuis mergedFontVariables
+  for (const v of mergedFontVariables) {
+    const name = v.name || "";
+    const first = (name.split("/")[0] || "").toLowerCase();
+    const modes = Object.keys(v.resolvedValuesByMode || {});
+    if (modes.length === 0) continue;
+
+    const mobileKey = modes[0];
+    const desktopKey = modes[1] || mobileKey;
+    const mobileVal =
+      v.resolvedValuesByMode[mobileKey] &&
+      v.resolvedValuesByMode[mobileKey].resolvedValue;
+    const desktopVal =
+      v.resolvedValuesByMode[desktopKey] &&
+      v.resolvedValuesByMode[desktopKey].resolvedValue;
+
+    // Si valeurs égales (primitive fixe), l'ajouter directement
+    if (
+      typeof mobileVal === "number" &&
+      typeof desktopVal === "number" &&
+      mobileVal === desktopVal
+    ) {
+      const fontSizePrefixes = new Set([
+        "fontsize",
+        "font-size",
+        "text",
+        "textsize",
+      ]);
+      const lineHeightPrefixes = new Set([
+        "lineheight",
+        "line-height",
+        "leading",
+      ]);
+
+      if (
+        fontSizePrefixes.has(first) ||
+        name.toLowerCase().startsWith("fontsize/")
+      ) {
+        const varName = fontVarName(name);
+        const partsF = varName.slice(2).split("-");
+        let prefix = partsF.slice(0, partsF.length - 1).join("-") || partsF[0];
+        if (/^(lineheight|line-height|leading)$/i.test(prefix))
+          prefix = "line-height";
+        if (/^(text|fontsize|font-size)$/i.test(prefix)) prefix = "text";
+        const px = Math.round(mobileVal);
+        fontPrimitives.push({
+          name: `--${prefix}-${px}`,
+          rem: formatNumber(mobileVal / 16) + "rem",
+          px: px,
+        });
+      } else if (
+        lineHeightPrefixes.has(first) ||
+        name.toLowerCase().startsWith("lineheight/")
+      ) {
+        const rawLast = name
+          .split("/")
+          .pop()
+          .toLowerCase()
+          .replace(/\s+/g, "-");
+        const key = rawLast.replace(/^(lineheight|line-height|leading)-?/, "");
+        const varName = `--line-height-${key}`;
+        const partsL = varName.slice(2).split("-");
+        let prefix = partsL.slice(0, partsL.length - 1).join("-") || partsL[0];
+        if (/^(lineheight|line-height|leading)$/i.test(prefix))
+          prefix = "line-height";
+        if (/^(text|fontsize|font-size)$/i.test(prefix)) prefix = "text";
+        const px = Math.round(mobileVal);
+        linePrimitives.push({
+          name: `--${prefix}-${px}`,
+          rem: formatNumber(mobileVal / 16) + "rem",
+          px: px,
+        });
+      }
+    }
+  }
   for (const f of fontSizes) {
     const partsF = f.varName.slice(2).split("-");
     let prefix = partsF.slice(0, partsF.length - 1).join("-") || partsF[0];

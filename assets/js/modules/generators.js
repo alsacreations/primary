@@ -694,7 +694,15 @@ export function generateTokensCSS() {
       try {
         const hasTextM = /--text-m\s*:/i.test(processed);
         const hasAnyText = /--text-[a-z0-9-]*\s*:/i.test(processed);
-        if (typoResponsive && !hasTextM) {
+        console.log(
+          "[generators-typo] hasTextM:",
+          hasTextM,
+          "typoResponsive:",
+          typoResponsive,
+          "themeFromImport:",
+          state?.themeFromImport
+        );
+        if (typoResponsive && !hasTextM && !state?.themeFromImport) {
           const typoLines = [];
           typoLines.push("\n  /* Typographie - Tailles de police */");
           typoLines.push("  --text-s: var(--text-14);");
@@ -737,7 +745,7 @@ export function generateTokensCSS() {
               processed = replaced;
             }
           }
-        } else if (!typoResponsive && !hasAnyText) {
+        } else if (!typoResponsive && !hasAnyText && !state?.themeFromImport) {
           // User requested fixed text sizes: append fixed-size tokens
           const fixedTypo = [
             "\n  /* Typographie - Tailles de police */",
@@ -919,10 +927,15 @@ export function generateTokensCSS() {
           "[generators-lh] processed preview (300 chars):",
           processed.substring(0, 300)
         );
+        console.log(
+          "[generators-lh] state.themeFromImport:",
+          state?.themeFromImport
+        );
         if (
           typoResponsive &&
           !hasSemanticLineHeightToken &&
-          !hasLineHeightComment
+          !hasLineHeightComment &&
+          !state?.themeFromImport
         ) {
           console.log(
             "[generators-lh] ⚠️ Ajout du bloc line-height par défaut"
@@ -948,7 +961,8 @@ export function generateTokensCSS() {
         } else if (
           !typoResponsive &&
           !hasSemanticLineHeightToken &&
-          !hasLineHeightComment
+          !hasLineHeightComment &&
+          !state?.themeFromImport
         ) {
           console.log(
             "[generators-lh] ⚠️ Ajout du bloc line-height fixe par défaut"

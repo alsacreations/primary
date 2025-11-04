@@ -25,19 +25,66 @@ async function loadCSSFile(url, propertyName) {
 }
 
 /**
- * Charge le fichier theme.css
+ * Charge le fichier theme.css depuis les sources canoniques
  */
 export async function loadThemeFile() {
-  await loadCSSFile("assets/css/theme.css", "themeContent");
-  // Chargé depuis les sources intégrées : ne pas considérer ceci comme un import
-  // utilisateur.
   try {
-    // importer l'état depuis le module state.js sans créer une dépendance cyclique
+    // Charger tous les fichiers canoniques dans l'ordre
+    const canonicalFiles = [
+      "canonical/primitives/commons/commons.css",
+      "canonical/primitives/spacings/spacings.css",
+      "canonical/primitives/fonts/fonts.css",
+      "canonical/primitives/radius/radius.css",
+      "canonical/primitives/colors/colors.css",
+    ];
+
+    const responses = await Promise.all(
+      canonicalFiles.map((path) => fetch(path).then((r) => r.text()))
+    );
+
+    // Extraire tout ce qui est avant :root dans le premier fichier (commons.css)
+    const commonsContent = responses[0];
+    const rootIndex = commonsContent.indexOf(":root");
+    const header =
+      rootIndex !== -1 ? commonsContent.substring(0, rootIndex).trim() : "";
+
+    // Extraire le contenu :root de chaque fichier et normaliser l'indentation
+    const rootContents = [];
+    for (const content of responses) {
+      const rootMatch = content.match(/:root\s*\{([\s\S]*?)\n\}/);
+      if (rootMatch) {
+        const innerContent = rootMatch[1];
+        // Normaliser l'indentation : enlever l'indentation existante puis ajouter 2 espaces
+        const lines = innerContent.split("\n");
+        const normalizedLines = lines
+          .map((line) => {
+            // Ligne vide
+            if (!line.trim()) return "";
+            // Commentaire ou déclaration : indenter de 2 espaces
+            return "  " + line.trimStart();
+          })
+          .join("\n");
+
+        if (normalizedLines.trim()) {
+          rootContents.push(normalizedLines);
+        }
+      }
+    }
+
+    // Construire le fichier final avec un seul :root
+    const combinedContent =
+      header + "\n\n:root {\n" + rootContents.join("\n\n") + "\n}\n";
+
+    // Importer l'état pour mettre à jour themeContent
     const stateModule = await import("./state.js");
-    if (stateModule && stateModule.state)
+    if (stateModule && stateModule.state) {
+      stateModule.state.themeContent = combinedContent;
       stateModule.state.themeFromImport = false;
-  } catch (e) {
-    // noop
+    }
+  } catch (error) {
+    showGlobalError(`Erreur de chargement du theme.css: ${error.message}`);
+    console.error("Erreur lors du chargement du theme.css:", error);
+    throw error;
   }
 }
 

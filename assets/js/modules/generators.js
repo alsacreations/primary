@@ -1893,8 +1893,11 @@ export function generateThemeJSON() {
   const spacingResponsive = !!cfg.spacingResponsive;
 
   // Canonical sample (match exact bytes when canonical config)
+  // SAUF si le contenu vient d'un import Figma (state.themeFromImport)
   const canonicalPath = "/public/samples/theme-base-light-dark.json"; // informational
+  const isFromImport = state && state.themeFromImport;
   if (
+    !isFromImport &&
     primaryColor === "raspberry" &&
     themeMode === "both" &&
     typoResponsive === true &&
@@ -1906,8 +1909,10 @@ export function generateThemeJSON() {
 
   // Non-canonical: build a reasonable mapping from generated CSS
   try {
-    const themeCSS = generateThemeCSS();
-    const tokensCSS = generateTokensCSS();
+    // Utiliser state.themeContent et state.tokensContent si disponibles (import Figma)
+    // sinon générer le CSS canonique
+    const themeCSS = (state && state.themeContent) || generateThemeCSS();
+    const tokensCSS = (state && state.tokensContent) || generateTokensCSS();
 
     // Build palette from detected variants
     const variantsMap = parseColorVariants(themeCSS + "\n" + tokensCSS);
@@ -1982,14 +1987,28 @@ export function generateThemeJSON() {
       }
     }
 
-    // Spacing extraction
+    // Spacing extraction from both themeCSS (primitives) and tokensCSS (semantic tokens)
     const spacing = [];
     const spacingRx = /--([a-z0-9-]*spacing[a-z0-9-]*):\s*([^;]+);/gim;
     let sp;
     const seen = new Set();
-    while ((sp = spacingRx.exec(tokensCSS))) {
+
+    // Extract from themeCSS first (primitives like --spacing-2, --spacing-4, etc.)
+    while ((sp = spacingRx.exec(themeCSS))) {
       const key = sp[1];
       const val = sp[2].trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        spacing.push({ name: key, size: val, slug: key });
+      }
+    }
+
+    // Then extract from tokensCSS (semantic tokens like --spacing-s, --spacing-m)
+    const spacingRx2 = /--([a-z0-9-]*spacing[a-z0-9-]*):\s*([^;]+);/gim;
+    let sp2;
+    while ((sp2 = spacingRx2.exec(tokensCSS))) {
+      const key = sp2[1];
+      const val = sp2[2].trim();
       if (!seen.has(key)) {
         seen.add(key);
         spacing.push({ name: key, size: val, slug: key });
@@ -2070,11 +2089,54 @@ export function generateThemeJSON() {
       Array.prototype.push.apply(spacing, canonicalSpacing);
     }
 
-    // Typography presets (minimal)
-    let fontSizes = [{ name: "text-m", size: "var(--text-m)", slug: "text-m" }];
+    // Typography presets: extract from themeCSS first
+    let fontSizes = [];
     let fontFamilies = [
       { name: "System", slug: "system", fontFamily: "system-ui, sans-serif" },
     ];
+
+    // Extract --text-* variables from themeCSS (primitives from Figma import)
+    const textVarRx = /--(text-[a-z0-9-]+):\s*([^;]+);/gim;
+    let textMatch;
+    let extractedFromTheme = 0;
+    while ((textMatch = textVarRx.exec(themeCSS))) {
+      const varName = textMatch[1]; // ex: "text-14", "text-16"
+      const varValue = textMatch[2].trim(); // ex: "0.875rem", "1rem"
+      fontSizes.push({
+        name: varName,
+        size: varValue,
+        slug: varName,
+      });
+      extractedFromTheme++;
+    }
+    if (extractedFromTheme > 0) {
+      console.log(
+        `[theme.json] Extracted ${extractedFromTheme} font sizes from themeCSS`
+      );
+    }
+
+    // Also extract semantic --text-* tokens from tokensCSS (ex: text-m, text-xl with clamp())
+    const textTokenRx = /--(text-[a-z0-9-]+):\s*([^;]+);/gim;
+    let tokenMatch;
+    let extractedFromTokens = 0;
+    while ((tokenMatch = textTokenRx.exec(tokensCSS))) {
+      const varName = tokenMatch[1]; // ex: "text-m", "text-xl"
+      const varValue = tokenMatch[2].trim(); // ex: "clamp(...)"
+      // Avoid duplicates
+      if (!fontSizes.some((fs) => fs.name === varName)) {
+        fontSizes.push({
+          name: varName,
+          size: varValue,
+          slug: varName,
+        });
+        extractedFromTokens++;
+      }
+    }
+    if (extractedFromTokens > 0) {
+      console.log(
+        `[theme.json] Extracted ${extractedFromTokens} font sizes from tokensCSS`
+      );
+    }
 
     // Provide fuller typography presets when extraction is minimal
     if (fontSizes.length <= 1) {

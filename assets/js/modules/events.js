@@ -610,7 +610,7 @@ function attachJsonImportHandlers() {
           const fileName = (p.__fileName || "").toLowerCase();
           const isColorFile = fileName.includes("color");
           const isFontFile = fileName.includes("font");
-          
+
           for (const v of p.variables || []) {
             // heuristics to classify — prefer explicit COLOR/type first,
             // then inspect per-mode resolved values to decide if the entry

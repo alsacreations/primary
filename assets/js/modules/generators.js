@@ -524,7 +524,7 @@ const CANONICAL_THEME_JSON = `{
       "fontFamily": "var:preset|font-family|poppins",
       "fontSize": "var:preset|font-size|text-m",
       "fontWeight": "400",
-      "lineHeight": "1.5rem",
+      "lineHeight": "var(--line-height-24)",
       "fontStyle": "normal"
     },
     "elements": {
@@ -2037,12 +2037,14 @@ export function generateThemeJSON() {
     const tokensCSS = (state && state.tokensContent) || generateTokensCSS();
 
     // Build palette from detected variants
+    // Use var(--color-name) references instead of raw oklch() values
     const variantsMap = parseColorVariants(themeCSS + "\n" + tokensCSS);
     const palette = [];
     for (const [base, map] of variantsMap.entries()) {
       for (const [variant, val] of map.entries()) {
         const name = `${base}-${variant}`;
-        palette.push({ name, slug: name, color: val });
+        const varRef = `var(--color-${name})`;
+        palette.push({ name, slug: name, color: varRef });
       }
     }
 
@@ -2112,6 +2114,7 @@ export function generateThemeJSON() {
     }
 
     // Spacing extraction from both themeCSS (primitives) and tokensCSS (semantic tokens)
+    // For primitives, use var(--spacing-*) references instead of raw values
     const spacing = [];
     const spacingRx = /--([a-z0-9-]*spacing[a-z0-9-]*):\s*([^;]+);/gim;
     let sp;
@@ -2123,11 +2126,15 @@ export function generateThemeJSON() {
       const val = sp[2].trim();
       if (!seen.has(key)) {
         seen.add(key);
-        spacing.push({ name: key, size: val, slug: key });
+        // For primitive spacing values (not clamp/var), use variable reference
+        const isPrimitive = !val.includes("clamp(") && !val.includes("var(");
+        const sizeValue = isPrimitive ? `var(--${key})` : val;
+        spacing.push({ name: key, size: sizeValue, slug: key });
       }
     }
 
     // Then extract from tokensCSS (semantic tokens like --spacing-s, --spacing-m)
+    // These already use clamp() or var() so keep them as-is
     const spacingRx2 = /--([a-z0-9-]*spacing[a-z0-9-]*):\s*([^;]+);/gim;
     let sp2;
     while ((sp2 = spacingRx2.exec(tokensCSS))) {
@@ -2143,23 +2150,31 @@ export function generateThemeJSON() {
     // canonical-ish set so WP exports include the common sizes.
     if (spacing.length < 10) {
       const canonicalSpacing = [
-        { name: "spacing-0", size: "0", slug: "spacing-0" },
-        { name: "spacing-1", size: "1px", slug: "spacing-1" },
-        { name: "spacing-2", size: "0.125rem", slug: "spacing-2" },
-        { name: "spacing-4", size: "0.25rem", slug: "spacing-4" },
-        { name: "spacing-8", size: "0.5rem", slug: "spacing-8" },
-        { name: "spacing-12", size: "0.75rem", slug: "spacing-12" },
-        { name: "spacing-16", size: "1rem", slug: "spacing-16" },
-        { name: "spacing-20", size: "1.25rem", slug: "spacing-20" },
-        { name: "spacing-24", size: "1.5rem", slug: "spacing-24" },
-        { name: "spacing-32", size: "2rem", slug: "spacing-32" },
-        { name: "spacing-40", size: "2.5rem", slug: "spacing-40" },
-        { name: "spacing-48", size: "3rem", slug: "spacing-48" },
-        { name: "spacing-56", size: "3.5rem", slug: "spacing-56" },
-        { name: "spacing-64", size: "4rem", slug: "spacing-64" },
-        { name: "spacing-80", size: "5rem", slug: "spacing-80" },
-        { name: "spacing-128", size: "8rem", slug: "spacing-128" },
-        { name: "spacing-160", size: "10rem", slug: "spacing-160" },
+        { name: "spacing-0", size: "var(--spacing-0)", slug: "spacing-0" },
+        { name: "spacing-1", size: "var(--spacing-1)", slug: "spacing-1" },
+        { name: "spacing-2", size: "var(--spacing-2)", slug: "spacing-2" },
+        { name: "spacing-4", size: "var(--spacing-4)", slug: "spacing-4" },
+        { name: "spacing-8", size: "var(--spacing-8)", slug: "spacing-8" },
+        { name: "spacing-12", size: "var(--spacing-12)", slug: "spacing-12" },
+        { name: "spacing-16", size: "var(--spacing-16)", slug: "spacing-16" },
+        { name: "spacing-20", size: "var(--spacing-20)", slug: "spacing-20" },
+        { name: "spacing-24", size: "var(--spacing-24)", slug: "spacing-24" },
+        { name: "spacing-32", size: "var(--spacing-32)", slug: "spacing-32" },
+        { name: "spacing-40", size: "var(--spacing-40)", slug: "spacing-40" },
+        { name: "spacing-48", size: "var(--spacing-48)", slug: "spacing-48" },
+        { name: "spacing-56", size: "var(--spacing-56)", slug: "spacing-56" },
+        { name: "spacing-64", size: "var(--spacing-64)", slug: "spacing-64" },
+        { name: "spacing-80", size: "var(--spacing-80)", slug: "spacing-80" },
+        {
+          name: "spacing-128",
+          size: "var(--spacing-128)",
+          slug: "spacing-128",
+        },
+        {
+          name: "spacing-160",
+          size: "var(--spacing-160)",
+          slug: "spacing-160",
+        },
         { name: "spacing-xs", size: "var(--spacing-4)", slug: "spacing-xs" },
       ];
 
@@ -2220,15 +2235,20 @@ export function generateThemeJSON() {
     ];
 
     // Extract --text-* variables from themeCSS (primitives from Figma import)
+    // For primitives, use var(--text-*) references instead of raw values
     const textVarRx = /--(text-[a-z0-9-]+):\s*([^;]+);/gim;
     let textMatch;
     let extractedFromTheme = 0;
     while ((textMatch = textVarRx.exec(themeCSS))) {
       const varName = textMatch[1]; // ex: "text-14", "text-16"
       const varValue = textMatch[2].trim(); // ex: "0.875rem", "1rem"
+      // For primitive text values (not clamp/var), use variable reference
+      const isPrimitive =
+        !varValue.includes("clamp(") && !varValue.includes("var(");
+      const sizeValue = isPrimitive ? `var(--${varName})` : varValue;
       fontSizes.push({
         name: varName,
-        size: varValue,
+        size: sizeValue,
         slug: varName,
       });
       extractedFromTheme++;
@@ -2240,6 +2260,7 @@ export function generateThemeJSON() {
     }
 
     // Also extract semantic --text-* tokens from tokensCSS (ex: text-m, text-xl with clamp())
+    // These already use clamp() or var() so keep them as-is
     const textTokenRx = /--(text-[a-z0-9-]+):\s*([^;]+);/gim;
     let tokenMatch;
     let extractedFromTokens = 0;
@@ -2265,25 +2286,25 @@ export function generateThemeJSON() {
     // Provide fuller typography presets when extraction is minimal
     if (fontSizes.length <= 1) {
       const canonicalFontSizes = [
-        { name: "text-10", size: "0.625rem", slug: "text-10" },
-        { name: "text-11", size: "0.6875rem", slug: "text-11" },
-        { name: "text-12", size: "0.75rem", slug: "text-12" },
-        { name: "text-13", size: "0.8rem", slug: "text-13" },
-        { name: "text-14", size: "0.875rem", slug: "text-14" },
-        { name: "text-15", size: "0.9375rem", slug: "text-15" },
-        { name: "text-16", size: "1rem", slug: "text-16" },
-        { name: "text-17", size: "1.0625rem", slug: "text-17" },
-        { name: "text-18", size: "1.125rem", slug: "text-18" },
-        { name: "text-20", size: "1.25rem", slug: "text-20" },
-        { name: "text-24", size: "1.5rem", slug: "text-24" },
-        { name: "text-30", size: "1.875rem", slug: "text-30" },
-        { name: "text-32", size: "2rem", slug: "text-32" },
-        { name: "text-36", size: "2.25rem", slug: "text-36" },
-        { name: "text-40", size: "2.5rem", slug: "text-40" },
-        { name: "text-48", size: "3rem", slug: "text-48" },
-        { name: "text-60", size: "3.75rem", slug: "text-60" },
-        { name: "text-80", size: "5rem", slug: "text-80" },
-        { name: "text-s", size: "0.875rem", slug: "text-s" },
+        { name: "text-10", size: "var(--text-10)", slug: "text-10" },
+        { name: "text-11", size: "var(--text-11)", slug: "text-11" },
+        { name: "text-12", size: "var(--text-12)", slug: "text-12" },
+        { name: "text-13", size: "var(--text-13)", slug: "text-13" },
+        { name: "text-14", size: "var(--text-14)", slug: "text-14" },
+        { name: "text-15", size: "var(--text-15)", slug: "text-15" },
+        { name: "text-16", size: "var(--text-16)", slug: "text-16" },
+        { name: "text-17", size: "var(--text-17)", slug: "text-17" },
+        { name: "text-18", size: "var(--text-18)", slug: "text-18" },
+        { name: "text-20", size: "var(--text-20)", slug: "text-20" },
+        { name: "text-24", size: "var(--text-24)", slug: "text-24" },
+        { name: "text-30", size: "var(--text-30)", slug: "text-30" },
+        { name: "text-32", size: "var(--text-32)", slug: "text-32" },
+        { name: "text-36", size: "var(--text-36)", slug: "text-36" },
+        { name: "text-40", size: "var(--text-40)", slug: "text-40" },
+        { name: "text-48", size: "var(--text-48)", slug: "text-48" },
+        { name: "text-60", size: "var(--text-60)", slug: "text-60" },
+        { name: "text-80", size: "var(--text-80)", slug: "text-80" },
+        { name: "text-s", size: "var(--text-s)", slug: "text-s" },
         {
           name: "text-m",
           size: "clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18))",
@@ -2398,7 +2419,7 @@ export function generateThemeJSON() {
         fontFamily: fontFamilyRef,
         fontSize: "var:preset|font-size|text-m",
         fontWeight: "400",
-        lineHeight: "1.5rem",
+        lineHeight: "var(--line-height-24)",
         fontStyle: "normal",
       },
       elements: {

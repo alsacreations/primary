@@ -746,7 +746,10 @@ function attachJsonImportHandlers() {
                 "[events] ⚠️ Aucune section typo trouvée dans tokensCss"
               );
             }
-            state.tokensContent = out.tokensCss;
+            // Ne pas utiliser out.tokensCss car il est généré avec une couleur primaire
+            // incorrecte (détection échoue sur les couleurs sans pattern -primary-).
+            // Laisser generateTokensCSS() regénérer avec la config actuelle.
+            // state.tokensContent = out.tokensCss;
           }
           updateThemePreview();
           updateColorChoices();

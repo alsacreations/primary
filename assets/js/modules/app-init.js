@@ -279,16 +279,26 @@ export function applyTokensToDocument() {
 }
 
 export function updateColorChoices() {
-  const customColors = parseColorVariables(state.config.customVars);
   const colorChoicesContainer = document.querySelector(".color-choices");
 
   const combined = state.themeContent + "\n" + state.config.customVars;
   const colorsMap = parseColorVariants(combined);
 
+  // Extraire les couleurs depuis le combined (themeContent + customVars)
+  // pour inclure les couleurs importées depuis Figma
+  const customColors = parseColorVariables(combined);
+
+  console.log("[updateColorChoices] customColors:", customColors);
+  console.log("[updateColorChoices] colorsMap:", colorsMap);
+
   const allColors = customColors.length > 0 ? [...customColors] : ["raspberry"];
 
   if (customColors.length > 0 && state.config.primaryColor === "raspberry") {
     state.config.primaryColor = customColors[0];
+    console.log(
+      "[updateColorChoices] Set primaryColor to:",
+      state.config.primaryColor
+    );
   }
 
   const swatchMarkup = (color) => {
@@ -355,8 +365,33 @@ export function updateColorChoices() {
     .forEach((input) => {
       input.addEventListener("change", (e) => {
         state.config.primaryColor = e.target.value;
+        // Vider tokensContent pour forcer la regénération avec la nouvelle couleur
+        if (state.tokensContent) {
+          console.log(
+            "[updateColorChoices] Clearing tokensContent to force regeneration"
+          );
+          state.tokensContent = "";
+        }
       });
     });
+
+  // Synchroniser state.config.primaryColor avec l'input checked par défaut
+  const checkedInput = colorChoicesContainer.querySelector(
+    'input[name="primary-color"]:checked'
+  );
+  if (checkedInput) {
+    console.log(
+      "[updateColorChoices] Syncing primaryColor with checked input:",
+      checkedInput.value
+    );
+    state.config.primaryColor = checkedInput.value;
+  } else {
+    console.warn("[updateColorChoices] No checked input found!");
+  }
+  console.log(
+    "[updateColorChoices] Final primaryColor:",
+    state.config.primaryColor
+  );
 }
 
 export function updateUI() {

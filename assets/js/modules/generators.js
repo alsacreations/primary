@@ -1428,6 +1428,9 @@ export function generateTokensCSS() {
   // This avoids brittle text-substitution on a large template and keeps
   // behaviour deterministic while providing a complete tokens file.
   let chosen = primaryColor || "info";
+  console.log("[generateTokensCSS] Initial primaryColor:", primaryColor);
+  console.log("[generateTokensCSS] Initial chosen:", chosen);
+
   // Avoid using runtime-only palettes (e.g. 'ocean') as the generated
   // project's primary color when they are only a runtime styling aid.
   // Heuristic: if the chosen color is runtime-only AND it does not appear
@@ -1442,13 +1445,23 @@ export function generateTokensCSS() {
     const appearsInCustom = new RegExp(`--color-${chosen}-`, "i").test(
       customVars
     );
+    console.log(
+      "[generateTokensCSS] isRuntimeOnly:",
+      isRuntimeOnly,
+      "appearsInTheme:",
+      appearsInTheme,
+      "appearsInCustom:",
+      appearsInCustom
+    );
     if (isRuntimeOnly && !appearsInTheme && !appearsInCustom) {
       chosen =
         typeof PLACEHOLDER_RASPBERRY !== "undefined" ? "raspberry" : "info";
+      console.log("[generateTokensCSS] Fallback to:", chosen);
     }
   } catch (e) {
     /* noop */
   }
+  console.log("[generateTokensCSS] Final chosen:", chosen);
   const lines = [];
 
   // Header adapted from the canonical template

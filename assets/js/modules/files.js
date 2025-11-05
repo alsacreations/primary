@@ -92,56 +92,47 @@ export async function loadThemeFile() {
  * Charge le fichier reset.css
  */
 export async function loadResetFile() {
-  // Prioriser une version distante si disponible (ex: dépôt central),
-  // repli sur la copie locale.
-  const candidates = [
-    "https://raw.githubusercontent.com/alsacreations/bretzel/main/public/reset.css",
-    "https://knacss.com/css/reset.css",
-    "assets/css/reset.css",
-  ];
+  const url = "https://reset.alsacreations.com/public/reset.css";
 
-  for (const url of candidates) {
-    try {
-      // ajouter un timestamp pour éviter le cache
-      const separator = url.includes("?") ? "&" : "?";
-      const fetchUrl = url.startsWith("http")
-        ? `${url}${separator}v=${Date.now()}`
-        : url;
-      const r = await fetch(fetchUrl);
-      if (r.ok) {
-        state.resetContent = await r.text();
-        return;
-      }
-    } catch (err) {
-      // essayer l'URL suivante
-      console.warn(`Impossible de charger ${url}, repli :`, err);
+  try {
+    // Ajouter un timestamp pour éviter le cache
+    const fetchUrl = `${url}?v=${Date.now()}`;
+    const response = await fetch(fetchUrl);
+
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
     }
+
+    state.resetContent = await response.text();
+  } catch (error) {
+    showGlobalError(
+      `Impossible de charger reset.css depuis reset.alsacreations.com: ${error.message}`
+    );
+    console.error(`Erreur lors du chargement de ${url}:`, error);
+    throw error;
   }
-  // Si tout échoue, laisser la valeur vide et afficher erreur via loadCSSFile
-  await loadCSSFile("assets/css/reset.css", "resetContent");
 }
 
 /**
  * Charge le fichier layouts.css
  */
 export async function loadLayoutsFile() {
-  // Prioriser la version distante sur GitHub (repo bretzel) puis fallback
-  const remote =
-    "https://raw.githubusercontent.com/alsacreations/bretzel/main/public/layouts.css";
-  try {
-    const resp = await fetch(`${remote}?v=${Date.now()}`);
-    if (resp.ok) {
-      state.layoutsContent = await resp.text();
-      return;
-    }
-  } catch (err) {
-    console.warn(
-      "Impossible de charger layouts.css distant, fallback local:",
-      err
-    );
-  }
+  const url = "https://bretzel.alsacreations.com/public/layouts.css";
+  const fetchUrl = `${url}?v=${Date.now()}`;
 
-  await loadCSSFile("assets/css/layouts.css", "layoutsContent");
+  try {
+    const response = await fetch(fetchUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    state.layoutsContent = await response.text();
+  } catch (error) {
+    showGlobalError(
+      `Erreur de chargement de layouts.css depuis ${url}: ${error.message}`
+    );
+    console.error("Erreur lors du chargement de layouts.css:", error);
+    throw error;
+  }
 }
 
 /**
@@ -155,85 +146,67 @@ export async function loadAppFile() {
  * Charge le fichier natives.css
  */
 export async function loadNativesFile() {
-  // Prioriser la version distante officielle de knacss, fallback sur le
-  // fichier local si la requête échoue. Cela permet de toujours fournir la
-  // version la plus à jour quand l'utilisateur est en ligne.
-  const remote = "https://knacss.com/css/natives.css";
-  try {
-    const resp = await fetch(remote);
-    if (resp.ok) {
-      state.nativesContent = await resp.text();
-      return;
-    }
-    // sinon, retomber sur la copie locale
-  } catch (err) {
-    // ignorer l'erreur et utiliser la copie locale
-    console.warn(
-      "Impossible de charger natives.css distant, repli local:",
-      err
-    );
-  }
+  const url = "https://knacss.com/css/natives.css";
+  const fetchUrl = `${url}?v=${Date.now()}`;
 
-  // Repli sur la copie locale
-  await loadCSSFile("assets/css/natives.css", "nativesContent");
+  try {
+    const response = await fetch(fetchUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    state.nativesContent = await response.text();
+  } catch (error) {
+    showGlobalError(
+      `Erreur de chargement de natives.css depuis ${url}: ${error.message}`
+    );
+    console.error("Erreur lors du chargement de natives.css:", error);
+    throw error;
+  }
 }
 
 /**
  * Charge les fichiers styles.css (système et Poppins)
  */
 export async function loadStylesFiles() {
-  try {
-    // Charger d'abord les samples canoniques dans public/samples pour
-    // garantir une sortie byte-for-byte conforme aux fichiers de référence.
-    // Fallback : utiliser `assets/css/styles.css` si le sample système n'est
-    // pas disponible. Pour Poppins, fallback sur une liste réduite.
+  // Contenu canonique pour styles système (hardcodé)
+  state.stylesSystemContent = `/* ----------------------------------
+ * Styles de base du projet
+ * ----------------------------------
+ */
 
-    // Système : privilégier public/samples/styles.css
-    const systemCandidates = [
-      "public/samples/styles.css",
-      "assets/css/styles.css",
-      "public/styles.css",
-      "styles.css",
-    ];
-    let systemText = "";
-    for (const p of systemCandidates) {
-      try {
-        const r = await fetch(p);
-        if (r.ok) {
-          systemText = await r.text();
-          break;
-        }
-      } catch (e) {
-        // ignorer l'erreur et essayer le suivant
-      }
-    }
-    state.stylesSystemContent = systemText || "";
+/* Modificateurs de Layouts */
+[data-layout*="boxed"] {
+  --boxed-max: 96rem; /* 1536px */
+}
 
-    // Poppins : tenter le sample dédié
-    const poppinsCandidates = [
-      "public/samples/styles-poppins.css",
-      "public/samples/styles-2.css",
-      "assets/css/styles-poppins.css",
-      "styles-poppins.css",
-    ];
-    let poppinsText = "";
-    for (const p of poppinsCandidates) {
-      try {
-        const r = await fetch(p);
-        if (r.ok) {
-          poppinsText = await r.text();
-          break;
-        }
-      } catch (e) {
-        // ignorer l'erreur et essayer le suivant
-      }
-    }
-    state.stylesPoppinsContent = poppinsText || "";
-  } catch (error) {
-    showGlobalError(`Erreur de chargement des styles: ${error.message}`);
-    console.error("Erreur lors du chargement des styles:", error);
-    throw error;
-  }
+/* Base */
+body {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-base);
+  font-size: var(--text-m);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Titres */
+.title-l {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.title-m {
+  font-size: var(--text-m);
+  font-weight: var(--font-weight-semibold);
+}
+
+.title-s {
+  font-size: var(--text-s);
+  font-weight: var(--font-weight-semibold);
+}
+`;
+
+  // Poppins : contenu vide par défaut (peut être étendu ultérieurement)
+  state.stylesPoppinsContent = "";
 }
 
 /**

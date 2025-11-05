@@ -1,16 +1,14 @@
 /* ----------------------------------
- * Modificateurs de Layouts
+ * Styles de base du projet
  * ----------------------------------
  */
+
+/* Modificateurs de Layouts */
 [data-layout*="boxed"] {
   --boxed-max: 96rem; /* 1536px */
 }
 
-/* ----------------------------------
- * Base
- * ----------------------------------
- */
-
+/* Base */
 body {
   background-color: var(--surface);
   color: var(--on-surface);
@@ -20,7 +18,6 @@ body {
 }
 
 /* Titres */
-
 .title-l {
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-semibold);

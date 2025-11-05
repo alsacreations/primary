@@ -1828,20 +1828,6 @@ export function generateTokensCSS() {
   lines.push("  --checkable-size: 1.25em;");
 
   lines.push("}");
-  lines.push("");
-  lines.push("*::selection {");
-  if (themeMode === "both") {
-    lines.push(
-      "  background: light-dark(var(--color-" +
-        chosen +
-        "-300), var(--color-" +
-        chosen +
-        "-500));"
-    );
-  } else {
-    lines.push("  background: var(--color-" + chosen + "-300);");
-  }
-  lines.push("}");
 
   return lines.join("\n") + "\n";
 }

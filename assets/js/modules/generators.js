@@ -652,19 +652,10 @@ export function generateTokensCSS() {
         const typoLabel = typoResponsive ? "oui" : "non";
         const spacingLabel = spacingResponsive ? "oui" : "non";
 
-        // Extraire la couleur primaire du header existant s'il existe
-        const existingHeaderMatch = processed.match(/^\s*\/\*[\s\S]*?\*\/\s*/m);
-        const existingHeader = existingHeaderMatch
-          ? existingHeaderMatch[0]
-          : "";
-        const figmaPrimaryMatch = existingHeader.match(
-          /Couleur primaire\s*:\s*(\w+)/i
-        );
-        const detectedPrimary = figmaPrimaryMatch ? figmaPrimaryMatch[1] : null;
-
-        // Utiliser la couleur détectée depuis Figma si disponible, sinon celle du sélecteur
-        const displayPrimary =
-          detectedPrimary || primaryColor || "(non précisée)";
+        // Pour un import Figma, toujours utiliser primaryColor du sélecteur HTML
+        // (l'utilisateur peut changer la couleur primaire à l'étape 2)
+        // Ne pas utiliser la détection depuis le header existant car elle peut être incorrecte
+        const displayPrimary = primaryColor || "blue"; // Défaut: blue
 
         const headerLines = [
           "/* ----------------------------------",
@@ -691,6 +682,9 @@ export function generateTokensCSS() {
       // tokensContent lacks the main responsive text token, append a small
       // canonical-like typography block so the UI preview reflects the
       // user's choice (best-effort; non-destructive).
+      //
+      // NOUVELLE LOGIQUE : Si une section typo importée existe dans state.importedTypoSection,
+      // l'injecter directement au lieu d'utiliser les tokens canoniques.
       try {
         const hasTextM = /--text-m\s*:/i.test(processed);
         const hasAnyText = /--text-[a-z0-9-]*\s*:/i.test(processed);
@@ -700,9 +694,45 @@ export function generateTokensCSS() {
           "typoResponsive:",
           typoResponsive,
           "themeFromImport:",
-          state?.themeFromImport
+          state?.themeFromImport,
+          "importedTypoSection:",
+          !!state?.importedTypoSection
         );
-        if (typoResponsive && !hasTextM && !state?.themeFromImport) {
+
+        // Priorité 1 : Injecter la section typo importée depuis Figma si disponible
+        if (state?.importedTypoSection) {
+          if (!hasAnyText) {
+            console.log(
+              "[generators-typo] ✅ Injection de la section typo importée depuis Figma"
+            );
+            // Injecter avant la fermeture du :root
+            if (/\n}\s*$/.test(processed)) {
+              processed = processed.replace(
+                /\n}\s*$/,
+                "\n" + state.importedTypoSection + "\n}\n"
+              );
+            } else {
+              processed =
+                processed.trimEnd() + "\n" + state.importedTypoSection + "\n";
+            }
+          } else {
+            console.log(
+              "[generators-typo] ⚠️ Section typo NON injectée car hasAnyText=true"
+            );
+          }
+        } else {
+          console.log(
+            "[generators-typo] ℹ️ Aucune section typo importée disponible"
+          );
+        }
+
+        // Priorité 2 : Tokens canoniques responsive si demandé et rien d'importé
+        if (
+          !state?.importedTypoSection &&
+          typoResponsive &&
+          !hasTextM &&
+          !state?.themeFromImport
+        ) {
           const typoLines = [];
           typoLines.push("\n  /* Typographie - Tailles de police */");
           typoLines.push("  --text-s: var(--text-14);");
@@ -762,6 +792,53 @@ export function generateTokensCSS() {
             processed = processed.replace(/\n}\s*$/m, "\n" + fixedTypo + "}\n");
           else processed = processed.trimEnd() + "\n" + fixedTypo + "\n";
         }
+      } catch (e) {
+        /* noop */
+      }
+
+      // Même logique pour les espacements : injecter la section importée si disponible
+      try {
+        const hasSpacing = /--spacing-[a-z0-9-]*\s*:/i.test(processed);
+        console.log(
+          "[generators-spacing] hasSpacing:",
+          hasSpacing,
+          "spacingResponsive:",
+          spacingResponsive,
+          "importedSpacingSection:",
+          !!state?.importedSpacingSection
+        );
+
+        // Priorité 1 : Injecter la section spacing importée depuis Figma si disponible
+        if (state?.importedSpacingSection) {
+          if (!hasSpacing) {
+            console.log(
+              "[generators-spacing] ✅ Injection de la section spacing importée depuis Figma"
+            );
+            // Injecter avant la fermeture du :root
+            if (/\n}\s*$/.test(processed)) {
+              processed = processed.replace(
+                /\n}\s*$/,
+                "\n" + state.importedSpacingSection + "\n}\n"
+              );
+            } else {
+              processed =
+                processed.trimEnd() +
+                "\n" +
+                state.importedSpacingSection +
+                "\n";
+            }
+          } else {
+            console.log(
+              "[generators-spacing] ⚠️ Section spacing NON injectée car hasSpacing=true"
+            );
+          }
+        } else {
+          console.log(
+            "[generators-spacing] ℹ️ Aucune section spacing importée disponible"
+          );
+        }
+        // Priorité 2 : Tokens canoniques si nécessaire (mais normalement les espacements
+        // sont déjà dans tokensContent ou seront générés par generateThemeFromScratch)
       } catch (e) {
         /* noop */
       }
@@ -880,7 +957,7 @@ export function generateTokensCSS() {
             // target only typographic and line-height declarations
             if (
               /^\s*--text-[a-z0-9-]*\s*:/.test(l) ||
-              /^\s*--line-height-\d+\s*:/.test(l) ||
+              /^\s*--line-height-[a-z0-9-]*\s*:/.test(l) ||
               l.includes("/* Tailles de police */") ||
               l.includes("/* Typographie — Hauteurs de lignes */")
             ) {

@@ -261,6 +261,46 @@ body {
   font-size: var(--text-s);
 }
 
+/* Import summary */
+.import-summary {
+  padding: var(--spacing-m);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-16);
+  background: var(--layer-1);
+}
+
+.import-summary[hidden] {
+  display: none;
+}
+
+.import-summary-title {
+  margin: 0;
+  margin-bottom: var(--spacing-s);
+  color: var(--on-surface);
+  font-size: var(--text-m);
+  font-weight: var(--font-weight-semibold);
+}
+
+.import-summary-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-xs) var(--spacing-s);
+  margin: 0;
+
+  & dt {
+    color: var(--on-surface-secondary);
+    font-size: var(--text-s);
+    font-weight: var(--font-weight-medium);
+  }
+
+  & dd {
+    margin: 0;
+    color: var(--on-surface);
+    font-size: var(--text-s);
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
 /* Configuration */
 .config-fieldset {
   margin: 0;

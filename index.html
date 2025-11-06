@@ -202,6 +202,32 @@
                 />
                 <!-- JSON paste removed: imports are performed from downloaded files only -->
                 <p id="json-import-status" class="muted" aria-live="polite"></p>
+                <div id="json-import-summary" class="import-summary" hidden>
+                  <h3 class="import-summary-title">Données récupérées :</h3>
+                  <dl class="import-summary-list">
+                    <dt>Couleurs :</dt>
+                    <dd id="summary-colors">-</dd>
+                    <dt id="summary-semantics-label">Tokens sémantiques :</dt>
+                    <dd id="summary-semantics">-</dd>
+                    <dt id="summary-fonts-label">Tailles de polices :</dt>
+                    <dd>
+                      <span id="summary-fonts">-</span>
+                      <span id="summary-fonts-fluid" hidden> (fluides)</span>
+                    </dd>
+                    <dt id="summary-lineheights-label">Hauteurs de ligne :</dt>
+                    <dd>
+                      <span id="summary-lineheights">-</span>
+                      <span id="summary-lineheights-fluid" hidden>
+                        (fluides)</span
+                      >
+                    </dd>
+                    <dt id="summary-spacings-label">Espacements :</dt>
+                    <dd>
+                      <span id="summary-spacings">-</span>
+                      <span id="summary-spacings-fluid" hidden> (fluides)</span>
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>

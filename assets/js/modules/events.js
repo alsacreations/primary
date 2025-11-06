@@ -22,6 +22,7 @@ import {
 } from "./ui.js";
 import { applyThemeToDocument, applyTokensToDocument } from "./app-init.js";
 import { copyToClipboard } from "./clipboard.js";
+import { parseColorVariants } from "./generators.js";
 
 /**
  * Navigue vers l'étape précédente
@@ -31,6 +32,206 @@ export function previousStep() {
     state.currentStep--;
     updateUI();
   }
+}
+
+/**
+ * Affiche le résumé des données importées depuis Figma
+ * @param {Object} out - Données générées (themeCss, tokensCss)
+ * @param {Object} jsonData - Données JSON brutes ({ primitives, fonts })
+ */
+function displayImportSummary(out, jsonData = {}) {
+  if (!out || !out.themeCss || !out.tokensCss) {
+    return;
+  }
+
+  const summaryEl = document.getElementById("json-import-summary");
+  if (!summaryEl) {
+    return;
+  }
+
+  console.log("[displayImportSummary] jsonData:", jsonData);
+  console.log(
+    "[displayImportSummary] primitives.variables count:",
+    jsonData.primitives?.variables?.length || 0
+  );
+  console.log(
+    "[displayImportSummary] fonts.variables count:",
+    jsonData.fonts?.variables?.length || 0
+  );
+
+  // Inspecter la structure d'une variable pour voir comment accéder aux valeurs
+  if (
+    jsonData.fonts &&
+    jsonData.fonts.variables &&
+    jsonData.fonts.variables.length > 0
+  ) {
+    console.log(
+      "[displayImportSummary] Exemple de variable fonts[0]:",
+      jsonData.fonts.variables[0]
+    );
+    console.log(
+      "[displayImportSummary] resolvedValuesByMode:",
+      jsonData.fonts.variables[0].resolvedValuesByMode
+    );
+  }
+  if (
+    jsonData.primitives &&
+    jsonData.primitives.variables &&
+    jsonData.primitives.variables.length > 0
+  ) {
+    const spacingVar = jsonData.primitives.variables.find((v) =>
+      String(v.name || "")
+        .toLowerCase()
+        .includes("spacing")
+    );
+    if (spacingVar) {
+      console.log(
+        "[displayImportSummary] Exemple de variable spacing:",
+        spacingVar
+      );
+      console.log(
+        "[displayImportSummary] resolvedValuesByMode:",
+        spacingVar.resolvedValuesByMode
+      );
+    }
+  }
+
+  // 1. Compter les couleurs (tous les variants)
+  const colorVariants = parseColorVariants(out.themeCss);
+  const colorsCount = colorVariants.size;
+
+  // 2. Compter les tokens sémantiques dans tokensCss
+  const semanticTokens = [
+    "primary",
+    "on-primary",
+    "secondary",
+    "on-secondary",
+    "surface",
+    "on-surface",
+    "surface-variant",
+    "on-surface-variant",
+    "accent",
+    "on-accent",
+    "layer",
+    "on-layer",
+  ];
+  let semanticsCount = 0;
+  for (const token of semanticTokens) {
+    if (out.tokensCss.includes(`--${token}:`)) {
+      semanticsCount++;
+    }
+  }
+
+  // 3. Compter les tailles de police dans themeCss et détecter si fluides
+  const fontSizeMatches = out.themeCss.matchAll(/--text-[a-z0-9]+:/gi);
+  const fontSizes = new Set(Array.from(fontSizeMatches).map((m) => m[0]));
+  const fontsCount = fontSizes.size;
+
+  // Détecter si les fonts sont fluides en cherchant des valeurs différentes entre modes
+  let hasFontClamp = false;
+  if (jsonData.fonts && jsonData.fonts.variables) {
+    hasFontClamp = jsonData.fonts.variables.some((v) => {
+      const modes = v.resolvedValuesByMode || {};
+      const modeValues = Object.values(modes)
+        .map((m) => m?.resolvedValue)
+        .filter((val) => typeof val === "number");
+      // Fluide si au moins 2 valeurs différentes entre les modes
+      return modeValues.length >= 2 && modeValues[0] !== modeValues[1];
+    });
+    console.log("[displayImportSummary] hasFontClamp:", hasFontClamp);
+  }
+
+  // 4. Compter les line-heights dans themeCss et détecter si fluides
+  const lineHeightMatches = out.themeCss.matchAll(/--line-height-[a-z0-9]+:/gi);
+  const lineHeights = new Set(Array.from(lineHeightMatches).map((m) => m[0]));
+  const lineHeightsCount = lineHeights.size;
+
+  // Détecter si les line-heights sont fluides
+  let hasLineHeightClamp = false;
+  if (jsonData.fonts && jsonData.fonts.variables) {
+    hasLineHeightClamp = jsonData.fonts.variables.some((v) => {
+      const name = String(v.name || "").toLowerCase();
+      if (!name.includes("leading") && !name.includes("lineheight"))
+        return false;
+      const modes = v.resolvedValuesByMode || {};
+      const modeValues = Object.values(modes)
+        .map((m) => m?.resolvedValue)
+        .filter((val) => typeof val === "number");
+      // Fluide si au moins 2 valeurs différentes entre les modes
+      return modeValues.length >= 2 && modeValues[0] !== modeValues[1];
+    });
+    console.log(
+      "[displayImportSummary] hasLineHeightClamp:",
+      hasLineHeightClamp
+    );
+  }
+
+  // 5. Compter les spacings dans themeCss et détecter si fluides
+  const spacingMatches = out.themeCss.matchAll(/--spacing-[a-z0-9]+:/gi);
+  const spacings = new Set(Array.from(spacingMatches).map((m) => m[0]));
+  const spacingsCount = spacings.size;
+
+  // Détecter si les spacings sont fluides
+  let hasSpacingClamp = false;
+  if (jsonData.primitives && jsonData.primitives.variables) {
+    hasSpacingClamp = jsonData.primitives.variables.some((v) => {
+      const name = String(v.name || "").toLowerCase();
+      if (!name.includes("spacing") && !name.includes("space")) return false;
+      const modes = v.resolvedValuesByMode || {};
+      const modeValues = Object.values(modes)
+        .map((m) => m?.resolvedValue)
+        .filter((val) => typeof val === "number");
+      // Fluide si au moins 2 valeurs différentes entre les modes
+      return modeValues.length >= 2 && modeValues[0] !== modeValues[1];
+    });
+    console.log("[displayImportSummary] hasSpacingClamp:", hasSpacingClamp);
+  }
+
+  // Mettre à jour le DOM
+  const summaryColors = document.getElementById("summary-colors");
+  const summarySemantic = document.getElementById("summary-semantics");
+  const summaryFonts = document.getElementById("summary-fonts");
+  const summaryFontsFluid = document.getElementById("summary-fonts-fluid");
+  const summaryLineHeights = document.getElementById("summary-lineheights");
+  const summaryLineHeightsFluid = document.getElementById(
+    "summary-lineheights-fluid"
+  );
+  const summarySpacings = document.getElementById("summary-spacings");
+  const summarySpacingsFluid = document.getElementById(
+    "summary-spacings-fluid"
+  );
+
+  if (summaryColors) summaryColors.textContent = colorsCount;
+  if (summarySemantic) summarySemantic.textContent = semanticsCount;
+  if (summaryFonts) summaryFonts.textContent = fontsCount;
+  if (summaryLineHeights) summaryLineHeights.textContent = lineHeightsCount;
+  if (summarySpacings) summarySpacings.textContent = spacingsCount;
+
+  // Afficher/masquer les labels "(fluides)"
+  if (summaryFontsFluid) {
+    summaryFontsFluid.hidden = !hasFontClamp;
+    console.log(
+      "[displayImportSummary] summaryFontsFluid.hidden =",
+      summaryFontsFluid.hidden
+    );
+  }
+  if (summaryLineHeightsFluid) {
+    summaryLineHeightsFluid.hidden = !hasLineHeightClamp;
+    console.log(
+      "[displayImportSummary] summaryLineHeightsFluid.hidden =",
+      summaryLineHeightsFluid.hidden
+    );
+  }
+  if (summarySpacingsFluid) {
+    summarySpacingsFluid.hidden = !hasSpacingClamp;
+    console.log(
+      "[displayImportSummary] summarySpacingsFluid.hidden =",
+      summarySpacingsFluid.hidden
+    );
+  }
+
+  // Afficher le résumé
+  summaryEl.hidden = false;
 }
 
 /**
@@ -735,24 +936,74 @@ function attachJsonImportHandlers() {
               "[events] Setting state.tokensContent from Figma import"
             );
             console.log("[events] tokensCss length:", out.tokensCss.length);
-            // Chercher et afficher la section typo
+
+            // Extraire les sections typographie et espacements depuis tokensCss
+            // Ces sections sont valides et doivent être préservées même si la couleur primaire est incorrecte
+            // La section typo peut inclure plusieurs sous-sections (tailles, line-heights)
             const typoMatch = out.tokensCss.match(
-              /\/\* Typographie[^*]*\*\/[\s\S]{0,800}/
+              /\/\* Typographie[^*]*\*\/[\s\S]*?(?=\n\s*\/\* Espacements|\n\s*}\s*$)/
             );
+            const spacingMatch = out.tokensCss.match(
+              /\/\* Espacements[^*]*\*\/[\s\S]*?(?=\n\s*}\s*$)/
+            );
+
             if (typoMatch) {
-              console.log("[events] Section typo trouvée:", typoMatch[0]);
+              console.log(
+                "[events] Section typo trouvée, longueur:",
+                typoMatch[0].length
+              );
+              state.importedTypoSection = typoMatch[0];
             } else {
               console.log(
                 "[events] ⚠️ Aucune section typo trouvée dans tokensCss"
               );
+              state.importedTypoSection = null;
             }
-            // Ne pas utiliser out.tokensCss car il est généré avec une couleur primaire
-            // incorrecte (détection échoue sur les couleurs sans pattern -primary-).
-            // Laisser generateTokensCSS() regénérer avec la config actuelle.
-            // state.tokensContent = out.tokensCss;
+
+            if (spacingMatch) {
+              console.log(
+                "[events] Section spacing trouvée, longueur:",
+                spacingMatch[0].length
+              );
+              state.importedSpacingSection = spacingMatch[0];
+            } else {
+              console.log(
+                "[events] ⚠️ Aucune section spacing trouvée dans tokensCss"
+              );
+              state.importedSpacingSection = null;
+            }
+
+            // Extraire UNIQUEMENT la section couleurs depuis out.tokensCss
+            // (sans typo ni spacing, car la couleur primaire est incorrecte)
+            // Cette section sera utilisée par generateTokensCSS() puis complétée
+            // avec les sections typo/spacing extraites ci-dessus
+            const colorSectionMatch = out.tokensCss.match(
+              /^[\s\S]*?(?=\n\s*\/\* Typographie|\n\s*\/\* Espacements|\n\s*}$)/
+            );
+
+            if (colorSectionMatch) {
+              console.log(
+                "[events] Section couleurs extraite, longueur:",
+                colorSectionMatch[0].length
+              );
+              // Utiliser cette section partielle comme base
+              // generateTokensCSS() va la post-traiter pour corriger la couleur primaire
+              // puis injecter les sections typo/spacing
+              state.tokensContent = colorSectionMatch[0] + "\n}";
+            } else {
+              console.log(
+                "[events] ⚠️ Impossible d'extraire section couleurs, utilisation complète"
+              );
+              // Fallback : utiliser out.tokensCss complet et laisser generateTokensCSS() gérer
+              state.tokensContent = out.tokensCss;
+            }
           }
           updateThemePreview();
           updateColorChoices();
+
+          // Afficher le résumé des données importées
+          displayImportSummary(out, { primitives, fonts });
+
           // Re-générer les fichiers (tokens) maintenant que themeContent est finalisé
           try {
             generateAllFiles();

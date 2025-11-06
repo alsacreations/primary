@@ -112,7 +112,7 @@
   --line-height-100: 6.25rem;
 
   /* Transitions et animations */
-  --transition-duration: 300ms;
+  --transition-duration: 250ms;
 
   /* Niveaux de z-index */
   --z-under-page-level: -1;

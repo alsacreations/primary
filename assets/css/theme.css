@@ -98,7 +98,7 @@
   --radius-full: 9999px;
 
   /* Transitions et animations */
-  --transition-duration: 0.25s;
+  --transition-duration: 300ms;
 
   /* Niveaux de z-index */
   --z-under-page-level: -1;

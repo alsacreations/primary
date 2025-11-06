@@ -605,17 +605,37 @@ export function generateTokensCSS() {
     "[generateTokensCSS] state.themeFromImport:",
     state?.themeFromImport
   );
-  if (state && state.tokensContent && state.tokensContent.trim().length) {
-    console.log(
-      "[generateTokensCSS] ✅ Utilisation de state.tokensContent (import Figma)"
-    );
+
+  // Utiliser la branche import si themeFromImport est vrai
+  // (même si tokensContent est vide, on construira les tokens canoniques + sections importées)
+  if (state && state.themeFromImport) {
+    console.log("[generateTokensCSS] ✅ Mode import Figma activé");
     try {
+      // Commencer avec un template vide ou le contenu existant
+      let processed = (state.tokensContent || "").trim();
+
+      console.log(
+        "[generateTokensCSS] processed initial length:",
+        processed.length
+      );
+      console.log(
+        "[generateTokensCSS] processed initial (200 chars):",
+        processed.substring(0, 200)
+      );
+
+      // Si tokensContent est vide, initialiser avec :root {}
+      if (!processed) {
+        console.log(
+          "[generateTokensCSS] tokensContent vide, initialisation :root {}"
+        );
+        processed = ":root {\n}\n";
+      }
+
       // Best-effort post-processing: if theme primitives are present in
       // the current state.themeContent, replace raw color literals in the
       // produced tokensContent (oklch(...), rgb(...), hex) with
       // var(--primitive-name) so the UI preview shows primitives
       // rather than inline values when possible.
-      const rawTokens = state.tokensContent;
       const themeCss = (state && state.themeContent) || "";
       const primMap = Object.create(null);
       const primRx = /(--[a-z0-9-]+)\s*:\s*([^;]+);/gim;
@@ -626,22 +646,24 @@ export function generateTokensCSS() {
         if (val) primMap[val] = primMap[val] || name;
       }
 
+      // Remplacer les couleurs littérales par des références aux primitives
       const replaceRx = /oklch\([^\)]+\)|rgba?\([^\)]+\)|#[0-9a-fA-F]{3,8}/g;
-      let processed = rawTokens.replace(replaceRx, (match) => {
+      processed = processed.replace(replaceRx, (match) => {
         const key = match.trim();
         if (primMap[key]) return `var(${primMap[key]})`;
         return match;
       });
+
+      // Déterminer la couleur primaire pour le header et l'injection des tokens
+      // Pour un import Figma, toujours utiliser primaryColor du sélecteur HTML
+      // (l'utilisateur peut changer la couleur primaire à l'étape 2)
+      const displayPrimary = primaryColor || "blue"; // Défaut: blue
 
       // Ensure the header comment of generated tokens is always coherent
       // and reflects the current configuration even when `state.tokensContent`
       // comes from an imported JSON. We replace any leading /* ---- */ block
       // with a generated header that contains: chosen primary, themeMode,
       // typoResponsive and spacingResponsive.
-      //
-      // EXCEPTION: Si le header existant contient déjà "Couleur primaire : X"
-      // (détectée depuis Figma), on le préserve au lieu d'utiliser primaryColor
-      // du sélecteur HTML.
       try {
         const themeLabel =
           themeMode === "both"
@@ -651,11 +673,6 @@ export function generateTokensCSS() {
             : "light uniquement";
         const typoLabel = typoResponsive ? "oui" : "non";
         const spacingLabel = spacingResponsive ? "oui" : "non";
-
-        // Pour un import Figma, toujours utiliser primaryColor du sélecteur HTML
-        // (l'utilisateur peut changer la couleur primaire à l'étape 2)
-        // Ne pas utiliser la détection depuis le header existant car elle peut être incorrecte
-        const displayPrimary = primaryColor || "blue"; // Défaut: blue
 
         const headerLines = [
           "/* ----------------------------------",
@@ -674,8 +691,245 @@ export function generateTokensCSS() {
         processed = processed.replace(/^\s*\/\*[\s\S]*?\*\/\s*/m, "");
         // Prepend our coherent header
         processed = headerLines + "\n" + processed;
+
+        console.log(
+          "[generators-header] processed après header (200 premiers chars):",
+          processed.substring(0, 200)
+        );
       } catch (e) {
         /* noop */
+      }
+
+      // INJECTION DES TOKENS DE COULEURS CANONIQUES
+      // Les tokens de couleurs doivent TOUJOURS être présents, même avec import Figma
+      // Ils s'adaptent à la config (light, dark, both)
+      try {
+        console.log(
+          "[generators-colors] Injection des tokens de couleurs canoniques"
+        );
+
+        // Vérifier si les tokens canoniques sont déjà présents
+        const hasColorTokens =
+          /--primary\s*:/.test(processed) ||
+          /\/\*\s*Couleur primaire\s*\*\//.test(processed);
+
+        if (!hasColorTokens) {
+          console.log(
+            "[generators-colors] ✅ Tokens canoniques absents, injection"
+          );
+
+          console.log(
+            "[generators-colors] processed avant injection (300 chars):",
+            processed.substring(0, 300)
+          );
+
+          // Construire le bloc de couleurs selon themeMode
+          const colorLines = [];
+
+          // color-scheme block
+          if (themeMode === "both") {
+            colorLines.push("  color-scheme: light dark;");
+            colorLines.push("");
+            colorLines.push('  &[data-theme="light"] {');
+            colorLines.push("    color-scheme: light;");
+            colorLines.push("  }");
+            colorLines.push("");
+            colorLines.push('  &[data-theme="dark"] {');
+            colorLines.push("    color-scheme: dark;");
+            colorLines.push("  }");
+          } else if (themeMode === "dark") {
+            colorLines.push("  color-scheme: dark;");
+          } else {
+            colorLines.push("  color-scheme: light;");
+          }
+
+          colorLines.push("");
+          colorLines.push("  /* Couleur primaire */");
+          colorLines.push(`  --primary: var(--color-${displayPrimary}-500);`);
+          colorLines.push("  --on-primary: var(--color-white);");
+          colorLines.push("");
+
+          // accent
+          colorLines.push("  /* Couleur d'accent */");
+          if (themeMode === "both") {
+            colorLines.push(
+              `  --accent: light-dark(var(--primary), var(--color-${displayPrimary}-300));`
+            );
+            colorLines.push(
+              `  --accent-invert: light-dark(var(--color-${displayPrimary}-300), var(--primary));`
+            );
+          } else if (themeMode === "dark") {
+            colorLines.push(`  --accent: var(--color-${displayPrimary}-300);`);
+            colorLines.push("  --accent-invert: var(--primary);");
+          } else {
+            colorLines.push("  --accent: var(--primary);");
+            colorLines.push(
+              `  --accent-invert: var(--color-${displayPrimary}-300);`
+            );
+          }
+
+          colorLines.push("");
+          // surfaces
+          if (themeMode === "both") {
+            colorLines.push("  /* Surface du document */");
+            colorLines.push(
+              "  --surface: light-dark(var(--color-white), var(--color-gray-900));"
+            );
+            colorLines.push(
+              "  --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));"
+            );
+          } else if (themeMode === "dark") {
+            colorLines.push("  /* Surface du document */");
+            colorLines.push("  --surface: var(--color-gray-900);");
+            colorLines.push("  --on-surface: var(--color-gray-100);");
+          } else {
+            colorLines.push("  /* Surface du document */");
+            colorLines.push("  --surface: var(--color-white);");
+            colorLines.push("  --on-surface: var(--color-gray-900);");
+          }
+
+          colorLines.push("");
+          colorLines.push("  /* Niveaux de profondeur */");
+          if (themeMode === "both") {
+            colorLines.push(
+              "  --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));"
+            );
+            colorLines.push(
+              "  --layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));"
+            );
+            colorLines.push(
+              "  --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));"
+            );
+          } else if (themeMode === "dark") {
+            colorLines.push("  --layer-1: var(--color-gray-800);");
+            colorLines.push("  --layer-2: var(--color-gray-700);");
+            colorLines.push("  --layer-3: var(--color-gray-600);");
+          } else {
+            colorLines.push("  --layer-1: var(--color-gray-50);");
+            colorLines.push("  --layer-2: var(--color-gray-100);");
+            colorLines.push("  --layer-3: var(--color-gray-200);");
+          }
+
+          colorLines.push("");
+          colorLines.push("  /* Interactions */");
+          if (themeMode === "both") {
+            colorLines.push(
+              `  --link: light-dark(var(--primary), var(--color-${displayPrimary}-300));`
+            );
+            colorLines.push(
+              `  --link-hover: light-dark(var(--color-${displayPrimary}-700), var(--primary));`
+            );
+            colorLines.push(
+              `  --link-active: light-dark(var(--color-${displayPrimary}-700), var(--primary));`
+            );
+          } else if (themeMode === "dark") {
+            colorLines.push(`  --link: var(--color-${displayPrimary}-300);`);
+            colorLines.push("  --link-hover: var(--primary);");
+            colorLines.push("  --link-active: var(--primary);");
+          } else {
+            colorLines.push("  --link: var(--primary);");
+            colorLines.push(
+              `  --link-hover: var(--color-${displayPrimary}-700);`
+            );
+            colorLines.push(
+              `  --link-active: var(--color-${displayPrimary}-700);`
+            );
+          }
+
+          colorLines.push("");
+          colorLines.push("  /* Couleur de sélection */");
+          if (themeMode === "both") {
+            colorLines.push(
+              `  --selection: light-dark(var(--color-${displayPrimary}-300), var(--color-${displayPrimary}-500));`
+            );
+          } else if (themeMode === "dark") {
+            colorLines.push(
+              `  --selection: var(--color-${displayPrimary}-500);`
+            );
+          } else {
+            colorLines.push(
+              `  --selection: var(--color-${displayPrimary}-300);`
+            );
+          }
+
+          colorLines.push("");
+          colorLines.push("  /* États */");
+          if (themeMode === "both") {
+            colorLines.push(
+              "  --warning: light-dark(var(--color-warning-500), var(--color-warning-300));"
+            );
+            colorLines.push(
+              "  --error: light-dark(var(--color-error-500), var(--color-error-300));"
+            );
+            colorLines.push(
+              "  --success: light-dark(var(--color-success-500), var(--color-success-300));"
+            );
+            colorLines.push(
+              "  --info: light-dark(var(--color-info-500), var(--color-info-300));"
+            );
+          } else if (themeMode === "dark") {
+            colorLines.push("  --warning: var(--color-warning-300);");
+            colorLines.push("  --error: var(--color-error-300);");
+            colorLines.push("  --success: var(--color-success-300);");
+            colorLines.push("  --info: var(--color-info-300);");
+          } else {
+            colorLines.push("  --warning: var(--color-warning-500);");
+            colorLines.push("  --error: var(--color-error-500);");
+            colorLines.push("  --success: var(--color-success-500);");
+            colorLines.push("  --info: var(--color-info-500);");
+          }
+
+          colorLines.push("");
+          colorLines.push("  /* Bordures */");
+          if (themeMode === "both") {
+            colorLines.push("  --border-light: var(--color-gray-600);");
+            colorLines.push(
+              "  --border-medium: light-dark(var(--color-gray-300), var(--color-gray-600));"
+            );
+          } else if (themeMode === "dark") {
+            colorLines.push("  --border-light: var(--color-gray-600);");
+            colorLines.push("  --border-medium: var(--color-gray-600);");
+          } else {
+            colorLines.push("  --border-light: var(--color-gray-600);");
+            colorLines.push("  --border-medium: var(--color-gray-300);");
+          }
+
+          // Injecter après le header, au début du :root
+          const rootMatch = processed.match(/:root\s*\{/);
+          console.log(
+            "[generators-colors] rootMatch:",
+            rootMatch ? rootMatch[0] : "NOT FOUND"
+          );
+          if (rootMatch) {
+            const insertPos =
+              processed.indexOf(rootMatch[0]) + rootMatch[0].length;
+            console.log("[generators-colors] insertPos:", insertPos);
+            console.log(
+              "[generators-colors] colorLines.length:",
+              colorLines.length
+            );
+            processed =
+              processed.slice(0, insertPos) +
+              "\n" +
+              colorLines.join("\n") +
+              "\n" +
+              processed.slice(insertPos);
+            console.log(
+              "[generators-colors] ✅ Injection effectuée, processed length:",
+              processed.length
+            );
+          } else {
+            console.log(
+              "[generators-colors] ⚠️ :root { non trouvé dans processed"
+            );
+          }
+        } else {
+          console.log(
+            "[generators-colors] ⚠️ Tokens canoniques déjà présents, skip"
+          );
+        }
+      } catch (e) {
+        console.error("[generators-colors] Erreur injection tokens:", e);
       }
 
       // If the user asked for responsive typography but the client-generated

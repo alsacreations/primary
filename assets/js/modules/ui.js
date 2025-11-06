@@ -556,6 +556,14 @@ export function generateAllFiles() {
     }
     const appCSS = generateAppCSS();
     const themeCSS = generateThemeCSS();
+    console.log(
+      "[generateAllFiles] Avant generateTokensCSS, state.tokensContent.length:",
+      state?.tokensContent?.length || 0
+    );
+    console.log(
+      "[generateAllFiles] state.themeFromImport:",
+      state?.themeFromImport
+    );
     const tokensCSS = generateTokensCSS();
     const stylesCSS = generateStylesCSS();
 

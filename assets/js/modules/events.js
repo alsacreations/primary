@@ -996,30 +996,19 @@ function attachJsonImportHandlers() {
               state.importedSpacingSection = null;
             }
 
-            // Extraire UNIQUEMENT la section couleurs depuis out.tokensCss
-            // (sans typo ni spacing, car la couleur primaire est incorrecte)
-            // Cette section sera utilisée par generateTokensCSS() puis complétée
-            // avec les sections typo/spacing extraites ci-dessus
-            const colorSectionMatch = out.tokensCss.match(
-              /^[\s\S]*?(?=\n\s*\/\* Typographie|\n\s*\/\* Espacements|\n\s*}$)/
+            // NE PAS extraire de section couleurs partielle depuis out.tokensCss
+            // car le regex peut capturer des sections indésirables (espacements, etc.)
+            // À la place, laisser state.tokensContent VIDE et marquer state.themeFromImport = true
+            // Le générateur injectera systématiquement les tokens de couleurs canoniques
+            console.log(
+              "[events] Import Figma: state.tokensContent laissé vide, tokens canoniques seront injectés"
             );
-
-            if (colorSectionMatch) {
-              console.log(
-                "[events] Section couleurs extraite, longueur:",
-                colorSectionMatch[0].length
-              );
-              // Utiliser cette section partielle comme base
-              // generateTokensCSS() va la post-traiter pour corriger la couleur primaire
-              // puis injecter les sections typo/spacing
-              state.tokensContent = colorSectionMatch[0] + "\n}";
-            } else {
-              console.log(
-                "[events] ⚠️ Impossible d'extraire section couleurs, utilisation complète"
-              );
-              // Fallback : utiliser out.tokensCss complet et laisser generateTokensCSS() gérer
-              state.tokensContent = out.tokensCss;
-            }
+            state.tokensContent = "";
+            console.log(
+              "[events] Vérification state.tokensContent après affectation:",
+              state.tokensContent.length,
+              "chars"
+            );
           }
           updateThemePreview();
           updateColorChoices();

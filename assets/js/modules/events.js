@@ -96,6 +96,21 @@ function displayImportSummary(out, jsonData = {}) {
     }
   }
 
+  // Détecter si des données contiennent des modes (light/dark)
+  let hasMultipleModes = false;
+  if (jsonData.primitives && jsonData.primitives.variables) {
+    hasMultipleModes = jsonData.primitives.variables.some((v) => {
+      const modes = v.resolvedValuesByMode || v.valuesByMode || {};
+      return Object.keys(modes).length >= 2;
+    });
+  }
+  if (!hasMultipleModes && jsonData.fonts && jsonData.fonts.variables) {
+    hasMultipleModes = jsonData.fonts.variables.some((v) => {
+      const modes = v.resolvedValuesByMode || v.valuesByMode || {};
+      return Object.keys(modes).length >= 2;
+    });
+  }
+
   // 1. Compter les couleurs (tous les variants)
   const colorVariants = parseColorVariants(out.themeCss);
   const colorsCount = colorVariants.size;
@@ -189,7 +204,9 @@ function displayImportSummary(out, jsonData = {}) {
 
   // Mettre à jour le DOM
   const summaryColors = document.getElementById("summary-colors");
+  const summaryColorsMode = document.getElementById("summary-colors-mode");
   const summarySemantic = document.getElementById("summary-semantics");
+  const summarySemanticMode = document.getElementById("summary-semantics-mode");
   const summaryFonts = document.getElementById("summary-fonts");
   const summaryFontsFluid = document.getElementById("summary-fonts-fluid");
   const summaryLineHeights = document.getElementById("summary-lineheights");
@@ -202,7 +219,13 @@ function displayImportSummary(out, jsonData = {}) {
   );
 
   if (summaryColors) summaryColors.textContent = colorsCount;
+  if (summaryColorsMode) {
+    summaryColorsMode.hidden = !hasMultipleModes;
+  }
   if (summarySemantic) summarySemantic.textContent = semanticsCount;
+  if (summarySemanticMode) {
+    summarySemanticMode.hidden = !hasMultipleModes;
+  }
   if (summaryFonts) summaryFonts.textContent = fontsCount;
   if (summaryLineHeights) summaryLineHeights.textContent = lineHeightsCount;
   if (summarySpacings) summarySpacings.textContent = spacingsCount;

@@ -157,7 +157,7 @@
             </div>
 
             <!-- Variables personnalisées -->
-            <div class="custom-vars">
+            <div class="custom-vars" data-layout="stack" data-gap="s">
               <label
                 for="custom-vars-input"
                 class="custom-vars-label visually-hidden"
@@ -189,13 +189,13 @@
               <h3 class="source-title">
                 Importer depuis un JSON Figma (optionnel)
               </h3>
-              <p class="custom-vars-hint">
-                Importez un ou plusieurs fichiers JSON d'export de tokens (Figma
-                / autre). Le parseur est tolérant : il cherchera des paires
-                clé/valeur et les transformera en variables CSS.
-              </p>
 
               <div data-layout="stack" data-gap="s">
+                <p class="custom-vars-hint">
+                  Importez un ou plusieurs fichiers JSON d'export de tokens
+                  (Figma / autre). Le parseur est tolérant : il cherchera des
+                  paires clé/valeur et les transformera en variables CSS.
+                </p>
                 <label for="json-import-file" class="visually-hidden"
                   >Choisir un fichier JSON</label
                 >

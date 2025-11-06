@@ -255,9 +255,11 @@ body {
 
 .custom-vars-hint {
   margin: 0;
-  margin-bottom: var(--spacing-s);
-  color: var(--on-surface-secondary);
   font-size: var(--text-s);
+}
+
+[id="json-import-status"] {
+  margin: 0;
 }
 
 /* Import summary */

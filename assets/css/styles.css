@@ -253,12 +253,7 @@ body {
 }
 
 .custom-vars-hint {
-  margin: 0;
   font-size: var(--text-s);
-}
-
-[id="json-import-status"] {
-  margin: 0;
 }
 
 /* Import summary */

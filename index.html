@@ -38,7 +38,12 @@
         aria-label="Étapes de configuration"
         role="navigation"
       >
-        <ol class="steps-list" data-layout="cluster" data-justify="center">
+        <ol
+          class="steps-list"
+          role="list"
+          data-layout="cluster"
+          data-justify="center"
+        >
           <li class="step is-active">
             <button
               type="button"
@@ -171,7 +176,7 @@
                 rows="10"
               ></textarea>
 
-              <div class="custom-vars-extra" style="margin-top: 0.5rem">
+              <div class="custom-vars-extra">
                 <label class="config-checkbox">
                   <input type="checkbox" id="synthesize-project-colors" />
                   <span>Extrapoler les couleurs du projet (optionnel)</span>

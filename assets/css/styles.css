@@ -199,7 +199,6 @@ body {
 .step-description {
   margin: 0;
   margin-top: var(--spacing-xs);
-  color: var(--on-surface-secondary);
   font-size: var(--text-m);
 }
 

@@ -31,13 +31,13 @@
   --accent-invert: light-dark(var(--color-ocean-300), var(--primary));
 
   /* Couleur du document */
-  --surface: light-dark(var(--color-white), var(--color-gray-900));
+  --surface: light-dark(var(--color-gray-50), var(--color-gray-900));
   --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));
 
   /* Niveaux de profondeur */
-  --layer-1: light-dark(var(--color-steel-50), var(--color-steel-900));
-  --layer-2: light-dark(var(--color-steel-100), var(--color-steel-800));
-  --layer-3: light-dark(var(--color-steel-200), var(--color-steel-700));
+  --layer-1: light-dark(var(--color-steel-200), var(--color-steel-900));
+  --layer-2: light-dark(var(--color-steel-300), var(--color-steel-800));
+  --layer-3: light-dark(var(--color-steel-400), var(--color-steel-700));
 
   /* Liens */
   --link: light-dark(var(--primary), var(--color-ocean-300));

@@ -13,7 +13,7 @@
       href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"
     />
   </head>
-  <body data-layout="boxed">
+  <body>
     <!-- Zone d'erreurs -->
     <div
       id="global-error"
@@ -21,12 +21,16 @@
       role="alert"
       aria-live="polite"
       hidden
+      data-layout="boxed"
     >
       <!-- Messages d'erreur globaux apparaîtront ici -->
     </div>
-    <header class="header" role="banner" data-layout="repel">
+    <header class="header" role="banner" data-layout="repel boxed">
       <div>
-        <h1 class="title">Primary</h1>
+        <h1 class="title" data-layout="cluster">
+          <img src="assets/images/primary.svg" width="61" height="56" alt="" />
+          <span>Primary</span>
+        </h1>
         <p class="subtitle">
           Pour <span title="débuter">starter</span> ses projets avec style.
         </p>
@@ -77,6 +81,7 @@
         class="step-section is-visible"
         id="step-sources"
         aria-labelledby="step-sources-title"
+        data-layout="boxed"
       >
         <div data-layout="stack" data-gap="l">
           <!-- Comment ça marche ? -->
@@ -253,6 +258,7 @@
         id="step-config"
         aria-labelledby="step-config-title"
         hidden
+        data-layout="boxed"
       >
         <div data-layout="stack" data-gap="l">
           <header>
@@ -391,6 +397,7 @@
         id="step-generate"
         aria-labelledby="step-generate-title"
         hidden
+        data-layout="boxed"
       >
         <div data-layout="stack" data-gap="l">
           <div class="generated-output">
@@ -653,7 +660,7 @@
       <!-- Navigation -->
       <nav
         class="step-actions"
-        data-layout="repel"
+        data-layout="repel boxed"
         aria-label="Navigation entre les étapes"
         role="navigation"
       >
@@ -667,7 +674,7 @@
     </main>
 
     <footer class="footer" role="contentinfo">
-      <div class="footer-alsa">
+      <div class="footer-alsa" data-layout="boxed">
         <p>KNACSS est un projet <i>fifoo</i> conçu avec ❤️ par</p>
         <a class="logo-link" href="https://www.alsacreations.fr/"
           ><svg

@@ -8,7 +8,11 @@ input[type="radio"]:focus-visible + span {
   outline-offset: 2px;
 }
 
-/* Modificateurs Layouts */
+/* Modificateurs */
+
+details {
+  --details-background-color: var(--layer-2);
+}
 
 [data-layout*="boxed"] {
   --boxed-max: 96rem;
@@ -16,7 +20,7 @@ input[type="radio"]:focus-visible + span {
 
 /* Layout général */
 body {
-  padding: var(--spacing-m);
+  padding-block: var(--spacing-m);
   background: var(--surface);
   color: var(--on-surface);
   font-family: var(--font-base);
@@ -24,8 +28,10 @@ body {
 }
 
 .header {
-  padding-bottom: var(--spacing-m);
-  border-bottom: 1px solid var(--border-light);
+  padding-bottom: var(--spacing-s);
+  padding-inline: var(--spacing-s);
+
+  /* border-bottom: 1px solid var(--border-light); */
 }
 
 .title {
@@ -44,12 +50,13 @@ body {
 }
 
 .main {
-  padding-block: var(--spacing-l);
+  padding: var(--spacing-xl) var(--spacing-s);
+  background-color: var(--layer-1);
+  clip-path: polygon(0 3%, 100% 0, 100% 100%, 0 97%);
 }
 
 .footer {
-  padding-block: var(--spacing-m);
-  border-top: 1px solid var(--border-light);
+  padding-block: var(--spacing-l) var(--spacing-m);
 }
 
 .logo-alsacreations-pepins-inner {
@@ -206,7 +213,7 @@ body {
   padding: var(--spacing-m);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-16);
-  background: var(--layer-1);
+  background: var(--layer-2);
 }
 
 .source-title {

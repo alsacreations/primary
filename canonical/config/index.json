@@ -1,4 +1,7 @@
 {
+  ".github/copilot-instructions.md": ".github/copilot-instructions.md",
+  ".vscode/extensions.json": ".vscode/extensions.json",
+  ".vscode/settings.json": ".vscode/settings.json",
   "editorconfig.txt": ".editorconfig",
   "gitignore.txt": ".gitignore",
   "postcss.config.mjs": "postcss.config.mjs",

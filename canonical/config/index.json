@@ -1,0 +1,7 @@
+{
+  "editorconfig.txt": ".editorconfig",
+  "gitignore.txt": ".gitignore",
+  "postcss.config.mjs": "postcss.config.mjs",
+  "prettier.config.mjs": "prettier.config.mjs",
+  "stylelint.config.mjs": "stylelint.config.mjs"
+}

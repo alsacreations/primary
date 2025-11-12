@@ -39,6 +39,22 @@ if (themeJson) {
   console.log(`  ✓ ${themeJson}`);
 }
 
+console.log("\n🔧 Fichiers de config (conditionnels - si checkbox cochée) :\n");
+const configFiles = files.filter(
+  (f) =>
+    f.endsWith(".config.mjs") || f === ".editorconfig" || f === ".gitignore"
+);
+if (configFiles.length > 0) {
+  configFiles.forEach((f) => console.log(`  ✓ ${f}`));
+} else {
+  console.log("  (liste dynamique via canonical/config/index.json)");
+  console.log("  → .editorconfig (depuis editorconfig.txt)");
+  console.log("  → .gitignore (depuis gitignore.txt)");
+  console.log("  → postcss.config.mjs");
+  console.log("  → prettier.config.mjs");
+  console.log("  → stylelint.config.mjs");
+}
+
 console.log(`\n📊 Total identifié : ${files.length} appels zip.file()\n`);
 
 // Vérification des chemins vers canonical/
@@ -73,5 +89,10 @@ primary-css-kit.zip
 │   ├── alsacreations.svg
 │   └── favicon.svg
 ├── index.html
-└── theme.json (si WordPress)
+├── theme.json (si WordPress)
+├── .editorconfig (si config cochée)
+├── .gitignore (si config cochée)
+├── postcss.config.mjs (si config cochée)
+├── prettier.config.mjs (si config cochée)
+└── stylelint.config.mjs (si config cochée)
 `);

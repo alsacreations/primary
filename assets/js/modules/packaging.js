@@ -90,6 +90,31 @@ export async function downloadAllFiles() {
     console.warn("Impossible d'ajouter theme.json au ZIP:", err);
   }
 
+  // Fichiers de config (si checkbox cochée)
+  try {
+    const includeConfigCheckbox = document.getElementById(
+      "include-config-files"
+    );
+    if (includeConfigCheckbox && includeConfigCheckbox.checked) {
+      // Récupérer le mapping des fichiers de config (source -> destination)
+      const indexResp = await fetch("canonical/config/index.json");
+      if (indexResp.ok) {
+        const configMapping = await indexResp.json();
+
+        // configMapping = { "editorconfig.txt": ".editorconfig", ... }
+        for (const [sourceFile, destFile] of Object.entries(configMapping)) {
+          const configResp = await fetch(`canonical/config/${sourceFile}`);
+          if (configResp.ok) {
+            const configContent = await configResp.text();
+            zip.file(destFile, configContent); // Utiliser le nom de destination
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Erreur lors de l'ajout des fichiers de config:", err);
+  }
+
   // Générer le blob et déclencher le téléchargement
   try {
     const content = await zip.generateAsync({ type: "blob" });

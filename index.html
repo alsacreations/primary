@@ -636,7 +636,7 @@
               </details>
 
               <!-- Bouton de téléchargement unique -->
-              <div data-layout="stack" data-gap="s">
+              <div data-layout="duo" data-split="auto-1" data-gap="s">
                 <button
                   type="button"
                   class="btn btn-primary"
@@ -651,6 +651,17 @@
                   </svg>
                   Tout télécharger
                 </button>
+
+                <div class="config-checkbox">
+                  <input
+                    type="checkbox"
+                    id="include-config-files"
+                    name="include-config-files"
+                  />
+                  <label for="include-config-files">
+                    Ajouter fichiers de config
+                  </label>
+                </div>
               </div>
             </div>
           </div>

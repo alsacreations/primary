@@ -1,5 +1,6 @@
 #
 # *** Configuration par défaut pour les projets Alsacréations ***
+# Mise à jour : 2025-11-12
 #
 root = true
 

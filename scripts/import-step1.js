@@ -24,8 +24,8 @@ async function useProjectSource() {
   const srcTheme = path.join(ROOT, "assets", "css", "theme.css");
   const srcTokens = path.join(
     ROOT,
-    "public",
-    "samples",
+    "canonical",
+    "tokens",
     "theme-tokens-base.css"
   );
   const dstTheme = path.join(outDir, "theme.css");

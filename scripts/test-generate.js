@@ -203,14 +203,14 @@ async function runHeadlessComparisons() {
     state.nativesContent = "";
   }
   try {
-    state.stylesSystemContent = read(["public", "samples", "styles.css"]);
+    state.stylesSystemContent = read(["canonical", "styles", "styles.css"]);
   } catch (e) {
     state.stylesSystemContent = "";
   }
   try {
     state.stylesPoppinsContent = read([
-      "public",
-      "samples",
+      "canonical",
+      "styles",
       "styles-poppins.css",
     ]);
   } catch (e) {
@@ -244,28 +244,28 @@ async function runHeadlessComparisons() {
   state.config.fontFamily = "system";
   const generatedStylesSystem = generateStylesCSS();
   const expectedStylesSystem = fs.readFileSync(
-    path.join(__dirname, "..", "public", "samples", "styles.css"),
+    path.join(__dirname, "..", "canonical", "styles", "styles.css"),
     "utf8"
   );
   assert(
     generatedStylesSystem === expectedStylesSystem,
-    "styles.css (system) mismatch vs public/samples/styles.css"
+    "styles.css (system) mismatch vs canonical/styles/styles.css"
   );
-  console.log("✓ styles.css (system) matches public/samples/styles.css");
+  console.log("✓ styles.css (system) matches canonical/styles/styles.css");
 
   // 3) styles.css poppins
   state.config.fontFamily = "poppins";
   const generatedStylesPoppins = generateStylesCSS();
   const expectedStylesPoppins = fs.readFileSync(
-    path.join(__dirname, "..", "public", "samples", "styles-poppins.css"),
+    path.join(__dirname, "..", "canonical", "styles", "styles-poppins.css"),
     "utf8"
   );
   assert(
     generatedStylesPoppins === expectedStylesPoppins,
-    "styles.css (poppins) mismatch vs public/samples/styles-poppins.css"
+    "styles.css (poppins) mismatch vs canonical/styles/styles-poppins.css"
   );
   console.log(
-    "✓ styles.css (poppins) matches public/samples/styles-poppins.css"
+    "✓ styles.css (poppins) matches canonical/styles/styles-poppins.css"
   );
 
   // 4) tokens canonical
@@ -274,18 +274,18 @@ async function runHeadlessComparisons() {
     path.join(
       __dirname,
       "..",
-      "public",
-      "samples",
+      "canonical",
+      "tokens",
       "theme-tokens-base-light-dark.css"
     ),
     "utf8"
   );
   assert(
     generatedTokens === expectedTokens,
-    "Canonical theme-tokens mismatch vs public/samples/theme-tokens-base-light-dark.css"
+    "Canonical theme-tokens mismatch vs canonical/tokens/theme-tokens-base-light-dark.css"
   );
   console.log(
-    "✓ canonical theme-tokens matches public/samples/theme-tokens-base-light-dark.css"
+    "✓ canonical theme-tokens matches canonical/tokens/theme-tokens-base-light-dark.css"
   );
 
   // 5) theme.json (WordPress) canonical comparison
@@ -297,22 +297,14 @@ async function runHeadlessComparisons() {
   state.config.spacingResponsive = true;
   const generatedThemeJson = generateThemeJSON();
   const expectedThemeJson = fs.readFileSync(
-    path.join(
-      __dirname,
-      "..",
-      "public",
-      "samples",
-      "theme-base-light-dark.json"
-    ),
+    path.join(__dirname, "..", "canonical", "wordpress", "theme.json"),
     "utf8"
   );
   assert(
     generatedThemeJson === expectedThemeJson,
-    "Canonical theme.json mismatch vs public/samples/theme-base-light-dark.json"
+    "Canonical theme.json mismatch vs canonical/wordpress/theme.json"
   );
-  console.log(
-    "✓ canonical theme.json matches public/samples/theme-base-light-dark.json"
-  );
+  console.log("✓ canonical theme.json matches canonical/wordpress/theme.json");
 
   // 6) theme.json should omit Poppins when config.fontFamily !== 'poppins'
   state.config.technology = "wordpress";

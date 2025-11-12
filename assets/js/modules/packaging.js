@@ -32,7 +32,7 @@ export async function downloadAllFiles() {
 
   // Index
   try {
-    const indexResp = await fetch("public/samples/index.html");
+    const indexResp = await fetch("canonical/samples/index.html");
     if (indexResp.ok) {
       const indexContent = await indexResp.text();
       zip.file("index.html", indexContent);
@@ -43,7 +43,7 @@ export async function downloadAllFiles() {
 
   // SVGs
   try {
-    const svgResp = await fetch("public/samples/alsacreations.svg");
+    const svgResp = await fetch("canonical/assets/alsacreations.svg");
     if (svgResp.ok) {
       const svgBlob = await svgResp.blob();
       zip.file("img/alsacreations.svg", svgBlob);
@@ -53,7 +53,7 @@ export async function downloadAllFiles() {
   }
 
   try {
-    const favResp = await fetch("public/samples/favicon.svg");
+    const favResp = await fetch("canonical/assets/favicon.svg");
     if (favResp.ok) {
       const favBlob = await favResp.blob();
       zip.file("img/favicon.svg", favBlob);
@@ -67,7 +67,7 @@ export async function downloadAllFiles() {
     const fontFamily = state.config && state.config.fontFamily;
     if (fontFamily === "poppins") {
       const fontResp = await fetch(
-        "public/samples/Poppins-Variable-opti.woff2"
+        "canonical/fonts/Poppins-Variable-opti.woff2"
       );
       if (fontResp.ok) {
         const fontBlob = await fontResp.blob();

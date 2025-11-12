@@ -2360,7 +2360,7 @@ export function generateThemeJSON() {
 
   // Canonical sample (match exact bytes when canonical config)
   // SAUF si le contenu vient d'un import Figma (state.themeFromImport)
-  const canonicalPath = "/public/samples/theme-base-light-dark.json"; // informational
+  const canonicalPath = "/canonical/wordpress/theme.json"; // informational
   const isFromImport = state && state.themeFromImport;
   if (
     !isFromImport &&

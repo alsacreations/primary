@@ -23,7 +23,7 @@ const cssFiles = files.filter(
 cssFiles.forEach((f) => console.log(`  ✓ ${f}`));
 
 console.log("\n🖼️  Assets statiques (toujours présents) :\n");
-console.log("  ✓ index.html");
+console.log("  ✓ styleguide.html");
 console.log("  ✓ img/alsacreations.svg");
 console.log("  ✓ img/favicon.svg");
 
@@ -88,7 +88,7 @@ primary-css-kit.zip
 ├── img/
 │   ├── alsacreations.svg
 │   └── favicon.svg
-├── index.html
+├── styleguide.html
 ├── theme.json (si WordPress)
 ├── .editorconfig (si config cochée)
 ├── .gitignore (si config cochée)

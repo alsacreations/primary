@@ -80,7 +80,7 @@ global.JSZip.prototype.generateAsync = async function (options) {
     "assets/css/layouts.css",
     "assets/css/natives.css",
     "assets/css/styles.css",
-    "index.html",
+    "styleguide.html",
     "img/alsacreations.svg",
     "img/favicon.svg",
   ];

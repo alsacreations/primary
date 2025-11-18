@@ -30,15 +30,15 @@ export async function downloadAllFiles() {
   zip.file("assets/css/natives.css", state.nativesContent || "");
   zip.file("assets/css/styles.css", stylesCSS);
 
-  // Index
+  // Styleguide
   try {
-    const indexResp = await fetch("canonical/samples/index.html");
-    if (indexResp.ok) {
-      const indexContent = await indexResp.text();
-      zip.file("index.html", indexContent);
+    const styleguideResp = await fetch("canonical/samples/styleguide.html");
+    if (styleguideResp.ok) {
+      const styleguideContent = await styleguideResp.text();
+      zip.file("styleguide.html", styleguideContent);
     }
   } catch (err) {
-    console.warn("index.html sample absent pour le ZIP:", err);
+    console.warn("styleguide.html sample absent pour le ZIP:", err);
   }
 
   // SVGs

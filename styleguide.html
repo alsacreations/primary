@@ -63,6 +63,7 @@
         margin-bottom: 1.5rem;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid var(--primary, #007bff);
+        color: var(--accent, #666666);
       }
 
       .section h3 {
@@ -73,7 +74,7 @@
       .token-demo {
         margin-bottom: 0.5rem;
         padding: 1rem;
-        border: 1px solid var(--border-light, #e0e0e0);
+        border: 1px solid #444444;
         border-radius: 8px;
         background: var(--surface, #ffffff);
       }
@@ -82,7 +83,7 @@
         width: 4rem;
         height: 3rem;
         margin-bottom: 0.5rem;
-        border: 1px solid var(--border-light, #e0e0e0);
+        border: 1px solid #444444;
         border-radius: 4px;
       }
 
@@ -187,18 +188,32 @@
         }
 
         async loadCSSFiles() {
-          // Chargement des fichiers CSS depuis la racine de l'app
-          const [tokensResponse, primitivesResponse] = await Promise.all([
-            fetch("./assets/css/theme-tokens.css"),
-            fetch("./assets/css/theme.css"),
-          ]);
+          let tokensCSS, primitivesCSS;
 
-          if (!tokensResponse.ok || !primitivesResponse.ok) {
-            throw new Error("Impossible de charger les fichiers CSS");
+          // Vérifier si le CSS est injecté directement (version téléchargée)
+          if (window.INJECTED_THEME_CSS && window.INJECTED_TOKENS_CSS) {
+            console.log("Utilisation du CSS injecté (version téléchargée)");
+            primitivesCSS = window.INJECTED_THEME_CSS;
+            tokensCSS = window.INJECTED_TOKENS_CSS;
+          } else {
+            // Sinon, charger depuis les fichiers externes
+            try {
+              // Essayer d'abord les chemins du dossier assets
+              const [tokensResponse, primitivesResponse] = await Promise.all([
+                fetch("./assets/css/theme-tokens.css"),
+                fetch("./assets/css/theme.css"),
+              ]);
+
+              if (tokensResponse.ok && primitivesResponse.ok) {
+                tokensCSS = await tokensResponse.text();
+                primitivesCSS = await primitivesResponse.text();
+              } else {
+                throw new Error("Fichiers non trouvés dans assets/css/");
+              }
+            } catch (error) {
+              throw new Error("Impossible de charger les fichiers CSS");
+            }
           }
-
-          const tokensCSS = await tokensResponse.text();
-          const primitivesCSS = await primitivesResponse.text();
 
           // Logs pour déboguer le contenu chargé
           console.log("=== CONTENU theme.css CHARGÉ ===");

@@ -30,15 +30,31 @@ export async function downloadAllFiles() {
   zip.file("assets/css/natives.css", state.nativesContent || "");
   zip.file("assets/css/styles.css", stylesCSS);
 
-  // Styleguide
+  // Styleguide avec CSS injecté pour version autonome
   try {
-    const styleguideResp = await fetch("canonical/samples/styleguide.html");
+    const styleguideResp = await fetch("styleguide.html");
     if (styleguideResp.ok) {
-      const styleguideContent = await styleguideResp.text();
+      let styleguideContent = await styleguideResp.text();
+
+      // Injecter le CSS directement dans le styleguide pour le rendre autonome
+      const cssInjection = `
+        <script>
+          // CSS injecté pour version téléchargée
+          window.INJECTED_THEME_CSS = \`${themeCSS.replace(/`/g, "\\`")}\`;
+          window.INJECTED_TOKENS_CSS = \`${tokensCSS.replace(/`/g, "\\`")}\`;
+        </script>
+      `;
+
+      // Injecter avant la fermeture du head
+      styleguideContent = styleguideContent.replace(
+        "</head>",
+        cssInjection + "</head>"
+      );
+
       zip.file("styleguide.html", styleguideContent);
     }
   } catch (err) {
-    console.warn("styleguide.html sample absent pour le ZIP:", err);
+    console.warn("styleguide.html absent pour le ZIP:", err);
   }
 
   // SVGs

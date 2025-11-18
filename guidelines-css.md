@@ -350,9 +350,9 @@ Les tokens assignent des rôles fonctionnels aux primitives, créant une couche 
   --text-s: clamp(var(--text-14), 0.8239rem + 0.2273vw, var(--text-16));
   --text-m: clamp(var(--text-16), 0.9489rem + 0.2273vw, var(--text-18));
   --text-l: clamp(var(--text-18), 1.0739rem + 0.2273vw, var(--text-20));
-  --text-xl: clamp(var(--text-20), 0.9943rem + 1.1364vw, var(--text-30));
+  --text-xl: clamp(var(--text-20), 0.957rem + 1.3043vw, var(--text-32));
   --text-2xl: clamp(var(--text-24), 1.1932rem + 1.3636vw, var(--text-36));
-  --text-3xl: clamp(var(--text-30), 1.4148rem + 2.0455vw, var(--text-48));
+  --text-3xl: clamp(var(--text-32), 1.609rem + 1.7391vw, var(--text-48));
 
   /* Espacements adaptatifs */
   --gap-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));

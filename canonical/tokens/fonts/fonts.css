@@ -3,9 +3,9 @@
   --text-s: var(--text-14);
   --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));
   --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));
-  --text-xl: clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30));
+  --text-xl: clamp(var(--text-20), 0.957rem + 1.3043vw, var(--text-32));
   --text-2xl: clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36));
-  --text-3xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));
+  --text-3xl: clamp(var(--text-32), 1.609rem + 1.7391vw, var(--text-48));
   --text-4xl: clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80));
 
   /* Hauteurs de lignes */

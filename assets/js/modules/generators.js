@@ -148,9 +148,9 @@ const CANONICAL_THEME_TOKENS = `/* ----------------------------------
   --text-s: var(--text-14);
   --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));
   --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));
-  --text-xl: clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30));
+  --text-xl: clamp(var(--text-20), 0.957rem + 1.3043vw, var(--text-32));
   --text-2xl: clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36));
-  --text-3xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));
+  --text-3xl: clamp(var(--text-32), 1.609rem + 1.7391vw, var(--text-48));
   --text-4xl: clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80));
 
   /* Espacements */
@@ -997,13 +997,13 @@ export function generateTokensCSS() {
             "  --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));"
           );
           typoLines.push(
-            "  --text-xl: clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30));"
+            "  --text-xl: clamp(var(--text-20), 0.957rem + 1.3043vw, var(--text-32));"
           );
           typoLines.push(
             "  --text-2xl: clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36));"
           );
           typoLines.push(
-            "  --text-3xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));"
+            "  --text-3xl: clamp(var(--text-32), 1.609rem + 1.7391vw, var(--text-48));"
           );
           typoLines.push(
             "  --text-4xl: clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80));"
@@ -1038,7 +1038,7 @@ export function generateTokensCSS() {
             "  --text-l: var(--text-18);",
             "  --text-xl: var(--text-20);",
             "  --text-2xl: var(--text-24);",
-            "  --text-3xl: var(--text-30);",
+            "  --text-3xl: var(--text-32);",
             "  --text-4xl: var(--text-48);",
             "\n",
           ].join("\n");
@@ -2038,13 +2038,13 @@ export function generateTokensCSS() {
           "  --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));"
         );
         lines.push(
-          "  --text-xl: clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30));"
+          "  --text-xl: clamp(var(--text-20), 0.957rem + 1.3043vw, var(--text-32));"
         );
         lines.push(
           "  --text-2xl: clamp(var(--text-24), 1.2065rem + 1.3043vw, var(--text-36));"
         );
         lines.push(
-          "  --text-3xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));"
+          "  --text-3xl: clamp(var(--text-32), 1.609rem + 1.7391vw, var(--text-48));"
         );
         lines.push(
           "  --text-4xl: clamp(var(--text-48), 2.1818rem + 3.6364vw, var(--text-80));"
@@ -2054,7 +2054,7 @@ export function generateTokensCSS() {
         lines.push("  --text-l: var(--text-18);");
         lines.push("  --text-xl: var(--text-20);");
         lines.push("  --text-2xl: var(--text-24);");
-        lines.push("  --text-3xl: var(--text-30);");
+        lines.push("  --text-3xl: var(--text-32);");
         lines.push("  --text-4xl: var(--text-48);");
       }
     } // Ferme le if (tokensContentForTypo)
@@ -2641,7 +2641,6 @@ export function generateThemeJSON() {
         { name: "text-18", size: "var(--text-18)", slug: "text-18" },
         { name: "text-20", size: "var(--text-20)", slug: "text-20" },
         { name: "text-24", size: "var(--text-24)", slug: "text-24" },
-        { name: "text-30", size: "var(--text-30)", slug: "text-30" },
         { name: "text-32", size: "var(--text-32)", slug: "text-32" },
         { name: "text-36", size: "var(--text-36)", slug: "text-36" },
         { name: "text-40", size: "var(--text-40)", slug: "text-40" },
@@ -2661,7 +2660,7 @@ export function generateThemeJSON() {
         },
         {
           name: "text-xl",
-          size: "clamp(var(--text-20), 1.0054rem + 1.087vw, var(--text-30))",
+          size: "clamp(var(--text-20), 0.957rem + 1.3043vw, var(--text-32))",
           slug: "text-xl",
         },
         {
@@ -2671,7 +2670,7 @@ export function generateThemeJSON() {
         },
         {
           name: "text-3xl",
-          size: "clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48))",
+          size: "clamp(var(--text-32), 1.609rem + 1.7391vw, var(--text-48))",
           slug: "text-3xl",
         },
         {

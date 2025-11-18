@@ -6,8 +6,64 @@
     <title>Styleguide</title>
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg" />
     <link rel="stylesheet" href="assets/css/app.css" />
+    <style>
+      body {
+        padding: var(--spacing-12);
+      }
+
+      .token-demo {
+        padding: var(--spacing-12);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-8);
+        background: var(--surface);
+      }
+
+      .color-swatch {
+        width: 4rem;
+        height: 3rem;
+        margin-bottom: var(--spacing-8);
+        border-radius: var(--radius-4);
+      }
+
+      .token-info {
+        font-size: var(--text-s);
+      }
+
+      .token-info strong {
+        display: block;
+        margin-bottom: var(--spacing-4);
+        font-weight: var(--font-weight-semibold);
+      }
+
+      .token-info code {
+        display: block;
+        color: var(--accent);
+        font-family: var(--font-mono);
+        font-size: 0.875em;
+      }
+
+      .border-sample,
+      .typo-sample,
+      .spacing-sample {
+        margin-bottom: var(--spacing-8);
+      }
+
+      .spacing-ruler {
+        height: 0.25rem;
+        margin-bottom: var(--spacing-4);
+        background: var(--accent);
+      }
+
+      /* Limite la taille d'affichage des grandes polices pour la lisibilité du styleguide */
+      .typo-sample {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    </style>
   </head>
-  <body data-layout="boxed">
+  <body>
     <header class="header" role="banner">
       <h1 class="title-l">Styleguide</h1>
     </header>
@@ -17,87 +73,899 @@
         <div>
           <h2>Tokens (theme-tokens.css)</h2>
           <h3>Couleur primaire</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="autogrid" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--primary)"
+              ></div>
+              <div class="token-info">
+                <strong>--primary</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border: 1px solid var(--border-light);
+                  background-color: var(--on-primary);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--on-primary</strong>
+              </div>
+            </div>
           </div>
           <h3>Couleur d'accent</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="autogrid" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--accent)"
+              ></div>
+              <div class="token-info">
+                <strong>--accent</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border: 1px solid var(--border-light);
+                  background-color: var(--accent-invert);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--accent-invert</strong>
+              </div>
+            </div>
           </div>
           <h3>Surface du document</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="autogrid" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border: 1px solid var(--border-light);
+                  background-color: var(--surface);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--surface</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--on-surface)"
+              ></div>
+              <div class="token-info">
+                <strong>--on-surface</strong>
+              </div>
+            </div>
           </div>
           <h3>Niveaux de profondeur</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="autogrid" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border: 1px solid var(--border-light);
+                  background-color: var(--layer-1);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--layer-1</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border: 1px solid var(--border-light);
+                  background-color: var(--layer-2);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--layer-2</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border: 1px solid var(--border-light);
+                  background-color: var(--layer-3);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--layer-3</strong>
+              </div>
+            </div>
           </div>
           <h3>Interactions</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="autogrid" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--link)"
+              ></div>
+              <div class="token-info">
+                <strong>--link</strong>
+                <a href="#" style="color: var(--link)">Exemple de lien</a>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--link-hover)"
+              ></div>
+              <div class="token-info">
+                <strong>--link-hover</strong>
+                <a href="#" style="color: var(--link-hover)">Lien au survol</a>
+              </div>
+            </div>
           </div>
           <h3>États</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="autogrid" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--success)"
+              ></div>
+              <div class="token-info">
+                <strong>--success</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--warning)"
+              ></div>
+              <div class="token-info">
+                <strong>--warning</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--error)"
+              ></div>
+              <div class="token-info">
+                <strong>--error</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--info)"
+              ></div>
+              <div class="token-info">
+                <strong>--info</strong>
+              </div>
+            </div>
           </div>
           <h3>Bordures</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="autogrid" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="border-sample"
+                style="
+                  padding: var(--spacing-16);
+                  border: 1px solid var(--border-light);
+                "
+              >
+                Border light
+              </div>
+              <div class="token-info">
+                <strong>--border-light</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="border-sample"
+                style="
+                  padding: var(--spacing-16);
+                  border: 1px solid var(--border-medium);
+                "
+              >
+                Border medium
+              </div>
+              <div class="token-info">
+                <strong>--border-medium</strong>
+              </div>
+            </div>
           </div>
           <h3>Typographie — Tailles de police</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
-          </div>
-          <h3>Typographie — Hauteurs de lignes</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-s)">
+                --text-s — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-m)">
+                --text-m — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-l)">
+                --text-l — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-xl)">
+                --text-xl — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-2xl)">
+                --text-2xl — Exemple
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-3xl)">
+                --text-3xl — Exemple
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-4xl)">
+                --text-4xl — Exemple
+              </div>
+            </div>
           </div>
           <h3>Espacements</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-xs)"></div>
+              <div class="typo-sample">--spacing-xs</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-s)"></div>
+              <div class="typo-sample">--spacing-s</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-m)"></div>
+              <div class="typo-sample">--spacing-m</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-l)"></div>
+              <div class="typo-sample">--spacing-l</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-xl)"></div>
+              <div class="typo-sample">--spacing-xl</div>
+            </div>
           </div>
           <h3>Formulaires</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <label for="sample-input">Label d'exemple</label>
+              <input type="text" id="sample-input" placeholder="Placeholder" />
+            </div>
+            <div class="token-demo">
+              <label for="sample-select">Sélection</label>
+              <select id="sample-select">
+                <option>Option 1</option>
+                <option>Option 2</option>
+              </select>
+            </div>
+            <div class="token-demo">
+              <label> <input type="checkbox" /> Case à cocher </label>
+            </div>
+            <div class="token-demo">
+              <button type="button" class="btn btn-primary">
+                Bouton primaire
+              </button>
+              <button type="button" class="btn btn-secondary">
+                Bouton secondaire
+              </button>
+            </div>
           </div>
         </div>
         <div>
           <h2>Primitives (theme.css)</h2>
           <h3>Breakpoints</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div class="typo-sample">--md - 768px</div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample">--lg - 1024px</div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample">--xl - 1280px</div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample">--xxl - 1536px</div>
+            </div>
           </div>
           <h3>Couleurs</h3>
           <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-white)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-white</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-black)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-black</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-50)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-50</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-100)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-100</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-200)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-200</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-300)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-300</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-400)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-400</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-500)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-500</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-600)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-600</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-700)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-700</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-800)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-800</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-gray-900)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-gray-900</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-error-100)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-error-100</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-error-300)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-error-300</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-error-500)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-error-500</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-error-700)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-error-700</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-error-900)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-error-900</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-success-100)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-success-100</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-success-300)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-success-300</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-success-500)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-success-500</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-success-700)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-success-700</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-success-900)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-success-900</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-warning-100)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-warning-100</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-warning-300)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-warning-300</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-warning-500)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-warning-500</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-warning-700)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-warning-700</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-warning-900)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-warning-900</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-info-100)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-info-100</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-info-300)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-info-300</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-info-500)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-info-500</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-info-700)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-info-700</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="background-color: var(--color-info-900)"
+              ></div>
+              <div class="token-info">
+                <strong>--color-info-900</strong>
+              </div>
+            </div>
           </div>
           <h3>Typographie — Tailles de police</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-14)">
+                --text-14 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-16)">
+                --text-16 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-18)">
+                --text-18 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-20)">
+                --text-20 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-24)">
+                --text-24 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-28)">
+                --text-28 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-32)">
+                --text-32 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-36)">
+                --text-36 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-40)">
+                --text-40 — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-48)">
+                --text-48 — Exemple
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-64)">
+                --text-64 — Exemple
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="typo-sample" style="font-size: var(--text-80)">
+                --text-80 — Exemple
+              </div>
+            </div>
           </div>
           <h3>Graisses de police</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
-          </div>
-          <h3>Typographie — Hauteurs de lignes</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="typo-sample"
+                style="font-weight: var(--font-weight-light)"
+              >
+                --font-weight-light — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="typo-sample"
+                style="font-weight: var(--font-weight-regular)"
+              >
+                --font-weight-regular — Exemple de texte
+              </div>
+            </div>
+
+            <div class="token-demo">
+              <div
+                class="typo-sample"
+                style="font-weight: var(--font-weight-semibold)"
+              >
+                --font-weight-semibold — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="typo-sample"
+                style="font-weight: var(--font-weight-bold)"
+              >
+                --font-weight-bold — Exemple de texte
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="typo-sample"
+                style="font-weight: var(--font-weight-black)"
+              >
+                --font-weight-black — Exemple de texte
+              </div>
+            </div>
           </div>
           <h3>Espacements</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="spacing-ruler"
+                style="
+                  width: var(--spacing-0);
+                  min-width: 1px;
+                  background: var(--border-medium);
+                "
+              ></div>
+              <div class="typo-sample">--spacing-0 - 0</div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="spacing-ruler"
+                style="width: var(--spacing-0); min-width: 2px; opacity: 50%"
+              ></div>
+              <div class="typo-sample">--spacing-1 - 1px</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-2)"></div>
+              <div class="typo-sample">--spacing-2 - 0.125rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-4)"></div>
+              <div class="typo-sample">--spacing-4 - 0.25rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-8)"></div>
+              <div class="typo-sample">--spacing-8 - 0.5rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-12)"></div>
+              <div class="typo-sample">--spacing-12 - 0.75rem</div>
+            </div>
+
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-20)"></div>
+              <div class="typo-sample">--spacing-16 - 1rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-20)"></div>
+              <div class="typo-sample">--spacing-20 - 1.25rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-24)"></div>
+              <div class="typo-sample">--spacing-24 - 1.5rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-32)"></div>
+              <div class="typo-sample">--spacing-32 - 2rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-40)"></div>
+              <div class="typo-sample">--spacing-40 - 2.5rem</div>
+            </div>
+
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-48)"></div>
+              <div class="typo-sample">--spacing-48 - 3rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-64)"></div>
+              <div class="typo-sample">--spacing-64 - 4rem</div>
+            </div>
+            <div class="token-demo">
+              <div class="spacing-ruler" style="width: var(--spacing-80)"></div>
+              <div class="typo-sample">--spacing-80 - 5rem</div>
+            </div>
           </div>
           <h3>Border-radius</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border-radius: var(--radius-4);
+                  background-color: var(--accent);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--radius-4</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border-radius: var(--radius-8);
+                  background-color: var(--accent);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--radius-8</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border-radius: var(--radius-12);
+                  background-color: var(--accent);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--radius-12</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border-radius: var(--radius-16);
+                  background-color: var(--accent);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--radius-16</strong>
+              </div>
+            </div>
+
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border-radius: var(--radius-24);
+                  background-color: var(--accent);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--radius-24</strong>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div
+                class="color-swatch"
+                style="
+                  border-radius: var(--radius-full);
+                  background-color: var(--accent);
+                "
+              ></div>
+              <div class="token-info">
+                <strong>--radius-full</strong>
+              </div>
+            </div>
           </div>
           <h3>Z-index</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div class="token-info">
+                <strong>--z-under-page-level</strong>
+                <span>-1</span>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="token-info">
+                <strong>--z-above-page-level</strong>
+                <span>1</span>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="token-info">
+                <strong>--z-header-level</strong>
+                <span>1000</span>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="token-info">
+                <strong>--z-above-header-level</strong>
+                <span>2000</span>
+              </div>
+            </div>
+            <div class="token-demo">
+              <div class="token-info">
+                <strong>--z-above-all-level</strong>
+                <span>3000</span>
+              </div>
+            </div>
           </div>
           <h3>Transitions</h3>
-          <div data-layout="autogrid">
-            <!-- ici le contenu dynamique -->
+          <div data-layout="stack" data-gap="s">
+            <div class="token-demo">
+              <div class="token-info">
+                <strong>--transition-duration</strong>
+                <span>250ms</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

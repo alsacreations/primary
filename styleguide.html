@@ -142,6 +142,15 @@
         </p>
       </header>
 
+      <div
+        id="source-indicator"
+        style="
+          margin-bottom: 1rem;
+          color: var(--accent, #666666);
+          font-size: 0.95rem;
+        "
+      ></div>
+
       <div id="loading" class="loading">
         <p>Chargement des fichiers CSS...</p>
       </div>
@@ -195,20 +204,72 @@
             console.log("Utilisation du CSS injecté (version téléchargée)");
             primitivesCSS = window.INJECTED_THEME_CSS;
             tokensCSS = window.INJECTED_TOKENS_CSS;
+            const el = document.getElementById("source-indicator");
+            if (el)
+              el.textContent =
+                "Source des tokens : contenu injecté (ZIP généré)";
           } else {
             // Sinon, charger depuis les fichiers externes
             try {
-              // Essayer d'abord les chemins du dossier assets
-              const [tokensResponse, primitivesResponse] = await Promise.all([
-                fetch("./assets/css/theme-tokens.css"),
-                fetch("./assets/css/theme.css"),
-              ]);
+              // Tentative 1: essayer d'utiliser l'état / générateurs runtime
+              try {
+                const stateModule = await import(
+                  "./assets/js/modules/state.js"
+                );
+                const generators = await import(
+                  "./assets/js/modules/generators.js"
+                );
 
-              if (tokensResponse.ok && primitivesResponse.ok) {
-                tokensCSS = await tokensResponse.text();
-                primitivesCSS = await primitivesResponse.text();
-              } else {
-                throw new Error("Fichiers non trouvés dans assets/css/");
+                // generators génèrent le CSS en s'appuyant sur `state`
+                try {
+                  primitivesCSS = generators.generateThemeCSS();
+                  tokensCSS = generators.generateTokensCSS();
+                  // Afficher l'indicateur de source
+                  document.getElementById("source-indicator").textContent =
+                    "Source des tokens : génération runtime (state/generators)";
+                  console.log("Utilisation des générateurs runtime (state)");
+                } catch (e) {
+                  console.warn(
+                    "Générateurs présents mais échec de génération:",
+                    e
+                  );
+                }
+              } catch (e) {
+                // Si import dynamique impossible ou modules absents, on ne poursuit pas
+                console.info(
+                  "Modules state/generators non disponibles en runtime, saut."
+                );
+              }
+
+              // Si aucun contenu généré par les modules n'a été obtenu,
+              // autoriser explicitement le chargement depuis `assets/css` via
+              // le paramètre d'URL `?useAssets=true` (prévisualisation explicite).
+              if (!tokensCSS || !primitivesCSS) {
+                const params = new URLSearchParams(window.location.search);
+                const allowAssets = params.get("useAssets") === "true";
+                if (!allowAssets) {
+                  throw new Error(
+                    "Aucun contenu injecté ou généré disponible. Pour prévisualiser les fichiers d'assets, ajoutez '?useAssets=true' à l'URL. Pour le kit ZIP, le styleguide utilise toujours les fichiers injectés au moment de la génération."
+                  );
+                }
+
+                // Chargement explicite des fichiers assets (prévisualisation)
+                const [tokensResponse, primitivesResponse] = await Promise.all([
+                  fetch("./assets/css/theme-tokens.css"),
+                  fetch("./assets/css/theme.css"),
+                ]);
+
+                if (tokensResponse.ok && primitivesResponse.ok) {
+                  tokensCSS = await tokensResponse.text();
+                  primitivesCSS = await primitivesResponse.text();
+                  document.getElementById("source-indicator").textContent =
+                    "Source des tokens : fichiers assets (prévisualisation)";
+                  console.warn(
+                    "Chargement depuis assets/css/ (mode preview via ?useAssets=true)."
+                  );
+                } else {
+                  throw new Error("Fichiers non trouvés dans assets/css/");
+                }
               }
             } catch (error) {
               throw new Error("Impossible de charger les fichiers CSS");
@@ -259,11 +320,8 @@
             ];
 
             // Filtre les variables qui ne devraient pas être affichées
-            const shouldExclude =
-              fullName.startsWith("--gap") ||
-              fullName.includes("line-height") ||
-              phantomTextVariables.includes(fullName) ||
-              excludedVariables.includes(fullName);
+            // Option 1: afficher toutes les primitives sauf les exclusions explicites
+            const shouldExclude = excludedVariables.includes(fullName);
 
             if (shouldExclude) {
               console.log("Variable filtrée:", fullName);
@@ -305,7 +363,8 @@
             if (
               category === "fontFamilies" ||
               category === "fontWeights" ||
-              category === "fontSizes"
+              category === "fontSizes" ||
+              category === "lineHeights"
             ) {
               const groupDemo = document.createElement("div");
               groupDemo.className = "token-demo";
@@ -354,7 +413,8 @@
             if (
               category === "fontFamilies" ||
               category === "fontWeights" ||
-              category === "fontSizes"
+              category === "fontSizes" ||
+              category === "lineHeights"
             ) {
               const groupDemo = document.createElement("div");
               groupDemo.className = "token-demo";
@@ -391,6 +451,7 @@
             fontFamilies: [],
             fontWeights: [],
             fontSizes: [],
+            lineHeights: [],
             borders: [],
             other: [],
           };
@@ -420,6 +481,8 @@
               name === "--xxl"
             ) {
               categories.breakpoints.push([name, value]);
+            } else if (name.includes("line-height")) {
+              categories.lineHeights.push([name, value]);
             } else if (name.includes("spacing") && !name.includes("gap")) {
               categories.spacing.push([name, value]);
             } else if (
@@ -445,6 +508,7 @@
         getCategoryTitle(category) {
           const titles = {
             colors: "Couleurs",
+            lineHeights: "Hauteurs de lignes",
             breakpoints: "Breakpoints",
             spacing: "Espacements",
             fontFamilies: "Familles de police",
@@ -506,6 +570,8 @@
             styleProperty = "font-weight";
           } else if (category === "fontFamilies") {
             styleProperty = "font-family";
+          } else if (category === "lineHeights") {
+            styleProperty = "line-height";
           }
 
           sample.innerHTML = `

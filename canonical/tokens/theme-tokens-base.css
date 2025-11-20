@@ -9,62 +9,78 @@
  * ----------------------------------
  */
 
-/* Couleur primaire */
---primary: ;
---on-primary: ;
+:root {
+  /* Theme */
+  color-scheme: light dark;
 
-/* Couleur d'accent */
---accent: ;
---accent-invert: ;
+  &[data-theme="light"] {
+    color-scheme: light;
+  }
 
-/* Surface du document */
---surface: ;
---on-surface: ;
+  &[data-theme="dark"] {
+    color-scheme: dark;
+  }
 
-/* Niveaux de profondeur */
---layer-1: ;
---layer-2: ;
---layer-3: ;
+  /* Couleur primaire */
+  --primary: ;
+  --on-primary: ;
+  --primary-lighten: ;
+  --primary-darken: ;
 
-/* Interactions */
---link: ;
---link-hover: ;
+  /* Couleur d'accent */
+  --accent: ;
+  --accent-invert: ;
 
-/* Couleur de sélection */
---selection: ;
+  /* Surface du document */
+  --surface: ;
+  --on-surface: ;
 
-/* États */
---warning: ;
---error: ;
---success: ;
---info: ;
+  /* Niveaux de profondeur */
+  --layer-1: ;
+  --layer-2: ;
+  --layer-3: ;
 
-/* Bordures */
---border-light: ;
---border-medium: ;
+  /* Interactions */
+  --link: ;
+  --link-hover: ;
+  --link-active: ;
 
-/* Tailles de police */
---text-s: ;
---text-m: ;
---text-l: ;
---text-xl: ;
---text-2xl: ;
---text-3xl: ;
---text-4xl: ;
+  /* Couleur de sélection */
+  --selection: ;
 
-/* Espacements */
---spacing-xs: ;
---spacing-s: ;
---spacing-m: ;
---spacing-l: ;
---spacing-xl: ;
+  /* États */
+  --warning: ;
+  --error: ;
+  --success: ;
+  --info: ;
 
-/* Formulaires */
---form-control-background: ;
---on-form-control: ;
---form-control-spacing: ;
---form-control-border-width: ;
---form-control-border-color: ;
---form-control-border-radius: ;
---checkables-border-color: ;
---checkable-size: ;
+  /* Bordures */
+  --border-light: ;
+  --border-medium: ;
+
+  /* Tailles de police */
+  --text-s: ;
+  --text-m: ;
+  --text-l: ;
+  --text-xl: ;
+  --text-2xl: ;
+  --text-3xl: ;
+  --text-4xl: ;
+
+  /* Espacements */
+  --spacing-xs: ;
+  --spacing-s: ;
+  --spacing-m: ;
+  --spacing-l: ;
+  --spacing-xl: ;
+
+  /* Formulaires */
+  --form-control-background: ;
+  --on-form-control: ;
+  --form-control-spacing: ;
+  --form-control-border-width: ;
+  --form-control-border-color: ;
+  --form-control-border-radius: ;
+  --checkables-border-color: ;
+  --checkable-size: ;
+}

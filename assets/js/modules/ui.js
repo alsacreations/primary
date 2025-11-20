@@ -170,6 +170,19 @@ export function syncConfigFromDOM() {
   }
 }
 
+// Exposer la fonction de synchronisation globalement pour permettre
+// à d'autres modules (ex: generators) d'obtenir l'état DOM actuel
+// avant de lancer une génération. Ceci évite des conditions de course
+// où les listeners n'ont pas encore propagé les changements.
+if (typeof window !== "undefined") {
+  window.syncConfigFromDOM = syncConfigFromDOM;
+}
+
+// Expose generateAllFiles for debugging (call window.generateAllFiles())
+if (typeof window !== "undefined") {
+  window.generateAllFiles = generateAllFiles;
+}
+
 /**
  * Met à jour les choix de couleurs disponibles
  */

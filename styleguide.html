@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Styleguide</title>
     <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
-    <!-- Chargement des fichiers CSS générés de l'app -->
-    <link rel="stylesheet" href="assets/css/theme.css" />
-    <link rel="stylesheet" href="assets/css/theme-tokens.css" />
+    <!-- Les CSS ne sont pas chargés statiquement ici.
+          Le styleguide injecte dynamiquement le CSS généré ou chargé
+          (runtime/injected) pour éviter d'utiliser les assets comme source d'autorité. -->
     <link rel="stylesheet" href="assets/css/layouts.css" />
     <style>
       [data-layout*="autogrid"] {
@@ -280,6 +280,30 @@
           console.log("=== CONTENU theme.css CHARGÉ ===");
           console.log(primitivesCSS.substring(0, 1000) + "...");
           console.log("=== FIN CONTENU ===");
+
+          // Injecter le CSS chargé/généré dans le document pour que
+          // les variables CSS s'appliquent immédiatement à l'aperçu.
+          try {
+            const head =
+              document.head || document.getElementsByTagName("head")[0];
+            let themeStyle = document.getElementById("injected-theme-css");
+            if (!themeStyle) {
+              themeStyle = document.createElement("style");
+              themeStyle.id = "injected-theme-css";
+              head.appendChild(themeStyle);
+            }
+            themeStyle.textContent = primitivesCSS || "";
+
+            let tokensStyle = document.getElementById("injected-tokens-css");
+            if (!tokensStyle) {
+              tokensStyle = document.createElement("style");
+              tokensStyle.id = "injected-tokens-css";
+              head.appendChild(tokensStyle);
+            }
+            tokensStyle.textContent = tokensCSS || "";
+          } catch (e) {
+            console.warn("Impossible d'injecter le CSS dans le head:", e);
+          }
 
           // Parse des variables CSS
           this.tokens = this.parseCSS(tokensCSS);

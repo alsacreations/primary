@@ -13,10 +13,12 @@
   /* Couleur primaire */
   --primary: var(--color-raspberry-500);
   --on-primary: var(--color-white);
+  --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);
+  --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);
 
   /* Couleur d'accent */
-  --accent: light-dark(var(--primary), var(--color-raspberry-300));
-  --accent-invert: light-dark(var(--color-raspberry-300), var(--primary));
+  --accent: light-dark(var(--primary), var(--primary-lighten));
+  --accent-invert: light-dark(var(--primary-lighten), var(--primary));
 
   /* Surface du document */
   --surface: light-dark(var(--color-white), var(--color-gray-900));
@@ -28,15 +30,12 @@
   --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
 
   /* Interactions */
-  --link: light-dark(var(--primary), var(--color-raspberry-300));
-  --link-hover: light-dark(var(--color-raspberry-700), var(--primary));
-  --link-active: light-dark(var(--color-raspberry-700), var(--primary));
+  --link: light-dark(var(--primary), var(--primary-lighten));
+  --link-hover: light-dark(var(--primary-darken), var(--primary));
+  --link-active: light-dark(var(--primary-darken), var(--primary));
 
   /* Couleur de sélection */
-  --selection: light-dark(
-    var(--color-raspberry-300),
-    var(--color-raspberry-500)
-  );
+  --selection: light-dark(var(--primary-lighten), var(--primary-darken));
 
   /* États */
   --warning: light-dark(var(--color-warning-500), var(--color-warning-300));
@@ -45,6 +44,6 @@
   --info: light-dark(var(--color-info-500), var(--color-info-300));
 
   /* Bordures */
-  --border-light: var(--color-gray-600);
-  --border-medium: light-dark(var(--color-gray-300), var(--color-gray-600));
+  --border-light: var(--color-gray-400);
+  --border-medium: var(--color-gray-600);
 }

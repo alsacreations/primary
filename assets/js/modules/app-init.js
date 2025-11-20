@@ -5,6 +5,7 @@ import {
   parseColorVariables,
   generateMissingVariants,
   generateTokensCSS,
+  normalizeTokensContent,
 } from "./generators.js";
 import { elements } from "./dom.js";
 import { loadAllCanonicals } from "./canonical-loader.js";
@@ -20,7 +21,7 @@ export function hideGlobalError() {
 }
 
 export function validateCustomVars(css) {
-  if (!css.trim()) return true; // Vide est OK
+  if (!css || !css.trim()) return true;
 
   const lines = css
     .split("\n")
@@ -62,6 +63,53 @@ export async function init() {
       tokens: Object.keys(canonicals.tokens),
       hasThemeJson: !!canonicals.themeJson,
     });
+
+    // Si l'application n'a pas de tokens fournis par import Figma et
+    // que state.tokensContent est vide, initialiser state.tokensContent
+    // à partir des fichiers tokens canoniques chargés. Cela garantit
+    // que la génération (`generateTokensCSS()`) reprend exactement
+    // le contenu des canoniques lors de la création du kit.
+    try {
+      if (
+        canonicals &&
+        canonicals.tokens &&
+        !state.tokensContent &&
+        !state.themeFromImport
+      ) {
+        const parts = [];
+        if (canonicals.tokens.commons && canonicals.tokens.commons.raw)
+          parts.push(canonicals.tokens.commons.raw);
+        if (canonicals.tokens.colors && canonicals.tokens.colors.raw)
+          parts.push(canonicals.tokens.colors.raw);
+        if (canonicals.tokens.fonts && canonicals.tokens.fonts.raw)
+          parts.push(canonicals.tokens.fonts.raw);
+        if (canonicals.tokens.spacings && canonicals.tokens.spacings.raw)
+          parts.push(canonicals.tokens.spacings.raw);
+
+        const combined = parts.join("\n").trim();
+        if (combined) {
+          try {
+            // Normaliser avant d'assigner pour éviter les :root imbriqués
+            state.tokensContent = normalizeTokensContent(combined);
+            console.log(
+              "[app-init] state.tokensContent initialisé depuis canonical tokens (normalisé)"
+            );
+          } catch (e) {
+            // fallback: assigner brut si la normalisation échoue
+            state.tokensContent = combined;
+            console.warn(
+              "[app-init] normalisation échouée, tokensContent assigné sans normalisation:",
+              e && e.message
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(
+        "[app-init] Impossible d'initialiser state.tokensContent:",
+        e
+      );
+    }
   } catch (error) {
     console.error("[app-init] ❌ Erreur chargement canoniques:", error);
     showGlobalError(
@@ -85,6 +133,48 @@ export async function init() {
   // Générer les choix de couleurs initialement
   updateColorChoices();
   applyCustomVarsToDocument();
+
+  // Si nous avons initialisé `state.tokensContent` depuis les canoniques
+  // et que l'UI a choisi une couleur primaire (ex: via `updateColorChoices()`),
+  // synchroniser le token `--primary` dans `state.tokensContent` afin
+  // d'éviter une discordance entre l'UI (étape 2) et les tokens générés
+  // (étape 3). Ceci remplace uniquement la déclaration --primary.
+  try {
+    const chosen = state.config && state.config.primaryColor;
+    if (chosen && state.tokensContent) {
+      console.log(
+        "[app-init] Synchronisation state.tokensContent --primary ->",
+        chosen
+      );
+      // Remplacer une déclaration existante --primary: var(--color-...-NUM);
+      state.tokensContent = state.tokensContent.replace(
+        /(--primary\s*:\s*)var\(--color-[a-z0-9-]+-\d+\)\s*;/gi,
+        `$1var(--color-${chosen}-500);`
+      );
+
+      // Si la déclaration --primary existe mais vide (cas de template), la remplir
+      state.tokensContent = state.tokensContent.replace(
+        /(--primary\s*:\s*)(;)/gi,
+        `$1var(--color-${chosen}-500);`
+      );
+      // Remplacer aussi la ligne d'entête indiquant la couleur primaire
+      // dans le bloc de commentaire initial (s'il existe) pour garder
+      // `state.tokensContent` cohérent avec l'UI.
+      try {
+        state.tokensContent = state.tokensContent.replace(
+          /(\* - Couleur primaire\s*:\s*)([^\r\n]*)/i,
+          `$1 ${chosen}`
+        );
+      } catch (e) {
+        console.warn(
+          "[app-init] Impossible de remplacer la ligne d'entête Couleur primaire:",
+          e
+        );
+      }
+    }
+  } catch (e) {
+    console.warn("[app-init] Impossible de synchroniser tokensContent:", e);
+  }
 
   // Si on est en mode debug (ex: ?debug=state), appliquer le thème complet
   // au document pour faciliter le debug visuel local (ne s'active que via URL)
@@ -291,14 +381,15 @@ export function updateColorChoices() {
   console.log("[updateColorChoices] customColors:", customColors);
   console.log("[updateColorChoices] colorsMap:", colorsMap);
 
-  const allColors = customColors.length > 0 ? [...customColors] : ["raspberry"];
-
-  if (customColors.length > 0 && state.config.primaryColor === "raspberry") {
-    state.config.primaryColor = customColors[0];
-    console.log(
-      "[updateColorChoices] Set primaryColor to:",
-      state.config.primaryColor
-    );
+  // Toujours proposer le placeholder `raspberry` en premier dans la liste
+  // des choix afin qu'il soit proposé par défaut quand l'utilisateur n'a
+  // pas encore choisi de couleur (business rule). S'il y a des couleurs
+  // importées, elles suivent après le placeholder.
+  let allColors;
+  if (customColors.length > 0) {
+    allColors = ["raspberry", ...customColors];
+  } else {
+    allColors = ["raspberry"];
   }
 
   const swatchMarkup = (color) => {
@@ -365,12 +456,44 @@ export function updateColorChoices() {
     .forEach((input) => {
       input.addEventListener("change", (e) => {
         state.config.primaryColor = e.target.value;
-        // Vider tokensContent pour forcer la regénération avec la nouvelle couleur
-        if (state.tokensContent) {
-          console.log(
-            "[updateColorChoices] Clearing tokensContent to force regeneration"
+        // Si des tokens client-side existent, ne pas les vider (perte d'information)
+        // mais synchroniser la déclaration `--primary` et la ligne d'entête
+        // pour conserver la cohérence entre l'UI (étape 2) et les tokens (étape 3).
+        try {
+          if (state.tokensContent) {
+            const chosen = state.config.primaryColor;
+            console.log(
+              "[updateColorChoices] Synchronizing state.tokensContent --primary ->",
+              chosen
+            );
+            // Remplacer toute declaration --primary: ...; par la nouvelle valeur
+            state.tokensContent = state.tokensContent.replace(
+              /--primary\s*:\s*[^;]*;/gi,
+              `--primary: var(--color-${chosen}-500);`
+            );
+            // Remplir un placeholder éventuel
+            state.tokensContent = state.tokensContent.replace(
+              /(--primary\s*:\s*)(;)/gi,
+              `$1var(--color-${chosen}-500);`
+            );
+            // Mettre à jour la ligne d'entête indiquant la couleur primaire
+            try {
+              state.tokensContent = state.tokensContent.replace(
+                /(\* - Couleur primaire\s*:\s*)([^\r\n]*)/i,
+                `$1 ${chosen}`
+              );
+            } catch (err) {
+              console.warn(
+                "[updateColorChoices] Impossible de mettre à jour la ligne d'entête:",
+                err
+              );
+            }
+          }
+        } catch (e) {
+          console.warn(
+            "[updateColorChoices] Synchronisation tokensContent failed:",
+            e
           );
-          state.tokensContent = "";
         }
       });
     });

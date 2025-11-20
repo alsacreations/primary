@@ -38,6 +38,123 @@ export function parseColorVariables(cssText = "") {
   }
 }
 
+// Normalise un contenu CSS potentiel contenant plusieurs blocs `:root { ... }`.
+// - Extrait tous les inner contents des blocs :root
+// - Concatène en respectant les commentaires et les blocs imbriqués (ex: &[data-theme])
+// - Déduplique les propriétés top-level évidentes (ex: color-scheme)
+// Retourne un string contenant exactement un bloc `:root { ... }` prêt à être
+// post-traité par le générateur.
+export function normalizeTokensContent(cssText = "") {
+  if (!cssText || !cssText.trim()) return "";
+
+  // Récupérer le header comment initial s'il existe
+  const headerMatch = cssText.match(/^(\s*\/\*[\s\S]*?\*\/\s*)/);
+  const header = headerMatch ? headerMatch[1].trim() + "\n\n" : "";
+
+  // Extraire tous les blocs :root { ... } en étant robuste aux blocs
+  // imbriqués (brace-aware). La précédente approche regex non-balancée
+  // pouvait tronquer les blocs contenant des sous-blocs comme
+  // `&[data-theme="light"] { ... }`.
+  const inners = [];
+  const text = cssText;
+  let pos = 0;
+  while (true) {
+    const idx = text.indexOf(":root", pos);
+    if (idx === -1) break;
+    // trouver la première accolade ouvrante après ':root'
+    const openIdx = text.indexOf("{", idx);
+    if (openIdx === -1) break;
+    // parcourir pour trouver l'accolade fermante correspondante
+    let depth = 1;
+    let i = openIdx + 1;
+    while (i < text.length && depth > 0) {
+      const ch = text[i];
+      if (ch === "{") depth++;
+      else if (ch === "}") depth--;
+      i++;
+    }
+    if (depth === 0) {
+      const inner = text.slice(openIdx + 1, i - 1).trim();
+      if (inner) inners.push(inner);
+      pos = i;
+      continue;
+    }
+    // Si on n'a pas pu trouver la fermeture, sortir pour éviter boucle infinie
+    break;
+  }
+
+  // Si aucun :root trouvé, on prend le texte complet (fallback)
+  const combined = inners.length > 0 ? inners.join("\n\n") : cssText.trim();
+
+  // Traitement ligne par ligne en préservant commentaires et blocs
+  const lines = combined.split(/\r?\n/);
+  const out = [];
+  const seenProps = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw.trimEnd();
+    if (!line.trim()) {
+      // Eviter plusieurs lignes vides consécutives
+      if (out.length && out[out.length - 1].trim() === "") continue;
+      out.push("");
+      continue;
+    }
+
+    // conserver les commentaires tels quels
+    if (/^\/\*/.test(line)) {
+      out.push(line);
+      continue;
+    }
+
+    // Conservons les blocs (ex: &[data-theme="light"] { ... }) en recopiant
+    if (/\{\s*$/.test(line)) {
+      // collect until matching '}'
+      const block = [raw];
+      let depth =
+        (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+      i++;
+      while (i < lines.length && depth > 0) {
+        const cur = lines[i];
+        block.push(cur);
+        depth += (cur.match(/\{/g) || []).length;
+        depth -= (cur.match(/\}/g) || []).length;
+        i++;
+      }
+      i--;
+      out.push(...block.map((l) => l));
+      continue;
+    }
+
+    // Dédupliquer les propriétés top-level évidentes (prendre la première valeur rencontrée)
+    const propMatch = line.match(/^([a-zA-Z0-9-_]+)\s*:/);
+    if (propMatch) {
+      const prop = propMatch[1];
+      if (seenProps.has(prop)) continue;
+      seenProps.add(prop);
+      out.push(line);
+      continue;
+    }
+
+    // Par défaut conserver la ligne
+    out.push(line);
+  }
+
+  // Nettoyage des blank lines en début/fin
+  while (out.length && out[0].trim() === "") out.shift();
+  while (out.length && out[out.length - 1].trim() === "") out.pop();
+
+  const body = out.join("\n");
+  return (
+    header +
+    ":root {\n" +
+    body
+      .split(/\r?\n/)
+      .map((l) => "  " + l)
+      .join("\n") +
+    "\n}\n"
+  );
+}
+
 export function generateMissingVariants(variants) {
   const required = ["100", "300", "500", "700"];
   const result = new Map(variants);
@@ -590,6 +707,20 @@ const CANONICAL_THEME_JSON = `{
 // --- Generators -----------------------------------------------------------
 export function generateTokensCSS() {
   const cfg = state && state.config ? state.config : {};
+  // Si l'application est exécutée dans un navigateur, forcer une
+  // synchronisation DOM -> state avant de lire la configuration. Cela
+  // évite les cas où l'utilisateur change un contrôle mais le listener
+  // n'a pas propagé la valeur dans `state.config` avant la génération.
+  try {
+    if (
+      typeof window !== "undefined" &&
+      typeof window.syncConfigFromDOM === "function"
+    ) {
+      window.syncConfigFromDOM();
+    }
+  } catch (e) {
+    /* noop */
+  }
   const primaryColor = cfg.primaryColor;
   const themeMode = cfg.themeMode;
   const typoResponsive = !!cfg.typoResponsive;
@@ -607,12 +738,34 @@ export function generateTokensCSS() {
   );
 
   // Utiliser la branche import si themeFromImport est vrai
-  // (même si tokensContent est vide, on construira les tokens canoniques + sections importées)
-  if (state && state.themeFromImport) {
-    console.log("[generateTokensCSS] ✅ Mode import Figma activé");
+  // OU si `state.tokensContent` est présent (ex: import Figma ou seeds canoniques)
+  // Cela permet d'utiliser `state.tokensContent` quand il a été initialisé
+  // depuis les fichiers `/canonical/` (seed) ou via un import JSON.
+  const hasTokensContent = Boolean(
+    state && state.tokensContent && state.tokensContent.trim().length
+  );
+  if ((state && state.themeFromImport) || hasTokensContent) {
+    console.log(
+      "[generateTokensCSS] ✅ Mode import/génération depuis tokensContent activé"
+    );
     try {
       // Commencer avec un template vide ou le contenu existant
       let processed = (state.tokensContent || "").trim();
+
+      // Use robust normalisation helper to rebuild a single `:root` block
+      try {
+        processed = normalizeTokensContent(processed || "");
+        if (processed && processed.length) {
+          console.log(
+            "[generateTokensCSS] Normalized tokensContent via normalizeTokensContent()"
+          );
+        }
+      } catch (e) {
+        console.warn(
+          "[generateTokensCSS] normalisation tokensContent a échoué:",
+          e && e.message
+        );
+      }
 
       console.log(
         "[generateTokensCSS] processed initial length:",
@@ -655,9 +808,47 @@ export function generateTokensCSS() {
       });
 
       // Déterminer la couleur primaire pour le header et l'injection des tokens
-      // Pour un import Figma, toujours utiliser primaryColor du sélecteur HTML
-      // (l'utilisateur peut changer la couleur primaire à l'étape 2)
-      const displayPrimary = primaryColor || "blue"; // Défaut: blue
+      // Priorité :
+      // 1. `primaryColor` provenant de la config UI (l'utilisateur)
+      // 2. Détection dans le contenu normalisé `processed` (ex: var(--color-raspberry-500))
+      // 3. Valeur par défaut 'blue'
+      // Choix de la couleur primaire affichée dans l'en-tête.
+      // Priorités:
+      // 1. `state.config.primaryColor` (sélection utilisateur)
+      // 2. Si l'import Figma est actif (`state.themeFromImport`) ou si
+      //    `state.themeContent` contient des primitives, détecter la couleur
+      //    depuis le contenu (ex: var(--color-xxx-500)).
+      // 3. Sinon utiliser une valeur par défaut 'gray' (éviter d'hériter
+      //    automatiquement d'un token canonique comme 'raspberry').
+      // Par règle métier, quand aucune couleur utilisateur ni import n'existe
+      // nous devons proposer le placeholder `raspberry` comme couleur primaire.
+      let displayPrimary = primaryColor || "raspberry";
+      try {
+        if (!primaryColor) {
+          // Détecter les primitives uniquement si l'origine est un import
+          // ou si des primitives sont présentes dans themeContent.
+          const themeCss = (state && state.themeContent) || "";
+          const hasPrimitivesInTheme = /--color-([a-z0-9-]+)-\d+\s*:/i.test(
+            themeCss
+          );
+          if (state?.themeFromImport || hasPrimitivesInTheme) {
+            const det = processed.match(/var\(--color-([a-z0-9-]+)-\d+\)/i);
+            if (det && det[1]) {
+              displayPrimary = det[1];
+              console.log(
+                "[generateTokensCSS] Détection couleur primaire depuis processed (import/theme):",
+                displayPrimary
+              );
+            }
+          } else {
+            console.log(
+              "[generateTokensCSS] Pas d'import ni de primitives theme; utiliser 'raspberry' (placeholder) par défaut"
+            );
+          }
+        }
+      } catch (e) {
+        /* noop */
+      }
 
       // Ensure the header comment of generated tokens is always coherent
       // and reflects the current configuration even when `state.tokensContent`
@@ -698,6 +889,50 @@ export function generateTokensCSS() {
         );
       } catch (e) {
         /* noop */
+      }
+
+      // Ensure the processed content's `--primary` declaration matches the
+      // `displayPrimary` we use in the header. This fixes ordering issues
+      // where `state.tokensContent` was seeded earlier with a different
+      // primary than the UI selection (step 2). Replace any existing
+      // `--primary: ...;` declaration with the chosen variable.
+      try {
+        if (displayPrimary && /--primary\s*:/i.test(processed)) {
+          processed = processed.replace(
+            /--primary\s*:\s*[^;]*;/gi,
+            `--primary: var(--color-${displayPrimary}-500);`
+          );
+          console.log(
+            "[generators-header] synchronized --primary to",
+            displayPrimary
+          );
+        }
+      } catch (e) {
+        /* noop */
+      }
+
+      // Vérification: détecter les propriétés vides (placeholders non remplis)
+      try {
+        const emptyRx = /(--[a-z0-9-]+)\s*:\s*(?:;|\s*$|\n)/gim;
+        const empties = [];
+        let em;
+        while ((em = emptyRx.exec(processed))) {
+          if (em[1]) empties.push(em[1]);
+        }
+        if (empties.length) {
+          console.error(
+            "[generateTokensCSS] Erreur: placeholders vides détectés dans le contenu généré:",
+            empties
+          );
+          throw new Error(
+            `[generateTokensCSS] Placeholders vides trouvés: ${empties.join(
+              ", "
+            )}`
+          );
+        }
+      } catch (e) {
+        // Relever l'erreur plus haut; interrompre la génération pour alerter
+        throw e;
       }
 
       // INJECTION DES TOKENS DE COULEURS CANONIQUES
@@ -1101,55 +1336,55 @@ export function generateTokensCSS() {
       // to fixed first-arguments regardless of the typography setting.
       try {
         if (spacingResponsive === false) {
-          const linesArr2 = processed.split(/\n/);
-          const replaceClampInLine2 = (line) => {
-            if (line.indexOf("clamp(") === -1) return line;
-            let out = "";
-            let i = 0;
-            while (i < line.length) {
-              const pos = line.indexOf("clamp(", i);
-              if (pos === -1) {
-                out += line.slice(i);
-                break;
-              }
-              out += line.slice(i, pos);
-              const start = pos + 6;
-              let depth = 0;
-              let firstComma = -1;
-              let j = start;
-              for (; j < line.length; j++) {
-                const ch = line[j];
-                if (ch === "(") depth++;
-                else if (ch === ")") {
-                  if (depth === 0) break;
-                  depth--;
-                } else if (ch === "," && depth === 0 && firstComma === -1) {
-                  firstComma = j;
+          // Replace clamp(...) occurrences inside spacing/gap declarations.
+          // We operate at the declaration level so multi-line values and
+          // nested functions are handled correctly.
+          const declRegex =
+            /(^\s*--(?:gap|spacing)-[a-z0-9-]*\s*:\s*)([\s\S]*?)(;)/gim;
+
+          processed = processed.replace(
+            declRegex,
+            (full, declStart, declBody, semi) => {
+              if (!declBody.includes("clamp(")) return full;
+              let outBody = "";
+              let i = 0;
+              while (i < declBody.length) {
+                const pos = declBody.indexOf("clamp(", i);
+                if (pos === -1) {
+                  outBody += declBody.slice(i);
+                  break;
+                }
+                outBody += declBody.slice(i, pos);
+                const start = pos + 6; // after 'clamp('
+                let depth = 0;
+                let firstComma = -1;
+                let j = start;
+                for (; j < declBody.length; j++) {
+                  const ch = declBody[j];
+                  if (ch === "(") depth++;
+                  else if (ch === ")") {
+                    if (depth === 0) break;
+                    depth--;
+                  } else if (ch === "," && depth === 0 && firstComma === -1) {
+                    firstComma = j;
+                  }
+                }
+                if (firstComma === -1 || j >= declBody.length) {
+                  // malformed or unterminated: keep original fragment
+                  outBody += declBody.slice(
+                    pos,
+                    Math.min(j + 1, declBody.length)
+                  );
+                  i = Math.min(j + 1, declBody.length);
+                } else {
+                  const firstArg = declBody.slice(start, firstComma).trim();
+                  outBody += firstArg;
+                  i = j + 1;
                 }
               }
-              if (firstComma === -1 || j >= line.length) {
-                out += line.slice(pos, j + 1);
-                i = j + 1;
-              } else {
-                const firstArg = line.slice(start, firstComma).trim();
-                out += firstArg;
-                i = j + 1;
-              }
+              return declStart + outBody + semi;
             }
-            return out;
-          };
-
-          for (let idx = 0; idx < linesArr2.length; idx++) {
-            const l = linesArr2[idx];
-            if (
-              /^\s*--gap-[a-z0-9-]*\s*:/.test(l) ||
-              /^\s*--spacing-[a-z0-9-]*\s*:/.test(l) ||
-              l.includes("/* Espacements */")
-            ) {
-              linesArr2[idx] = replaceClampInLine2(l);
-            }
-          }
-          processed = linesArr2.join("\n");
+          );
         }
       } catch (e) {
         /* noop */
@@ -1166,25 +1401,31 @@ export function generateTokensCSS() {
           // file line-by-line and replace clamp occurrences only on those
           // lines. This preserves spacing clamps when spacingResponsive=false
           // (the user only requested fixed typography).
-          const linesArr = processed.split(/\n/);
-          const replaceClampInLine = (line) => {
-            if (line.indexOf("clamp(") === -1) return line;
-            // Small parser to replace each clamp(...) in this single line
+          // Process typographic and line-height declarations robustly at the
+          // declaration level so multi-line clamps and nested functions are
+          // handled correctly.
+          const typographicDeclRegex =
+            /(^\s*--(?:text|line-height)-[a-z0-9-]*\s*:\s*)([\s\S]*?)(;)/gim;
+          const spacingDeclRegex =
+            /(^\s*--(?:gap|spacing)-[a-z0-9-]*\s*:\s*)([\s\S]*?)(;)/gim;
+
+          const replaceClampInBody = (body) => {
+            if (!body.includes("clamp(")) return body;
             let out = "";
             let i = 0;
-            while (i < line.length) {
-              const pos = line.indexOf("clamp(", i);
+            while (i < body.length) {
+              const pos = body.indexOf("clamp(", i);
               if (pos === -1) {
-                out += line.slice(i);
+                out += body.slice(i);
                 break;
               }
-              out += line.slice(i, pos);
-              const start = pos + 6; // after 'clamp('
+              out += body.slice(i, pos);
+              const start = pos + 6;
               let depth = 0;
               let firstComma = -1;
               let j = start;
-              for (; j < line.length; j++) {
-                const ch = line[j];
+              for (; j < body.length; j++) {
+                const ch = body[j];
                 if (ch === "(") depth++;
                 else if (ch === ")") {
                   if (depth === 0) break;
@@ -1193,12 +1434,11 @@ export function generateTokensCSS() {
                   firstComma = j;
                 }
               }
-              if (firstComma === -1 || j >= line.length) {
-                // malformed: copy verbatim
-                out += line.slice(pos, j + 1);
-                i = j + 1;
+              if (firstComma === -1 || j >= body.length) {
+                out += body.slice(pos, Math.min(j + 1, body.length));
+                i = Math.min(j + 1, body.length);
               } else {
-                const firstArg = line.slice(start, firstComma).trim();
+                const firstArg = body.slice(start, firstComma).trim();
                 out += firstArg;
                 i = j + 1;
               }
@@ -1206,29 +1446,25 @@ export function generateTokensCSS() {
             return out;
           };
 
-          for (let idx = 0; idx < linesArr.length; idx++) {
-            const l = linesArr[idx];
-            // target only typographic and line-height declarations
-            if (
-              /^\s*--text-[a-z0-9-]*\s*:/.test(l) ||
-              /^\s*--line-height-[a-z0-9-]*\s*:/.test(l) ||
-              l.includes("/* Tailles de police */") ||
-              l.includes("/* Typographie — Hauteurs de lignes */")
-            ) {
-              linesArr[idx] = replaceClampInLine(l);
+          // Replace typographic declarations
+          processed = processed.replace(
+            typographicDeclRegex,
+            (full, declStart, declBody, semi) => {
+              if (!declBody.includes("clamp(")) return full;
+              return declStart + replaceClampInBody(declBody) + semi;
             }
-            // If the user disabled spacing responsiveness, also convert
-            // spacing-related clamps to fixed first-arguments.
-            if (
-              spacingResponsive === false &&
-              (/^\s*--gap-[a-z0-9-]*\s*:/.test(l) ||
-                /^\s*--spacing-[a-z0-9-]*\s*:/.test(l) ||
-                l.includes("/* Espacements */"))
-            ) {
-              linesArr[idx] = replaceClampInLine(l);
-            }
+          );
+
+          // If spacing responsiveness is also disabled, replace spacing declarations
+          if (spacingResponsive === false) {
+            processed = processed.replace(
+              spacingDeclRegex,
+              (full, declStart, declBody, semi) => {
+                if (!declBody.includes("clamp(")) return full;
+                return declStart + replaceClampInBody(declBody) + semi;
+              }
+            );
           }
-          processed = linesArr.join("\n");
         }
       } catch (e) {
         /* noop */
@@ -1317,36 +1553,107 @@ export function generateTokensCSS() {
         /* noop */
       }
 
-      // Ensure the Formulaires block is placed at the end of the :root
-      // so form tokens always appear last in theme-tokens.css.
+      // Reorder the Formulaires block so it appears immediately after
+      // the Bordures section, and crucially keep it inside the :root body.
       try {
         const formMarker = "/* Formulaires */";
-        const idx = processed.indexOf(formMarker);
-        if (idx !== -1) {
-          // extract block from marker up to the next blank line or closing brace
-          const after = processed.slice(idx);
-          // find end: prefer double newline, else closing brace
-          let endRel = after.indexOf("\n\n");
-          if (endRel === -1) endRel = after.indexOf("\n}");
-          if (endRel === -1) endRel = after.length;
-          const block = after.slice(0, endRel).trim();
-          // If block already at the end, skip
-          const endIdx = processed.search(/\n}\s*$/m);
-          const blockAtEnd =
-            endIdx !== -1 &&
-            processed.slice(endIdx - block.length, endIdx).includes(block);
-          if (!blockAtEnd) {
-            // remove first occurrence
-            processed =
-              processed.slice(0, idx) +
-              processed.slice(idx + after.slice(0, endRel).length);
-            // append before final closing brace
-            if (/\n}\s*$/.test(processed))
-              processed = processed.replace(
-                /\n}\s*$/m,
-                "\n  " + block + "\n}\n"
-              );
-            else processed = processed.trimEnd() + "\n  " + block + "\n";
+        const bordMarker = "/* Bordures */";
+
+        // Locate the :root block body robustly
+        const rootIdx = processed.indexOf(":root");
+        if (rootIdx !== -1) {
+          const openIdx = processed.indexOf("{", rootIdx);
+          if (openIdx !== -1) {
+            // Find matching closing brace
+            let depth = 1;
+            let j = openIdx + 1;
+            while (j < processed.length && depth > 0) {
+              const ch = processed[j];
+              if (ch === "{") depth++;
+              else if (ch === "}") depth--;
+              j++;
+            }
+            if (depth === 0) {
+              const body = processed.slice(openIdx + 1, j - 1);
+              let inner = body;
+
+              const fm = inner.indexOf(formMarker);
+              if (fm !== -1) {
+                // We'll split the inner body into top-level sections based on
+                // comment headers (/* ... */) to reliably move entire sections
+                // (header + declarations) without touching indentation.
+                const sectionRegex = /\n?\s*\/\*[\s\S]*?\*\/\s*/g;
+                const matches = Array.from(inner.matchAll(sectionRegex));
+
+                if (matches.length === 0) {
+                  // no clear sections: fallback to previous simple approach
+                  let after = inner.slice(fm);
+                  let endRel = after.indexOf("\n\n");
+                  if (endRel === -1) endRel = after.length;
+                  const block = after.slice(0, endRel).trim();
+                  inner = inner.slice(0, fm) + inner.slice(fm + endRel);
+                  inner = inner.trimEnd() + "\n\n" + block + "\n";
+                } else {
+                  // Build sections array
+                  const sections = [];
+                  let cursor = 0;
+                  for (let mi = 0; mi < matches.length; mi++) {
+                    const m = matches[mi];
+                    const headerStart = m.index;
+                    // add any leading content before first header as a plain section
+                    if (mi === 0 && headerStart > 0) {
+                      sections.push({
+                        header: null,
+                        body: inner.slice(0, headerStart),
+                      });
+                    }
+                    const header = m[0].trim();
+                    const contentStart = headerStart + m[0].length;
+                    const nextStart =
+                      mi + 1 < matches.length
+                        ? matches[mi + 1].index
+                        : inner.length;
+                    const bodyContent = inner.slice(contentStart, nextStart);
+                    sections.push({ header, body: bodyContent });
+                    cursor = nextStart;
+                  }
+
+                  // Find indices for bordures and formulaires
+                  let formIndex = -1;
+                  let bordIndex = -1;
+                  for (let si = 0; si < sections.length; si++) {
+                    const h = sections[si].header || "";
+                    if (h.includes(formMarker)) formIndex = si;
+                    if (h.includes(bordMarker)) bordIndex = si;
+                  }
+
+                  if (formIndex !== -1) {
+                    const formSection = sections.splice(formIndex, 1)[0];
+                    // Insert after bordIndex if present, otherwise append at end
+                    if (bordIndex !== -1) {
+                      if (formIndex < bordIndex) bordIndex -= 1; // account for removal
+                      sections.splice(bordIndex + 1, 0, formSection);
+                    } else {
+                      sections.push(formSection);
+                    }
+                  }
+
+                  // Reconstruct inner from sections
+                  inner = sections
+                    .map((s) =>
+                      s.header ? s.header + (s.body || "") : s.body || ""
+                    )
+                    .join("")
+                    .replace(/\n{3,}/g, "\n\n");
+                }
+
+                // Rebuild processed with updated inner
+                processed =
+                  processed.slice(0, openIdx + 1) +
+                  inner +
+                  processed.slice(j - 1);
+              }
+            }
           }
         }
       } catch (e) {
@@ -1361,6 +1668,170 @@ export function generateTokensCSS() {
         processed = processed.replace(/(\r?\n\s*){2,}/g, "\n\n");
       } catch (e) {
         /* noop - sanitization best-effort */
+      }
+
+      // Safety-net conversion PASS (after all injections):
+      // Si l'utilisateur a demandé des tailles/espacements fixes, supprimer
+      // toute occurrence restante de `clamp(...)` pour les déclarations
+      // typographiques et d'espacement. Ceci couvre les cas où un bloc
+      // injecté plus tard pourrait ré-introduire des `clamp()` non désirés.
+      try {
+        // Final safety-net: replace any remaining clamp(...) occurrences in
+        // typographic and spacing declarations with their first argument.
+        // Use declaration-level regexes so we don't break multi-line values.
+        const typographicDeclRegexFinal =
+          /(^\s*--(?:text|line-height)-[a-z0-9-]*\s*:\s*)([\s\S]*?)(;)/gim;
+        const spacingDeclRegexFinal =
+          /(^\s*--(?:spacing|gap)-[a-z0-9-]*\s*:\s*)([\s\S]*?)(;)/gim;
+
+        const replaceClampInBodyFinal = (body) => {
+          if (!body.includes("clamp(")) return body;
+          let out = "";
+          let i = 0;
+          while (i < body.length) {
+            const pos = body.indexOf("clamp(", i);
+            if (pos === -1) {
+              out += body.slice(i);
+              break;
+            }
+            out += body.slice(i, pos);
+            const start = pos + 6;
+            let depth = 0;
+            let firstComma = -1;
+            let j = start;
+            for (; j < body.length; j++) {
+              const ch = body[j];
+              if (ch === "(") depth++;
+              else if (ch === ")") {
+                if (depth === 0) break;
+                depth--;
+              } else if (ch === "," && depth === 0 && firstComma === -1) {
+                firstComma = j;
+              }
+            }
+            if (firstComma === -1 || j >= body.length) {
+              out += body.slice(pos, Math.min(j + 1, body.length));
+              i = Math.min(j + 1, body.length);
+            } else {
+              const firstArg = body.slice(start, firstComma).trim();
+              out += firstArg;
+              i = j + 1;
+            }
+          }
+          return out;
+        };
+
+        if (!typoResponsive) {
+          processed = processed.replace(
+            typographicDeclRegexFinal,
+            (full, declStart, declBody, semi) => {
+              if (!declBody.includes("clamp(")) return full;
+              return declStart + replaceClampInBodyFinal(declBody) + semi;
+            }
+          );
+        }
+
+        if (spacingResponsive === false) {
+          processed = processed.replace(
+            spacingDeclRegexFinal,
+            (full, declStart, declBody, semi) => {
+              if (!declBody.includes("clamp(")) return full;
+              return declStart + replaceClampInBodyFinal(declBody) + semi;
+            }
+          );
+        }
+      } catch (e) {
+        /* noop - best-effort safety net */
+      }
+
+      // Final ordering enforcement: ensure any "/* Formulaires */" section
+      // appears immediately after the "/* Bordures */" section within the
+      // :root block. This is a last-pass fix to avoid regressions from
+      // earlier transformations.
+      try {
+        const rootIdx2 = processed.indexOf(":root");
+        if (rootIdx2 !== -1) {
+          const openIdx2 = processed.indexOf("{", rootIdx2);
+          if (openIdx2 !== -1) {
+            let depth2 = 1;
+            let k = openIdx2 + 1;
+            while (k < processed.length && depth2 > 0) {
+              const ch = processed[k];
+              if (ch === "{") depth2++;
+              else if (ch === "}") depth2--;
+              k++;
+            }
+            if (depth2 === 0) {
+              const body2 = processed.slice(openIdx2 + 1, k - 1);
+              const sectionRegex2 = /\n?\s*\/\*[\s\S]*?\*\/\s*/g;
+              const matches2 = Array.from(body2.matchAll(sectionRegex2));
+              if (matches2.length > 0) {
+                const sections2 = [];
+                for (let mi = 0; mi < matches2.length; mi++) {
+                  const m = matches2[mi];
+                  const headerStart = m.index;
+                  if (mi === 0 && headerStart > 0) {
+                    sections2.push({
+                      header: null,
+                      body: body2.slice(0, headerStart),
+                    });
+                  }
+                  const header = m[0].trim();
+                  const contentStart = headerStart + m[0].length;
+                  const nextStart =
+                    mi + 1 < matches2.length
+                      ? matches2[mi + 1].index
+                      : body2.length;
+                  const bodyContent = body2.slice(contentStart, nextStart);
+                  sections2.push({ header, body: bodyContent });
+                }
+
+                // Collect all form sections, remove them
+                const formSections = [];
+                for (let si = sections2.length - 1; si >= 0; si--) {
+                  const h = sections2[si].header || "";
+                  if (h.includes("/* Formulaires */")) {
+                    formSections.unshift(sections2.splice(si, 1)[0]);
+                  }
+                }
+
+                if (formSections.length) {
+                  // find bordures index
+                  let bordIdx2 = -1;
+                  for (let si = 0; si < sections2.length; si++) {
+                    const h = sections2[si].header || "";
+                    if (h.includes("/* Bordures */")) {
+                      bordIdx2 = si;
+                      break;
+                    }
+                  }
+
+                  // insert forms after bordIdx2 (or at end)
+                  if (bordIdx2 !== -1) {
+                    // insert in order
+                    sections2.splice(bordIdx2 + 1, 0, ...formSections);
+                  } else {
+                    sections2.push(...formSections);
+                  }
+
+                  // Rebuild body and processed
+                  const newInner = sections2
+                    .map((s) =>
+                      s.header ? s.header + (s.body || "") : s.body || ""
+                    )
+                    .join("")
+                    .replace(/\n{3,}/g, "\n\n");
+                  processed =
+                    processed.slice(0, openIdx2 + 1) +
+                    newInner +
+                    processed.slice(k - 1);
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        /* noop - best-effort ordering enforcement */
       }
 
       // If a single theme is requested, normalise the color-scheme header
@@ -1736,6 +2207,35 @@ export function generateTokensCSS() {
         console.error("[generators-spacing-preserve] Erreur:", e);
       }
 
+      // Passe finale robuste : remplacer tout clamp(...) restant pour les
+      // déclarations typographiques et d'espacement lorsque la config
+      // demande des valeurs fixes. Utilise des regex multi-line non gourmandes
+      // pour couvrir les cas où les arguments sont sur plusieurs lignes.
+      try {
+        if (!typoResponsive) {
+          processed = processed.replace(
+            /(--text-[a-z0-9-]*\s*:\s*)clamp\([\s\S]*?\,([\s\S]*?)\)/gi,
+            (m, pfx, inner) => `${pfx}${inner.trim().replace(/;?\s*$/, "")};`
+          );
+          processed = processed.replace(
+            /(--line-height-[a-z0-9-]*\s*:\s*)clamp\([\s\S]*?\,([\s\S]*?)\)/gi,
+            (m, pfx, inner) => `${pfx}${inner.trim().replace(/;?\s*$/, "")};`
+          );
+        }
+        if (spacingResponsive === false) {
+          processed = processed.replace(
+            /(--spacing-[a-z0-9-]*\s*:\s*)clamp\([\s\S]*?\,([\s\S]*?)\)/gi,
+            (m, pfx, inner) => `${pfx}${inner.trim().replace(/;?\s*$/, "")};`
+          );
+          processed = processed.replace(
+            /(--gap-[a-z0-9-]*\s*:\s*)clamp\([\s\S]*?\,([\s\S]*?)\)/gi,
+            (m, pfx, inner) => `${pfx}${inner.trim().replace(/;?\s*$/, "")};`
+          );
+        }
+      } catch (e) {
+        /* noop - best-effort */
+      }
+
       return processed;
     } catch (e) {
       // If post-processing fails for any reason, fall back to verbatim
@@ -1750,7 +2250,12 @@ export function generateTokensCSS() {
     primaryColor === "raspberry" &&
     themeMode === "both" &&
     typoResponsive === true &&
-    spacingResponsive === true
+    spacingResponsive === true &&
+    // Ne retourner le template canonique que si le thème ne provient PAS
+    // d'un import utilisateur (ex: import Figma). Lors d'un import, le
+    // générateur doit utiliser `state.themeContent` pour refléter les
+    // primitives fournies par l'utilisateur.
+    !(state && state.themeFromImport)
   ) {
     return CANONICAL_THEME_TOKENS;
   }
@@ -1758,7 +2263,9 @@ export function generateTokensCSS() {
   // Build a full tokens output programmatically for non-canonical configs.
   // This avoids brittle text-substitution on a large template and keeps
   // behaviour deterministic while providing a complete tokens file.
-  let chosen = primaryColor || "info";
+  // If user selected a primaryColor, use it. Otherwise default to the
+  // placeholder `raspberry` (business rule) instead of 'info'.
+  let chosen = primaryColor || "raspberry";
   console.log("[generateTokensCSS] Initial primaryColor:", primaryColor);
   console.log("[generateTokensCSS] Initial chosen:", chosen);
 

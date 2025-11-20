@@ -9,10 +9,10 @@
 export const state = {
   currentStep: 1,
   config: {
-    // Default to 'raspberry' placeholder so users see a selected color
-    // in the configuration step. This ensures at least one color is
-    // visually highlighted (.is-selected) on initial load.
-    primaryColor: "raspberry",
+    // Default to null so the application picks the most appropriate
+    // color automatically (imported palette first, canonical seed next).
+    // Using `null` avoids forcing a specific project color on initial load.
+    primaryColor: null,
     themeMode: "both",
     typoResponsive: true,
     spacingResponsive: true,

@@ -8,9 +8,7 @@
  * - Espacements responsive : oui
  * ----------------------------------
  */
-
 :root {
-  /* Theme */
   color-scheme: light dark;
 
   &[data-theme="light"] {
@@ -43,10 +41,7 @@
   --link-hover: light-dark(var(--color-raspberry-700), var(--primary));
 
   /* Couleur de sélection */
-  --selection: light-dark(
-    var(--color-raspberry-300),
-    var(--color-raspberry-500)
-  );
+  --selection: light-dark(var(--color-raspberry-300), var(--color-raspberry-500));
 
   /* États */
   --warning: light-dark(var(--color-warning-500), var(--color-warning-300));
@@ -54,11 +49,10 @@
   --success: light-dark(var(--color-success-500), var(--color-success-300));
   --info: light-dark(var(--color-info-500), var(--color-info-300));
 
-  /* Bordures */
   --border-light: light-dark(var(--color-gray-100), var(--color-gray-800));
   --border-medium: light-dark(var(--color-gray-300), var(--color-gray-600));
 
-  /* Tailles de police */
+  /* Typographie - Tailles de police */
   --text-s: var(--text-14);
   --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));
   --text-l: clamp(var(--text-18), 1.0761rem + 0.2174vw, var(--text-20));
@@ -70,21 +64,9 @@
   /* Espacements */
   --spacing-xs: var(--spacing-4);
   --spacing-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));
-  --spacing-m: clamp(
-    var(--spacing-16),
-    0.5909rem + 1.8182vw,
-    var(--spacing-32)
-  );
-  --spacing-l: clamp(
-    var(--spacing-24),
-    0.8864rem + 2.2727vw,
-    var(--spacing-48)
-  );
-  --spacing-xl: clamp(
-    var(--spacing-32),
-    0.7727rem + 5.4545vw,
-    var(--spacing-80)
-  );
+  --spacing-m: clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32));
+  --spacing-l: clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48));
+  --spacing-xl: clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80));
 
   /* Formulaires */
   --form-control-background: light-dark(

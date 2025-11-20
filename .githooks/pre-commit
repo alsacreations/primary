@@ -1,0 +1,12 @@
+#!/bin/sh
+# Simple pre-commit hook to prevent accidental changes to assets/css/
+# To enable: run `git config core.hooksPath .githooks` in this repo.
+
+# Run the Node script which checks staged files
+node scripts/prevent-assets-modify.js
+rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "Pre-commit hook prevented the commit (see message above)."
+  exit $rc
+fi
+exit 0

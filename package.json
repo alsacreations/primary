@@ -4,6 +4,7 @@
   "description": "Configurateur CSS pour projets Alsacréations - Générateur de tokens et thèmes personnalisés",
   "main": "index.html",
   "scripts": {
+    "precommit:check-assets": "node scripts/prevent-assets-modify.js",
     "test": "node scripts/test-generate.js",
     "lint": "stylelint assets/css/**/*.css --fix",
     "format:generated": "npx stylelint \"tmp/*.css\" --fix",

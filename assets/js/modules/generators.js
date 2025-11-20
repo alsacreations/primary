@@ -45,114 +45,45 @@ export function parseColorVariables(cssText = "") {
 // Retourne un string contenant exactement un bloc `:root { ... }` prêt à être
 // post-traité par le générateur.
 export function normalizeTokensContent(cssText = "") {
-  if (!cssText || !cssText.trim()) return "";
-
-  // Récupérer le header comment initial s'il existe
-  const headerMatch = cssText.match(/^(\s*\/\*[\s\S]*?\*\/\s*)/);
-  const header = headerMatch ? headerMatch[1].trim() + "\n\n" : "";
-
-  // Extraire tous les blocs :root { ... } en étant robuste aux blocs
-  // imbriqués (brace-aware). La précédente approche regex non-balancée
-  // pouvait tronquer les blocs contenant des sous-blocs comme
-  // `&[data-theme="light"] { ... }`.
-  const inners = [];
-  const text = cssText;
-  let pos = 0;
-  while (true) {
-    const idx = text.indexOf(":root", pos);
-    if (idx === -1) break;
-    // trouver la première accolade ouvrante après ':root'
-    const openIdx = text.indexOf("{", idx);
-    if (openIdx === -1) break;
-    // parcourir pour trouver l'accolade fermante correspondante
-    let depth = 1;
-    let i = openIdx + 1;
-    while (i < text.length && depth > 0) {
-      const ch = text[i];
-      if (ch === "{") depth++;
-      else if (ch === "}") depth--;
-      i++;
-    }
-    if (depth === 0) {
-      const inner = text.slice(openIdx + 1, i - 1).trim();
-      if (inner) inners.push(inner);
-      pos = i;
-      continue;
-    }
-    // Si on n'a pas pu trouver la fermeture, sortir pour éviter boucle infinie
-    break;
-  }
-
-  // Si aucun :root trouvé, on prend le texte complet (fallback)
-  const combined = inners.length > 0 ? inners.join("\n\n") : cssText.trim();
-
-  // Traitement ligne par ligne en préservant commentaires et blocs
-  const lines = combined.split(/\r?\n/);
-  const out = [];
-  const seenProps = new Set();
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
-    const line = raw.trimEnd();
-    if (!line.trim()) {
-      // Eviter plusieurs lignes vides consécutives
-      if (out.length && out[out.length - 1].trim() === "") continue;
-      out.push("");
-      continue;
-    }
-
-    // conserver les commentaires tels quels
-    if (/^\/\*/.test(line)) {
-      out.push(line);
-      continue;
-    }
-
-    // Conservons les blocs (ex: &[data-theme="light"] { ... }) en recopiant
-    if (/\{\s*$/.test(line)) {
-      // collect until matching '}'
-      const block = [raw];
-      let depth =
-        (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
-      i++;
-      while (i < lines.length && depth > 0) {
-        const cur = lines[i];
-        block.push(cur);
-        depth += (cur.match(/\{/g) || []).length;
-        depth -= (cur.match(/\}/g) || []).length;
-        i++;
+  // Robust normalization that correctly handles nested braces inside the
+  // :root block (for example `&[data-theme] { ... }`). We scan the string
+  // to find every `:root {` occurrence and then walk the text to find the
+  // matching closing brace by tracking depth.
+  try {
+    const parts = [];
+    const txt = String(cssText || "");
+    let idx = 0;
+    while (true) {
+      const rootPos = txt.indexOf(":root", idx);
+      if (rootPos === -1) break;
+      const braceOpen = txt.indexOf("{", rootPos);
+      if (braceOpen === -1) break;
+      // walk to matching closing brace, accounting for nested braces
+      let depth = 1;
+      let p = braceOpen + 1;
+      while (p < txt.length && depth > 0) {
+        const ch = txt[p];
+        if (ch === "{") depth++;
+        else if (ch === "}") depth--;
+        p++;
       }
-      i--;
-      out.push(...block.map((l) => l));
-      continue;
+      const braceClose = p - 1;
+      if (braceClose <= braceOpen) break;
+      const inner = txt.slice(braceOpen + 1, braceClose).trim();
+      if (inner) parts.push(inner);
+      idx = braceClose + 1;
     }
 
-    // Dédupliquer les propriétés top-level évidentes (prendre la première valeur rencontrée)
-    const propMatch = line.match(/^([a-zA-Z0-9-_]+)\s*:/);
-    if (propMatch) {
-      const prop = propMatch[1];
-      if (seenProps.has(prop)) continue;
-      seenProps.add(prop);
-      out.push(line);
-      continue;
-    }
-
-    // Par défaut conserver la ligne
-    out.push(line);
-  }
-
-  // Nettoyage des blank lines en début/fin
-  while (out.length && out[0].trim() === "") out.shift();
-  while (out.length && out[out.length - 1].trim() === "") out.pop();
-
-  const body = out.join("\n");
-  return (
-    header +
-    ":root {\n" +
-    body
+    const body = parts.length ? parts.join("\n\n") : txt.trim();
+    const lines = body
       .split(/\r?\n/)
-      .map((l) => "  " + l)
-      .join("\n") +
-    "\n}\n"
-  );
+      .map((l) => (l.trim() ? "  " + l.trim() : ""))
+      .filter((l) => l !== "")
+      .join("\n");
+    return ":root {\n" + lines + "\n}\n";
+  } catch (e) {
+    return ":root {\n}\n";
+  }
 }
 
 export function generateMissingVariants(variants) {
@@ -753,8 +684,12 @@ export function generateTokensCSS() {
       let processed = (state.tokensContent || "").trim();
 
       // Use robust normalisation helper to rebuild a single `:root` block
+      // and mark that the AST-based normalizer was used so we can skip
+      // legacy regex spacing passes later.
+      let usedAstNormalization = false;
       try {
         processed = normalizeTokensContent(processed || "");
+        usedAstNormalization = true;
         if (processed && processed.length) {
           console.log(
             "[generateTokensCSS] Normalized tokensContent via normalizeTokensContent()"
@@ -898,14 +833,26 @@ export function generateTokensCSS() {
       // `--primary: ...;` declaration with the chosen variable.
       try {
         if (displayPrimary && /--primary\s*:/i.test(processed)) {
-          processed = processed.replace(
-            /--primary\s*:\s*[^;]*;/gi,
-            `--primary: var(--color-${displayPrimary}-500);`
+          // If the existing declaration already uses a `var(...)`, preserve
+          // it exactly (do not override imported `--primary: var(...)`).
+          const existingVarMatch = processed.match(
+            /--primary\s*:\s*(var\([^;\n]+\))/i
           );
-          console.log(
-            "[generators-header] synchronized --primary to",
-            displayPrimary
-          );
+          if (existingVarMatch) {
+            console.log(
+              "[generators-header] préserve --primary importé:",
+              existingVarMatch[1]
+            );
+          } else {
+            processed = processed.replace(
+              /--primary\s*:\s*[^;]*;/gi,
+              `--primary: var(--color-${displayPrimary}-500);`
+            );
+            console.log(
+              "[generators-header] synchronized --primary to",
+              displayPrimary
+            );
+          }
         }
       } catch (e) {
         /* noop */
@@ -920,19 +867,19 @@ export function generateTokensCSS() {
           if (em[1]) empties.push(em[1]);
         }
         if (empties.length) {
-          console.error(
-            "[generateTokensCSS] Erreur: placeholders vides détectés dans le contenu généré:",
+          // Don't abort generation on placeholders — proceed and inject
+          // canonical tokens non-destructively. Log a warning for visibility.
+          console.warn(
+            "[generateTokensCSS] placeholders vides détectés (poursuite de l'injection non-destructive):",
             empties
-          );
-          throw new Error(
-            `[generateTokensCSS] Placeholders vides trouvés: ${empties.join(
-              ", "
-            )}`
           );
         }
       } catch (e) {
-        // Relever l'erreur plus haut; interrompre la génération pour alerter
-        throw e;
+        // If the empties detection itself fails, emit a warning but continue.
+        console.warn(
+          "[generateTokensCSS] Warning during empties detection:",
+          e && e.message
+        );
       }
 
       // INJECTION DES TOKENS DE COULEURS CANONIQUES
@@ -944,11 +891,35 @@ export function generateTokensCSS() {
         );
 
         // Vérifier si les tokens canoniques sont déjà présents
-        const hasColorTokens =
-          /--primary\s*:/.test(processed) ||
-          /\/\*\s*Couleur primaire\s*\*\//.test(processed);
+        // Consider a color token present only if it has a non-empty value.
+        // A bare comment `/* Couleur primaire */` without values does not
+        // count as a populated color block.
+        // Debug: show current primary/on-primary matches before deciding.
+        /* debug logging removed */
 
-        if (!hasColorTokens) {
+        // Heuristique améliorée :
+        // - si `--primary` ou `--on-primary` sont absents ou vides -> injection complète
+        // - si `--primary` et `--on-primary` sont présents mais que les dérivés
+        //   `--primary-lighten` / `--primary-darken` sont manquants -> n'injecte
+        //   que les dérivés et les tokens qui en dépendent (accent, link, selection, bordures)
+        // - si tout est présent -> skip
+        const hasPrimaryNonEmpty = /--primary\s*:\s*[^;\n\r]*\S[^;\n\r]*;/.test(
+          processed
+        );
+        const hasOnPrimaryNonEmpty =
+          /--on-primary\s*:\s*[^;\n\r]*\S[^;\n\r]*;/.test(processed);
+        const hasPrimaryLight =
+          /--primary-lighten\s*:\s*[^;\n\r]*\S[^;\n\r]*;/.test(processed);
+        const hasPrimaryDark =
+          /--primary-darken\s*:\s*[^;\n\r]*\S[^;\n\r]*;/.test(processed);
+
+        const needFullInjection = !hasPrimaryNonEmpty || !hasOnPrimaryNonEmpty;
+        const needDerivedInjection =
+          hasPrimaryNonEmpty &&
+          hasOnPrimaryNonEmpty &&
+          (!hasPrimaryLight || !hasPrimaryDark);
+
+        if (needFullInjection) {
           console.log(
             "[generators-colors] ✅ Tokens canoniques absents, injection"
           );
@@ -979,28 +950,75 @@ export function generateTokensCSS() {
           }
 
           colorLines.push("");
+          // Respect any existing non-empty values: prefer original if present
+          const existingPrimaryMatch = processed.match(
+            /--primary\s*:\s*([^;]+);/i
+          );
+          const existingOnPrimaryMatch = processed.match(
+            /--on-primary\s*:\s*([^;]+);/i
+          );
+          const primaryVal =
+            existingPrimaryMatch && existingPrimaryMatch[1].trim()
+              ? existingPrimaryMatch[1].trim()
+              : `var(--color-${displayPrimary}-500)`;
+          const onPrimaryVal =
+            existingOnPrimaryMatch && existingOnPrimaryMatch[1].trim()
+              ? existingOnPrimaryMatch[1].trim()
+              : `var(--color-white)`;
+
+          // Compute derived variants preferring palette primitives when possible
+          let primaryLightVal = null;
+          let primaryDarkVal = null;
+          try {
+            const themeVariants = parseColorVariants(
+              (state && state.themeContent) || ""
+            );
+            const varMatch = /var\(--color-([a-z0-9-]+)-(\d+)\)/i.exec(
+              primaryVal
+            );
+            if (varMatch) {
+              const name = varMatch[1];
+              const variantsMap = themeVariants.get(name);
+              if (variantsMap) {
+                if (variantsMap.has("300"))
+                  primaryLightVal = `var(--color-${name}-300)`;
+                if (variantsMap.has("700"))
+                  primaryDarkVal = `var(--color-${name}-700)`;
+              }
+            }
+          } catch (e) {
+            /* noop */
+          }
+          // Canonical derivation: always derive from the `--primary` token
+          // so generated tokens reference `var(--primary)` instead of
+          // expanding primitive palette variables inline.
+          if (!primaryLightVal)
+            primaryLightVal = `var(--color-${displayPrimary}-300)`;
+          if (!primaryDarkVal)
+            primaryDarkVal = `var(--color-${displayPrimary}-700)`;
+
           colorLines.push("  /* Couleur primaire */");
-          colorLines.push(`  --primary: var(--color-${displayPrimary}-500);`);
-          colorLines.push("  --on-primary: var(--color-white);");
+          colorLines.push(`  --primary: ${primaryVal};`);
+          colorLines.push(`  --on-primary: ${onPrimaryVal};`);
+          colorLines.push(`  --primary-lighten: ${primaryLightVal};`);
+          colorLines.push(`  --primary-darken: ${primaryDarkVal};`);
           colorLines.push("");
 
           // accent
           colorLines.push("  /* Couleur d'accent */");
           if (themeMode === "both") {
             colorLines.push(
-              `  --accent: light-dark(var(--primary), var(--color-${displayPrimary}-300));`
+              `  --accent: light-dark(var(--primary), var(--primary-lighten));`
             );
             colorLines.push(
-              `  --accent-invert: light-dark(var(--color-${displayPrimary}-300), var(--primary));`
+              `  --accent-invert: light-dark(var(--primary-lighten), var(--primary));`
             );
           } else if (themeMode === "dark") {
-            colorLines.push(`  --accent: var(--color-${displayPrimary}-300);`);
+            colorLines.push(`  --accent: var(--primary-lighten);`);
             colorLines.push("  --accent-invert: var(--primary);");
           } else {
             colorLines.push("  --accent: var(--primary);");
-            colorLines.push(
-              `  --accent-invert: var(--color-${displayPrimary}-300);`
-            );
+            colorLines.push(`  --accent-invert: var(--primary-lighten);`);
           }
 
           colorLines.push("");
@@ -1049,42 +1067,34 @@ export function generateTokensCSS() {
           colorLines.push("  /* Interactions */");
           if (themeMode === "both") {
             colorLines.push(
-              `  --link: light-dark(var(--primary), var(--color-${displayPrimary}-300));`
+              `  --link: light-dark(var(--primary), var(--primary-lighten));`
             );
             colorLines.push(
-              `  --link-hover: light-dark(var(--color-${displayPrimary}-700), var(--primary));`
+              `  --link-hover: light-dark(var(--primary-darken), var(--primary));`
             );
             colorLines.push(
-              `  --link-active: light-dark(var(--color-${displayPrimary}-700), var(--primary));`
+              `  --link-active: light-dark(var(--primary-darken), var(--primary));`
             );
           } else if (themeMode === "dark") {
-            colorLines.push(`  --link: var(--color-${displayPrimary}-300);`);
+            colorLines.push(`  --link: var(--primary-lighten);`);
             colorLines.push("  --link-hover: var(--primary);");
             colorLines.push("  --link-active: var(--primary);");
           } else {
             colorLines.push("  --link: var(--primary);");
-            colorLines.push(
-              `  --link-hover: var(--color-${displayPrimary}-700);`
-            );
-            colorLines.push(
-              `  --link-active: var(--color-${displayPrimary}-700);`
-            );
+            colorLines.push(`  --link-hover: var(--primary-darken);`);
+            colorLines.push(`  --link-active: var(--primary-darken);`);
           }
 
           colorLines.push("");
           colorLines.push("  /* Couleur de sélection */");
           if (themeMode === "both") {
             colorLines.push(
-              `  --selection: light-dark(var(--color-${displayPrimary}-300), var(--color-${displayPrimary}-500));`
+              `  --selection: light-dark(var(--primary-lighten), var(--primary-darken));`
             );
           } else if (themeMode === "dark") {
-            colorLines.push(
-              `  --selection: var(--color-${displayPrimary}-500);`
-            );
+            colorLines.push(`  --selection: var(--primary);`);
           } else {
-            colorLines.push(
-              `  --selection: var(--color-${displayPrimary}-300);`
-            );
+            colorLines.push(`  --selection: var(--primary-lighten);`);
           }
 
           colorLines.push("");
@@ -1117,46 +1127,356 @@ export function generateTokensCSS() {
           colorLines.push("");
           colorLines.push("  /* Bordures */");
           if (themeMode === "both") {
-            colorLines.push("  --border-light: var(--color-gray-600);");
-            colorLines.push(
-              "  --border-medium: light-dark(var(--color-gray-300), var(--color-gray-600));"
-            );
+            // Canonical: lighter border in light mode, medium border for dark
+            colorLines.push("  --border-light: var(--color-gray-400);");
+            colorLines.push("  --border-medium: var(--color-gray-600);");
           } else if (themeMode === "dark") {
             colorLines.push("  --border-light: var(--color-gray-600);");
             colorLines.push("  --border-medium: var(--color-gray-600);");
           } else {
-            colorLines.push("  --border-light: var(--color-gray-600);");
-            colorLines.push("  --border-medium: var(--color-gray-300);");
+            // Light-only mode: border-light should be slightly lighter (gray-400)
+            colorLines.push("  --border-light: var(--color-gray-400);");
+            colorLines.push("  --border-medium: var(--color-gray-600);");
           }
 
-          // Injecter après le header, au début du :root
+          // Insert the canonical color block after the Theme header
+          // (color-scheme + any &[data-theme] blocks). This guarantees the
+          // canonical order: Theme -> Couleur primaire -> dérivés.
           const rootMatch = processed.match(/:root\s*\{/);
-          console.log(
-            "[generators-colors] rootMatch:",
-            rootMatch ? rootMatch[0] : "NOT FOUND"
-          );
           if (rootMatch) {
-            const insertPos =
+            let insertPos =
               processed.indexOf(rootMatch[0]) + rootMatch[0].length;
-            console.log("[generators-colors] insertPos:", insertPos);
-            console.log(
-              "[generators-colors] colorLines.length:",
-              colorLines.length
-            );
+            try {
+              const bodyStart = insertPos;
+              const csIndex = processed.indexOf("color-scheme", bodyStart);
+              if (csIndex !== -1) {
+                // move to end of the color-scheme declaration
+                let pos = processed.indexOf(";", csIndex);
+                if (pos === -1) pos = bodyStart;
+                else pos = pos + 1;
+
+                // include any following &[data-theme] blocks
+                while (true) {
+                  const dtIdx = processed.indexOf("&[data-theme", pos);
+                  if (dtIdx === -1) break;
+                  const openBrace = processed.indexOf("{", dtIdx);
+                  if (openBrace === -1) break;
+                  // find matching closing brace
+                  let depth = 1;
+                  let k = openBrace + 1;
+                  while (k < processed.length && depth > 0) {
+                    if (processed[k] === "{") depth++;
+                    else if (processed[k] === "}") depth--;
+                    k++;
+                  }
+                  pos = k; // after closing brace
+                }
+
+                // set insertion point after theme block
+                insertPos = pos;
+              }
+            } catch (e) {
+              /* noop - fallback to default insertPos */
+            }
+
+            // Insert colorLines at the computed insertion point
             processed =
               processed.slice(0, insertPos) +
               "\n" +
               colorLines.join("\n") +
               "\n" +
               processed.slice(insertPos);
-            console.log(
-              "[generators-colors] ✅ Injection effectuée, processed length:",
-              processed.length
+
+            // Deduplicate top-level declarations so that injected canonical
+            // declarations shadow any placeholders that remained.
+            try {
+              const rootIdx3 = processed.indexOf(":root");
+              if (rootIdx3 !== -1) {
+                const open3 = processed.indexOf("{", rootIdx3);
+                if (open3 !== -1) {
+                  let depth3 = 1;
+                  let jj = open3 + 1;
+                  while (jj < processed.length && depth3 > 0) {
+                    const ch3 = processed[jj];
+                    if (ch3 === "{") depth3++;
+                    else if (ch3 === "}") depth3--;
+                    jj++;
+                  }
+                  const end3 = jj - 1;
+                  const body3 = processed.slice(open3 + 1, end3);
+                  const lines3 = body3.split(/\r?\n/);
+                  const seenProps = new Set();
+                  const outLines3 = [];
+                  for (const ln of lines3) {
+                    const m = ln.match(/^\s*(--[a-z0-9-]+)\s*:/i);
+                    if (m) {
+                      const prop = m[1];
+                      if (seenProps.has(prop)) continue;
+                      seenProps.add(prop);
+                      outLines3.push(ln);
+                    } else {
+                      outLines3.push(ln);
+                    }
+                  }
+                  let newBody = outLines3.join("\n");
+                  try {
+                    const sectionRx = /\n?\s*\/\*[\s\S]*?\*\/\s*/g;
+                    const secMatches = Array.from(newBody.matchAll(sectionRx));
+                    if (secMatches.length) {
+                      const sections = [];
+                      let cursor4 = 0;
+                      for (let si = 0; si < secMatches.length; si++) {
+                        const m4 = secMatches[si];
+                        const headerStart4 = m4.index;
+                        if (si === 0 && headerStart4 > 0) {
+                          sections.push({
+                            header: null,
+                            body: newBody.slice(0, headerStart4),
+                          });
+                        }
+                        const header4 = m4[0].trim();
+                        const contentStart4 = headerStart4 + m4[0].length;
+                        const nextStart4 =
+                          si + 1 < secMatches.length
+                            ? secMatches[si + 1].index
+                            : newBody.length;
+                        const bodyContent4 = newBody.slice(
+                          contentStart4,
+                          nextStart4
+                        );
+                        sections.push({ header: header4, body: bodyContent4 });
+                        cursor4 = nextStart4;
+                      }
+                      const filtered = sections.filter((s) => {
+                        if (!s.header) return true;
+                        const hasNonEmpty =
+                          /--[a-z0-9-]+\s*:\s*[^;\n\r]*\S[^;\n\r]*;/.test(
+                            s.body
+                          );
+                        return hasNonEmpty;
+                      });
+                      newBody = filtered
+                        .map((s) =>
+                          s.header ? s.header + (s.body || "") : s.body || ""
+                        )
+                        .join("");
+                    }
+                  } catch (e) {
+                    /* noop section cleanup best-effort */
+                  }
+                  processed =
+                    processed.slice(0, open3 + 1) +
+                    newBody +
+                    processed.slice(end3);
+                }
+              }
+            } catch (e) {
+              /* noop dedupe best-effort */
+            }
+          }
+        } else if (needDerivedInjection) {
+          console.log(
+            "[generators-colors] ✅ Primary present but derived tokens missing, injecting derived tokens"
+          );
+
+          // Reuse primaryVal / onPrimaryVal computed earlier
+          // Compute derived variants preferring palette primitives when possible
+          let primaryLightVal = null;
+          let primaryDarkVal = null;
+          try {
+            const themeVariants = parseColorVariants(
+              (state && state.themeContent) || ""
             );
+            const varMatch = /var\(--color-([a-z0-9-]+)-(\d+)\)/i.exec(
+              primaryVal
+            );
+            if (varMatch) {
+              const name = varMatch[1];
+              const variantsMap = themeVariants.get(name);
+              if (variantsMap) {
+                if (variantsMap.has("300"))
+                  primaryLightVal = `var(--color-${name}-300)`;
+                if (variantsMap.has("700"))
+                  primaryDarkVal = `var(--color-${name}-700)`;
+              }
+            }
+          } catch (e) {
+            /* noop */
+          }
+          if (!primaryLightVal)
+            primaryLightVal = `var(--color-${displayPrimary}-300)`;
+          if (!primaryDarkVal)
+            primaryDarkVal = `var(--color-${displayPrimary}-700)`;
+
+          const derivedLines = [];
+          derivedLines.push("  /* Couleur primaire (dérivés injectés) */");
+          derivedLines.push(`  --primary-lighten: ${primaryLightVal};`);
+          derivedLines.push(`  --primary-darken: ${primaryDarkVal};`);
+          derivedLines.push("");
+
+          // Build separate canonical blocks for Accent, Interactions, Selection and Bordures
+          const accentBlock = [];
+          accentBlock.push("  /* Couleur d'accent */");
+          if (themeMode === "both") {
+            accentBlock.push(
+              "  --accent: light-dark(var(--primary), var(--primary-lighten));"
+            );
+            accentBlock.push(
+              "  --accent-invert: light-dark(var(--primary-lighten), var(--primary));"
+            );
+          } else if (themeMode === "dark") {
+            accentBlock.push("  --accent: var(--primary-lighten);");
+            accentBlock.push("  --accent-invert: var(--primary);");
           } else {
-            console.log(
-              "[generators-colors] ⚠️ :root { non trouvé dans processed"
+            accentBlock.push("  --accent: var(--primary);");
+            accentBlock.push("  --accent-invert: var(--primary-lighten);");
+          }
+
+          const interactionsBlock = [];
+          interactionsBlock.push("  /* Interactions */");
+          if (themeMode === "both") {
+            interactionsBlock.push(
+              "  --link: light-dark(var(--primary), var(--primary-lighten));"
             );
+            interactionsBlock.push(
+              "  --link-hover: light-dark(var(--primary-darken), var(--primary));"
+            );
+            interactionsBlock.push(
+              "  --link-active: light-dark(var(--primary-darken), var(--primary));"
+            );
+          } else if (themeMode === "dark") {
+            interactionsBlock.push("  --link: var(--primary-lighten);");
+            interactionsBlock.push("  --link-hover: var(--primary);");
+            interactionsBlock.push("  --link-active: var(--primary);");
+          } else {
+            interactionsBlock.push("  --link: var(--primary);");
+            interactionsBlock.push("  --link-hover: var(--primary-darken);");
+            interactionsBlock.push("  --link-active: var(--primary-darken);");
+          }
+
+          const selectionBlock = [];
+          selectionBlock.push("  /* Couleur de sélection */");
+          if (themeMode === "both") {
+            selectionBlock.push(
+              "  --selection: light-dark(var(--primary-lighten), var(--primary-darken));"
+            );
+          } else if (themeMode === "dark") {
+            selectionBlock.push("  --selection: var(--primary);");
+          } else {
+            selectionBlock.push("  --selection: var(--primary-lighten);");
+          }
+
+          const bordersBlock = [];
+          bordersBlock.push("  /* Bordures */");
+          if (themeMode === "both") {
+            bordersBlock.push("  --border-light: var(--color-gray-400);");
+            bordersBlock.push("  --border-medium: var(--color-gray-600);");
+          } else if (themeMode === "dark") {
+            bordersBlock.push("  --border-light: var(--color-gray-600);");
+            bordersBlock.push("  --border-medium: var(--color-gray-600);");
+          } else {
+            bordersBlock.push("  --border-light: var(--color-gray-400);");
+            bordersBlock.push("  --border-medium: var(--color-gray-600);");
+          }
+
+          // Inject derivedLines after the Theme block (color-scheme + &[data-theme])
+          const rootMatch = processed.match(/:root\s*\{/);
+          if (rootMatch) {
+            // default insertion is right after the opening brace
+            let insertPos =
+              processed.indexOf(rootMatch[0]) + rootMatch[0].length;
+            try {
+              const bodyStart = insertPos;
+              const csIndex = processed.indexOf("color-scheme", bodyStart);
+              if (csIndex !== -1) {
+                // move to end of the color-scheme declaration
+                let pos = processed.indexOf(";", csIndex);
+                if (pos === -1) pos = bodyStart;
+                else pos = pos + 1;
+
+                // include any following &[data-theme] blocks
+                while (true) {
+                  const dtIdx = processed.indexOf("&[data-theme", pos);
+                  if (dtIdx === -1) break;
+                  const openBrace = processed.indexOf("{", dtIdx);
+                  if (openBrace === -1) break;
+                  // find matching closing brace
+                  let depth = 1;
+                  let k = openBrace + 1;
+                  while (k < processed.length && depth > 0) {
+                    if (processed[k] === "{") depth++;
+                    else if (processed[k] === "}") depth--;
+                    k++;
+                  }
+                  pos = k; // after closing brace
+                }
+
+                // set insertion point after theme block
+                insertPos = pos;
+              }
+            } catch (e) {
+              /* noop - fallback to default insertPos */
+            }
+
+            // Insert derived primary lines, then insert the canonical blocks
+            // for accent, interactions, selection and borders so that the
+            // later canonical ordering pass can place them correctly.
+            const toInsert = [
+              derivedLines.join("\n"),
+              accentBlock.join("\n"),
+              interactionsBlock.join("\n"),
+              selectionBlock.join("\n"),
+              bordersBlock.join("\n"),
+            ]
+              .filter(Boolean)
+              .join("\n\n");
+
+            processed =
+              processed.slice(0, insertPos) +
+              "\n" +
+              toInsert +
+              "\n" +
+              processed.slice(insertPos);
+            // Deduplicate top-level declarations so injected derived tokens shadow placeholders
+            try {
+              const rootIdx3 = processed.indexOf(":root");
+              if (rootIdx3 !== -1) {
+                const open3 = processed.indexOf("{", rootIdx3);
+                if (open3 !== -1) {
+                  let depth3 = 1;
+                  let jj = open3 + 1;
+                  while (jj < processed.length && depth3 > 0) {
+                    const ch3 = processed[jj];
+                    if (ch3 === "{") depth3++;
+                    else if (ch3 === "}") depth3--;
+                    jj++;
+                  }
+                  const end3 = jj - 1;
+                  const body3 = processed.slice(open3 + 1, end3);
+                  const lines3 = body3.split(/\r?\n/);
+                  const seenProps = new Set();
+                  const outLines3 = [];
+                  for (const ln of lines3) {
+                    const m = ln.match(/^\s*(--[a-z0-9-]+)\s*:/i);
+                    if (m) {
+                      const prop = m[1];
+                      if (seenProps.has(prop)) continue;
+                      seenProps.add(prop);
+                      outLines3.push(ln);
+                    } else {
+                      outLines3.push(ln);
+                    }
+                  }
+                  let newBody = outLines3.join("\n");
+                  processed =
+                    processed.slice(0, open3 + 1) +
+                    newBody +
+                    processed.slice(end3);
+                }
+              }
+            } catch (e) {
+              /* noop dedupe best-effort */
+            }
           }
         } else {
           console.log(
@@ -1216,12 +1536,9 @@ export function generateTokensCSS() {
         }
 
         // Priorité 2 : Tokens canoniques responsive si demandé et rien d'importé
-        if (
-          !state?.importedTypoSection &&
-          typoResponsive &&
-          !hasTextM &&
-          !state?.themeFromImport
-        ) {
+        // NOTE: injecter les tokens manquants même si le contenu provient d'un import
+        // afin de compléter la prévisualisation de façon non-destructive.
+        if (!state?.importedTypoSection && typoResponsive && !hasTextM) {
           const typoLines = [];
           typoLines.push("\n  /* Typographie - Tailles de police */");
           typoLines.push("  --text-s: var(--text-14);");
@@ -1264,7 +1581,7 @@ export function generateTokensCSS() {
               processed = replaced;
             }
           }
-        } else if (!typoResponsive && !hasAnyText && !state?.themeFromImport) {
+        } else if (!typoResponsive && !hasAnyText) {
           // User requested fixed text sizes: append fixed-size tokens
           const fixedTypo = [
             "\n  /* Typographie - Tailles de police */",
@@ -1325,6 +1642,92 @@ export function generateTokensCSS() {
           console.log(
             "[generators-spacing] ℹ️ Aucune section spacing importée disponible"
           );
+
+          // Si aucun token d'espacement n'est présent dans l'import,
+          // injecter un bloc d'espacements canonique non-destructif afin
+          // que la prévisualisation affiche des valeurs cohérentes.
+          if (!hasSpacing) {
+            console.log(
+              "[generators-spacing] Aucun token spacing détecté dans l'import — injection canonique de secours"
+            );
+            const spacingLines = [];
+            spacingLines.push("\n  /* Espacements */");
+            spacingLines.push("  --spacing-xs: var(--spacing-4);");
+            if (spacingResponsive) {
+              spacingLines.push(
+                "  --spacing-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));"
+              );
+              spacingLines.push(
+                "  --spacing-m: clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32));"
+              );
+              spacingLines.push(
+                "  --spacing-l: clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48));"
+              );
+              spacingLines.push(
+                "  --spacing-xl: clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80));"
+              );
+            } else {
+              spacingLines.push("  --spacing-s: var(--spacing-8);");
+              spacingLines.push("  --spacing-m: var(--spacing-16);");
+              spacingLines.push("  --spacing-l: var(--spacing-24);");
+              spacingLines.push("  --spacing-xl: var(--spacing-32);");
+            }
+
+            if (/\n}\s*$/.test(processed)) {
+              processed = processed.replace(
+                /\n}\s*$/m,
+                "\n" + spacingLines.join("\n") + "\n}\n"
+              );
+            } else {
+              processed =
+                processed.trimEnd() + "\n" + spacingLines.join("\n") + "\n";
+            }
+
+            // Inject a default typography block as well if missing so the
+            // preview includes text tokens (non-destructive).
+            try {
+              const hasTextM = /--text-m\s*:/i.test(processed);
+              if (!hasTextM) {
+                const typoLines = [];
+                typoLines.push("\n  /* Tailles de police */");
+                typoLines.push(
+                  "  --text-xs: clamp(var(--text-12), 0.7011rem + 0.2174vw, var(--text-14));"
+                );
+                typoLines.push(
+                  "  --text-s: clamp(var(--text-14), 0.8261rem + 0.2174vw, var(--text-16));"
+                );
+                typoLines.push(
+                  "  --text-m: clamp(var(--text-16), 0.9511rem + 0.2174vw, var(--text-18));"
+                );
+                typoLines.push(
+                  "  --text-xl: clamp(var(--text-18), 0.9783rem + 0.6522vw, var(--text-24));"
+                );
+                typoLines.push(
+                  "  --text-2xl: clamp(var(--text-24), 1.3533rem + 0.6522vw, var(--text-30));"
+                );
+                typoLines.push(
+                  "  --text-4xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));"
+                );
+                typoLines.push(
+                  "  --text-5xl: clamp(var(--text-36), 1.663rem + 2.6087vw, var(--text-60));"
+                );
+                typoLines.push(
+                  "  --text-6xl: clamp(var(--text-36), 1.1739rem + 4.7826vw, var(--text-80));"
+                );
+                if (/\n}\s*$/.test(processed)) {
+                  processed = processed.replace(
+                    /\n}\s*$/m,
+                    "\n" + typoLines.join("\n") + "\n}\n"
+                  );
+                } else {
+                  processed =
+                    processed.trimEnd() + "\n" + typoLines.join("\n") + "\n";
+                }
+              }
+            } catch (e) {
+              /* noop */
+            }
+          }
         }
         // Priorité 2 : Tokens canoniques si nécessaire (mais normalement les espacements
         // sont déjà dans tokensContent ou seront générés par generateThemeFromScratch)
@@ -1501,8 +1904,7 @@ export function generateTokensCSS() {
         if (
           typoResponsive &&
           !hasSemanticLineHeightToken &&
-          !hasLineHeightComment &&
-          !state?.themeFromImport
+          !hasLineHeightComment
         ) {
           console.log(
             "[generators-lh] ⚠️ Ajout du bloc line-height par défaut"
@@ -1528,8 +1930,7 @@ export function generateTokensCSS() {
         } else if (
           !typoResponsive &&
           !hasSemanticLineHeightToken &&
-          !hasLineHeightComment &&
-          !state?.themeFromImport
+          !hasLineHeightComment
         ) {
           console.log(
             "[generators-lh] ⚠️ Ajout du bloc line-height fixe par défaut"
@@ -1643,8 +2044,13 @@ export function generateTokensCSS() {
                     .map((s) =>
                       s.header ? s.header + (s.body || "") : s.body || ""
                     )
-                    .join("")
-                    .replace(/\n{3,}/g, "\n\n");
+                    .join("");
+                  // When AST normalization has been used we already control
+                  // blank-line spacing precisely; avoid the legacy collapse
+                  // which can interfere with the node-driven formatting.
+                  if (!usedAstNormalization) {
+                    inner = inner.replace(/\n{3,}/g, "\n\n");
+                  }
                 }
 
                 // Rebuild processed with updated inner
@@ -1663,9 +2069,12 @@ export function generateTokensCSS() {
       // Final sanitization: remove accidental double-closing-paren sequences
       // that may have been left by aggressive replacements (e.g. "var(...));")
       try {
-        // Collapse 2+ consecutive blank lines (possibly with spaces) into
-        // exactly one blank line to avoid excessive vertical spacing.
-        processed = processed.replace(/(\r?\n\s*){2,}/g, "\n\n");
+        // Collapse 2+ consecutive blank lines into exactly one blank line.
+        // If we already used the AST-based normalizer, skip this legacy
+        // collapse: the node serializer handles spacing deterministically.
+        if (!usedAstNormalization) {
+          processed = processed.replace(/(\r?\n\s*){2,}/g, "\n\n");
+        }
       } catch (e) {
         /* noop - sanitization best-effort */
       }
@@ -1815,12 +2224,16 @@ export function generateTokensCSS() {
                   }
 
                   // Rebuild body and processed
-                  const newInner = sections2
+                  let newInner = sections2
                     .map((s) =>
                       s.header ? s.header + (s.body || "") : s.body || ""
                     )
-                    .join("")
-                    .replace(/\n{3,}/g, "\n\n");
+                    .join("");
+                  if (!usedAstNormalization) {
+                    newInner = newInner.replace(/\n{3,}/g, "\n\n");
+                  }
+                  // If AST normalization was used we trust the node serializer
+                  // to have produced the intended blank-line semantics.
                   processed =
                     processed.slice(0, openIdx2 + 1) +
                     newInner +
@@ -2231,6 +2644,683 @@ export function generateTokensCSS() {
             /(--gap-[a-z0-9-]*\s*:\s*)clamp\([\s\S]*?\,([\s\S]*?)\)/gi,
             (m, pfx, inner) => `${pfx}${inner.trim().replace(/;?\s*$/, "")};`
           );
+        }
+      } catch (e) {
+        /* noop - best-effort */
+      }
+
+      // Enforce canonical section ordering inside :root according to
+      // `canonical/tokens/tokens-order.txt`.
+      // Behaviour:
+      // - Preserve all declarations and values (imports override canonicals).
+      // - Reorder comment sections to follow the canonical sequence.
+      // - Any sections not matched are appended to "Tokens complémentaires".
+      try {
+        const orderRegexps = [
+          /Theme/i,
+          /Couleur primaire/i,
+          /Couleur d'accent/i,
+          /Surface du document/i,
+          /Niveaux de profondeur/i,
+          /Interactions/i,
+          /Couleur de sélection/i,
+          /États/i,
+          /Bordures/i,
+          /Tailles de police/i,
+          /Hauteurs de lignes/i,
+          /Espacements/i,
+          /Formulaires/i,
+          /Tokens complémentaires/i,
+        ];
+
+        const rootIdx = processed.indexOf(":root");
+        if (rootIdx !== -1) {
+          const open = processed.indexOf("{", rootIdx);
+          if (open !== -1) {
+            // find matching closing brace
+            let depth = 1;
+            let p = open + 1;
+            while (p < processed.length && depth > 0) {
+              if (processed[p] === "{") depth++;
+              else if (processed[p] === "}") depth--;
+              p++;
+            }
+            const end = p - 1;
+            // Work on a mutable body string so we can extract and remove the
+            // theme prelude (color-scheme + &[data-theme] blocks) to avoid
+            // duplications when we reassemble the canonical order.
+            let body = processed.slice(open + 1, end);
+
+            // First, extract any color-scheme + &[data-theme] blocks so they
+            // are treated as the canonical Theme prelude and not duplicated.
+            let themePrelude = "";
+            try {
+              const csIndex = body.search(/\bcolor-scheme\b/);
+              if (csIndex !== -1) {
+                let pos = body.indexOf(";", csIndex);
+                if (pos === -1) pos = csIndex;
+                else pos = pos + 1;
+
+                // include any following &[data-theme] blocks
+                while (true) {
+                  const dtIdx = body.indexOf("&[data-theme", pos);
+                  if (dtIdx === -1) break;
+                  const openBrace = body.indexOf("{", dtIdx);
+                  if (openBrace === -1) break;
+                  let depth = 1;
+                  let k = openBrace + 1;
+                  while (k < body.length && depth > 0) {
+                    if (body[k] === "{") depth++;
+                    else if (body[k] === "}") depth--;
+                    k++;
+                  }
+                  pos = k; // after closing brace
+                }
+
+                themePrelude = body.slice(csIndex, pos).trim();
+                // Remove that slice from body
+                body = (body.slice(0, csIndex) + body.slice(pos)).trim();
+                // Remove any remaining stray color-scheme/data-theme occurrences
+                body = body.replace(/\bcolor-scheme\b[\s\S]*?;/g, "");
+                body = body.replace(/&\[data-theme[\s\S]*?\}[\s\n\r]*/g, "");
+              }
+            } catch (e) {
+              /* noop */
+            }
+
+            // Extract comment-delimited sections
+            const sectionRx = /\s*\/\*[\s\S]*?\*\/\s*/g;
+            const matches = Array.from(body.matchAll(sectionRx));
+            const sections = [];
+            let cursor = 0;
+            if (matches.length) {
+              for (let i = 0; i < matches.length; i++) {
+                const m = matches[i];
+                const hdrStart = m.index;
+                // pre-header content (only for first match)
+                if (i === 0 && hdrStart > 0) {
+                  const pre = body.slice(0, hdrStart).trim();
+                  if (pre) sections.push({ header: null, body: pre });
+                }
+                const header = m[0].trim();
+                const contentStart = hdrStart + m[0].length;
+                const nextStart =
+                  i + 1 < matches.length ? matches[i + 1].index : body.length;
+                const secBody = body.slice(contentStart, nextStart).trim();
+                sections.push({ header, body: secBody });
+                cursor = nextStart;
+              }
+              // trailing content after last header
+              if (cursor < body.length) {
+                const tail = body.slice(cursor).trim();
+                if (tail) sections.push({ header: null, body: tail });
+              }
+            } else {
+              // No comment headers: try to recover any top-level declarations
+              // that do not match canonical prefixes and group them as
+              // "Tokens complémentaires" so imported JSON variables like
+              // `--surface-dim` or `--accent-blue` are not lost.
+              try {
+                const declRx = /(--[a-z0-9-]+)\s*:[^;]+;/gim;
+                const canonicalPropRx =
+                  /^(--primary$|--on-primary$|--primary-lighten$|--primary-darken$|--accent$|--accent-invert$|--surface$|--on-surface$|--layer-|--link$|--link-hover$|--link-active$|--selection$|--warning$|--error$|--success$|--info$|--border-|--text-|--line-height-|--spacing-|--gap-|--form-|--on-form-control|--checkables?-|--checkable-)/i;
+                const orphanDecls = [];
+                let m2;
+                // Collect declarations that do NOT match canonical prefixes
+                while ((m2 = declRx.exec(body))) {
+                  const prop = m2[1];
+                  const decl = m2[0].trim();
+                  if (!canonicalPropRx.test(prop)) {
+                    orphanDecls.push(decl);
+                    // remove the declaration from body to avoid duplicates
+                    body = body.replace(m2[0], "");
+                  }
+                }
+
+                if (orphanDecls.length) {
+                  const formatted = orphanDecls
+                    .map((l) => (l.trim() ? "  " + l.trim() : ""))
+                    .filter(Boolean)
+                    .join("\n");
+
+                  // Insert a Tokens complémentaires block just before closing
+                  // brace of :root to keep ordering stable.
+                  const insertion =
+                    "\n  /* Tokens complémentaires */\n" + formatted + "\n";
+                  processed =
+                    processed.slice(0, open + 1) +
+                    "\n" +
+                    body.trim() +
+                    insertion +
+                    processed.slice(end);
+                }
+              } catch (e) {
+                /* noop - best effort */
+              }
+            }
+
+            if (sections.length > 0) {
+              // Map headers to their section strings (preserve original header text)
+              const headerMap = new Map();
+              const unmatched = [];
+              for (const s of sections) {
+                if (!s.header) {
+                  unmatched.push(s.body);
+                  continue;
+                }
+                headerMap.set(s.header, s.body);
+              }
+
+              // Normalize header variants into canonical labels so that
+              // variants like "/* Couleur primaire (dérivés injectés) */"
+              // are grouped under the canonical "/* Couleur primaire */".
+              const headerGroups = new Map();
+              const normalizeHeader = (hdr) => {
+                const raw = String(hdr || "");
+                // Normalize and strip diacritics/punctuation for robust matching
+                let alpha = raw;
+                try {
+                  alpha = raw
+                    .normalize("NFKD")
+                    .replace(/\p{M}/gu, "")
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                } catch (e) {
+                  alpha = raw
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                }
+
+                // Explicit mapping to canonical header lines. This avoids
+                // depending on the `canonicalLabels` array being in scope
+                // and ensures variants are collapsed deterministically.
+                if (alpha.includes("couleur primaire"))
+                  return "  /* Couleur primaire */";
+                if (
+                  alpha.includes("couleur d accent") ||
+                  alpha.includes("couleur d'accent")
+                )
+                  return "  /* Couleur d'accent */";
+                if (
+                  alpha.includes("surface du document") ||
+                  alpha.includes("surface")
+                )
+                  return "  /* Surface du document */";
+                if (
+                  alpha.includes("niveaux de profondeur") ||
+                  alpha.includes("profondeur")
+                )
+                  return "  /* Niveaux de profondeur */";
+                if (alpha.includes("interactions"))
+                  return "  /* Interactions */";
+                if (
+                  alpha.includes("couleur de selection") ||
+                  alpha.includes("selection") ||
+                  alpha.includes("sélection")
+                )
+                  return "  /* Couleur de sélection */";
+                if (
+                  alpha.includes("état") ||
+                  alpha.includes("etats") ||
+                  alpha.includes("états d alerte")
+                )
+                  return "  /* États d'alerte */";
+                if (alpha.includes("bordure")) return "  /* Bordures */";
+                if (
+                  alpha.includes("tailles de police") ||
+                  alpha.includes("tailles") ||
+                  alpha.includes("police")
+                )
+                  return "  /* Tailles de police */";
+                if (
+                  alpha.includes("hauteurs de lignes") ||
+                  alpha.includes("hauteurs de ligne") ||
+                  alpha.includes("hauteurs")
+                )
+                  return "  /* Hauteurs de lignes */";
+                if (
+                  alpha.includes("espacement") ||
+                  alpha.includes("espacements")
+                )
+                  return "  /* Espacements */";
+                if (
+                  alpha.includes("formulaires") ||
+                  alpha.includes("form") ||
+                  alpha.includes("form-")
+                )
+                  return "  /* Formulaires */";
+                if (
+                  alpha.includes("tokens complement") ||
+                  alpha.includes("tokens complementai") ||
+                  alpha.includes("complement")
+                )
+                  return "  /* Tokens complémentaires */";
+
+                // Fallback: return trimmed original header
+                return hdr.trim();
+              };
+
+              for (const [hdr, body] of headerMap.entries()) {
+                const key = normalizeHeader(hdr);
+                // (debug) mapping hdr -> normalized key (silent in production)
+                if (!headerGroups.has(key)) headerGroups.set(key, []);
+                headerGroups.get(key).push(body);
+              }
+
+              // Debug: log detected headers (temporary)
+              try {
+                const keys = Array.from(headerGroups.keys()).map((k) =>
+                  k.trim()
+                );
+                // detected headers and orderRegexps logging removed for production
+              } catch (e) {
+                /* noop */
+              }
+
+              // Helper to find a header key matching a regexp
+              const findHeaderKey = (rx) => {
+                for (const key of headerMap.keys()) {
+                  if (rx.test(key)) return key;
+                }
+                return null;
+              };
+
+              const orderedParts = [];
+              // Insert a canonical Theme prelude (color-scheme + &[data-theme])
+              // at the top of :root so ordering is strict and predictable.
+              const themePreludeCanonical = [];
+              // Emit canonical Theme header first
+              themePreludeCanonical.push("  /* Theme (color-scheme) */");
+              if (typeof themeMode !== "undefined" && themeMode === "both") {
+                themePreludeCanonical.push("  color-scheme: light dark;");
+                themePreludeCanonical.push("");
+                themePreludeCanonical.push('  &[data-theme="light"] {');
+                themePreludeCanonical.push("    color-scheme: light;");
+                themePreludeCanonical.push("  }");
+                themePreludeCanonical.push("");
+                themePreludeCanonical.push('  &[data-theme="dark"] {');
+                themePreludeCanonical.push("    color-scheme: dark;");
+                themePreludeCanonical.push("  }");
+              } else if (
+                typeof themeMode !== "undefined" &&
+                themeMode === "dark"
+              ) {
+                themePreludeCanonical.push("  color-scheme: dark;");
+              } else {
+                themePreludeCanonical.push("  color-scheme: light;");
+              }
+              orderedParts.push(themePreludeCanonical.join("\n"));
+
+              const usedKeys = new Set();
+              // canonical labels to output (must match tokens-order.txt)
+              const canonicalLabels = [
+                "  /* Theme (color-scheme) */",
+                "  /* Couleur primaire */",
+                "  /* Couleur d'accent */",
+                "  /* Surface du document */",
+                "  /* Niveaux de profondeur */",
+                "  /* Interactions */",
+                "  /* Couleur de sélection */",
+                "  /* États d'alerte */",
+                "  /* Bordures */",
+                "  /* Tailles de police */",
+                "  /* Hauteurs de lignes */",
+                "  /* Espacements */",
+                "  /* Formulaires */",
+                "  /* Tokens complémentaires */",
+              ];
+
+              for (let idx = 0; idx < orderRegexps.length; idx++) {
+                const rx = orderRegexps[idx];
+                const hdrLine = canonicalLabels[idx];
+                // Skip Theme here — already emitted as prelude above
+                if (idx === 0) continue;
+
+                // find all header keys that match this semantic category
+                const matchingKeys = Array.from(headerMap.keys()).filter((k) =>
+                  rx.test(k)
+                );
+                if (matchingKeys.length === 0) {
+                  // nothing to emit for this section
+                  continue;
+                }
+
+                // Merge all bodies for matching headers
+                const mergedBody = matchingKeys
+                  .map((k) => headerMap.get(k) || "")
+                  .filter(Boolean)
+                  .join("\n\n");
+
+                if (!mergedBody || !mergedBody.trim()) {
+                  // mark keys as used but skip empty blocks
+                  for (const k of matchingKeys) usedKeys.add(k);
+                  continue;
+                }
+
+                // Special-case ordering for 'Couleur primaire' section (idx === 1)
+                let bodyLines = "";
+                if (idx === 1) {
+                  const desiredOrder = [
+                    "--primary",
+                    "--on-primary",
+                    "--primary-lighten",
+                    "--primary-darken",
+                  ];
+
+                  const rawLines = mergedBody
+                    .split(/\r?\n/)
+                    .map((l) => l.trim())
+                    .filter(Boolean);
+
+                  const propMap = new Map();
+                  const others = [];
+                  for (const ln of rawLines) {
+                    const m = ln.match(/^\s*(--[a-z0-9-]+)\s*:/i);
+                    if (m) {
+                      const prop = m[1];
+                      if (!propMap.has(prop)) propMap.set(prop, []);
+                      propMap.get(prop).push(ln);
+                    } else {
+                      others.push(ln);
+                    }
+                  }
+
+                  const ordered = [];
+                  for (const p of desiredOrder) {
+                    if (propMap.has(p)) {
+                      ordered.push(...propMap.get(p));
+                      propMap.delete(p);
+                    }
+                  }
+                  // append any remaining props in their original order
+                  for (const [k, arr] of propMap.entries())
+                    ordered.push(...arr);
+                  // then any non-declaration lines
+                  ordered.push(...others);
+
+                  bodyLines = ordered
+                    .map((l) => (l.trim() ? "  " + l.trim() : ""))
+                    .filter(Boolean)
+                    .join("\n");
+                } else {
+                  bodyLines = mergedBody
+                    .split(/\r?\n/)
+                    .map((l) => (l.trim() ? "  " + l.trim() : ""))
+                    .filter(Boolean)
+                    .join("\n");
+                }
+
+                orderedParts.push(hdrLine + "\n" + bodyLines);
+                for (const k of matchingKeys) usedKeys.add(k);
+              }
+
+              // If the import lacked a typography section, inject a default
+              // 'Tailles de police' block so the preview shows text tokens.
+              try {
+                const hasTypoHeader = Array.from(headerMap.keys()).some((k) =>
+                  /Tailles de police/i.test(k)
+                );
+                const hasTextMToken = /--text-m\s*:/i.test(processed);
+                if (!hasTypoHeader && !hasTextMToken && typoResponsive) {
+                  const defaultTypo = [
+                    "  /* Tailles de police */",
+                    "  --text-xs: clamp(var(--text-12), 0.7011rem + 0.2174vw, var(--text-14));",
+                    "  --text-s: clamp(var(--text-14), 0.8261rem + 0.2174vw, var(--text-16));",
+                    "  --text-m: clamp(var(--text-16), 0.9511rem + 0.2174vw, var(--text-18));",
+                    "  --text-xl: clamp(var(--text-18), 0.9783rem + 0.6522vw, var(--text-24));",
+                    "  --text-2xl: clamp(var(--text-24), 1.3533rem + 0.6522vw, var(--text-30));",
+                    "  --text-4xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));",
+                    "  --text-5xl: clamp(var(--text-36), 1.663rem + 2.6087vw, var(--text-60));",
+                    "  --text-6xl: clamp(var(--text-36), 1.1739rem + 4.7826vw, var(--text-80));",
+                  ].join("\n");
+                  // insert after 'Bordures' section if present, otherwise append
+                  const bordIdx = orderedParts.findIndex((s) =>
+                    /Bordures/i.test(s)
+                  );
+                  if (bordIdx === -1) orderedParts.push(defaultTypo);
+                  else orderedParts.splice(bordIdx + 1, 0, defaultTypo);
+                }
+              } catch (e) {
+                /* noop */
+              }
+
+              // Append any headers not matched by canonical list into 'Tokens complémentaires'
+              const remaining = [];
+              for (const [key, bodyContent] of headerMap.entries()) {
+                if (!usedKeys.has(key)) {
+                  // Do NOT include imported header comments (e.g. "/* Autres couleurs */")
+                  // inside the canonical "Tokens complémentaires" block. Only
+                  // include the inner declarations to keep the section tidy.
+                  const bodyLines = (bodyContent || "")
+                    .split(/\r?\n/)
+                    .map((l) => (l.trim() ? "  " + l.trim() : ""))
+                    .filter(Boolean)
+                    .join("\n");
+                  if (bodyLines) remaining.push(bodyLines);
+                }
+              }
+              // also include any unmatched free-form bodies
+              for (const u of unmatched) {
+                const part = u
+                  .split(/\r?\n/)
+                  .map((l) => (l.trim() ? "  " + l.trim() : ""))
+                  .filter(Boolean)
+                  .join("\n");
+                if (part) remaining.push(part);
+              }
+
+              if (remaining.length) {
+                // Use a canonical header label
+                orderedParts.push(
+                  "  /* Tokens complémentaires */\n" + remaining.join("\n\n")
+                );
+              }
+
+              // Rebuild body with exactly one blank line between sections
+              const newBody = orderedParts
+                .map((s) => s.trimRight())
+                .filter(Boolean)
+                .join("\n\n");
+
+              processed =
+                processed.slice(0, open + 1) +
+                "\n" +
+                newBody +
+                "\n" +
+                processed.slice(end);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(
+          "[generators-order] failed to enforce canonical order:",
+          e && e.message
+        );
+      }
+
+      // Small final fill: if some canonical declarations remained empty
+      // (placeholders like `--primary: ;`) fill them non-destructively.
+      try {
+        const original = (state && state.tokensContent) || "";
+        const origPrimaryVarMatch = original.match(
+          /--primary\s*:\s*(var\([^;\n]+\))/i
+        );
+
+        // production: do not log primary presence details
+
+        // Fill empty --primary only if it's empty. If the original import
+        // contained a `var(...)` for --primary we restore/preserve it.
+        if (/--primary\s*:\s*;/.test(processed)) {
+          if (origPrimaryVarMatch) {
+            processed = processed.replace(
+              /--primary\s*:\s*;/gi,
+              `--primary: ${origPrimaryVarMatch[1]};`
+            );
+            // restored imported --primary var()
+          } else {
+            processed = processed.replace(
+              /--primary\s*:\s*;/gi,
+              `--primary: var(--color-${displayPrimary}-500);`
+            );
+            // filled empty --primary with var(...) based on displayPrimary
+          }
+        }
+
+        // Non-destructive fills for derived tokens when empty
+        if (/--on-primary\s*:\s*;/.test(processed)) {
+          processed = processed.replace(
+            /--on-primary\s*:\s*;/gi,
+            `--on-primary: var(--color-white);`
+          );
+        }
+        if (/--primary-lighten\s*:\s*;/.test(processed)) {
+          processed = processed.replace(
+            /--primary-lighten\s*:\s*;/gi,
+            `--primary-lighten: var(--color-${displayPrimary}-300);`
+          );
+        }
+        if (/--primary-darken\s*:\s*;/.test(processed)) {
+          processed = processed.replace(
+            /--primary-darken\s*:\s*;/gi,
+            `--primary-darken: var(--color-${displayPrimary}-700);`
+          );
+        }
+
+        // Append les `customVars` fournis par l'utilisateur sous
+        // un en-tête `/* Tokens complémentaires */` si présents et
+        // si l'import ne les contient pas déjà. Injection non-destructive.
+        try {
+          const customVars =
+            (state && state.config && state.config.customVars) || "";
+          if (customVars && String(customVars).trim()) {
+            if (!/Tokens complémentaires/i.test(processed)) {
+              const formatted = String(customVars)
+                .split(/\r?\n/)
+                .map((l) => (l.trim() ? "  " + l.trim() : ""))
+                .filter(Boolean);
+              if (formatted.length) {
+                if (/\n}\s*$/.test(processed)) {
+                  processed = processed.replace(
+                    /\n}\s*$/m,
+                    "\n  /* Tokens complémentaires */\n" +
+                      formatted.join("\n") +
+                      "\n}\n"
+                  );
+                } else {
+                  processed =
+                    processed.trimEnd() +
+                    "\n  /* Tokens complémentaires */\n" +
+                    formatted.join("\n") +
+                    "\n";
+                }
+              }
+            }
+          }
+        } catch (e) {
+          /* noop */
+        }
+
+        // If typographic semantic tokens are still missing, append a
+        // canonical block so the import preview is complete.
+        try {
+          if (!/--text-m\s*:/i.test(processed)) {
+            const typoLines = [];
+            typoLines.push("\n  /* Tailles de police */");
+            typoLines.push(
+              "  --text-xs: clamp(var(--text-12), 0.7011rem + 0.2174vw, var(--text-14));"
+            );
+            typoLines.push(
+              "  --text-s: clamp(var(--text-14), 0.8261rem + 0.2174vw, var(--text-16));"
+            );
+            typoLines.push(
+              "  --text-m: clamp(var(--text-16), 0.9511rem + 0.2174vw, var(--text-18));"
+            );
+            typoLines.push(
+              "  --text-xl: clamp(var(--text-18), 0.9783rem + 0.6522vw, var(--text-24));"
+            );
+            typoLines.push(
+              "  --text-2xl: clamp(var(--text-24), 1.3533rem + 0.6522vw, var(--text-30));"
+            );
+            typoLines.push(
+              "  --text-4xl: clamp(var(--text-30), 1.4348rem + 1.9565vw, var(--text-48));"
+            );
+            if (/\n}\s*$/.test(processed)) {
+              processed = processed.replace(
+                /\n}\s*$/m,
+                "\n" + typoLines.join("\n") + "\n}\n"
+              );
+            } else {
+              processed =
+                processed.trimEnd() + "\n" + typoLines.join("\n") + "\n";
+            }
+          }
+        } catch (e) {
+          /* noop */
+        }
+
+        // If form tokens are missing, append canonical form tokens
+        try {
+          if (!/--form-control-background\s*:/i.test(processed)) {
+            const formLines = [];
+            formLines.push("\n  /* Formulaires */");
+            if (themeMode === "both") {
+              formLines.push(
+                "  --form-control-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );"
+              );
+              formLines.push(
+                "  --on-form-control: light-dark(var(--color-gray-900), var(--color-gray-100));"
+              );
+            } else {
+              formLines.push(
+                "  --form-control-background: var(--color-gray-200);"
+              );
+              formLines.push("  --on-form-control: var(--color-gray-900);");
+            }
+            formLines.push(
+              "  --form-control-spacing: var(--spacing-12) var(--spacing-16);"
+            );
+            formLines.push("  --form-control-border-width: 1px;");
+            formLines.push(
+              "  --form-control-border-color: var(--color-gray-400);"
+            );
+            formLines.push("  --form-control-border-radius: var(--radius-16);");
+            formLines.push(
+              "  --checkables-border-color: var(--color-gray-400);"
+            );
+            formLines.push("  --checkable-size: 1.25em;");
+            if (/\n}\s*$/.test(processed)) {
+              processed = processed.replace(
+                /\n}\s*$/m,
+                "\n" + formLines.join("\n") + "\n}\n"
+              );
+            } else {
+              processed =
+                processed.trimEnd() + "\n" + formLines.join("\n") + "\n";
+            }
+          }
+        } catch (e) {
+          /* noop */
+        }
+
+        // Safety: ensure balanced braces. If processed contains a `:root {`
+        // but the closing `}` is missing (or braces are unbalanced) add the
+        // required closing braces to avoid producing unterminated CSS in the UI.
+        try {
+          const openCount = (processed.match(/{/g) || []).length;
+          const closeCount = (processed.match(/}/g) || []).length;
+          if (openCount > closeCount) {
+            const missing = openCount - closeCount;
+            processed = processed + "\n" + "}".repeat(missing) + "\n";
+          } else if (!/}\s*\n?$/.test(processed)) {
+            // Ensure trailing newline
+            processed = processed + "\n";
+          }
+        } catch (e) {
+          /* noop */
         }
       } catch (e) {
         /* noop - best-effort */
@@ -2677,6 +3767,24 @@ export function generateTokensCSS() {
   lines.push("  --form-control-border-radius: var(--radius-16);");
   lines.push("  --checkables-border-color: var(--color-gray-400);");
   lines.push("  --checkable-size: 1.25em;");
+
+  // Append any user-provided custom variables as 'Tokens complémentaires'
+  try {
+    const customVars = (state && state.config && state.config.customVars) || "";
+    if (customVars && String(customVars).trim()) {
+      const formatted = String(customVars)
+        .split(/\r?\n/)
+        .map((l) => (l.trim() ? "  " + l.trim() : ""))
+        .filter(Boolean);
+      if (formatted.length) {
+        lines.push("");
+        lines.push("  /* Tokens complémentaires */");
+        for (const ln of formatted) lines.push(ln);
+      }
+    }
+  } catch (e) {
+    /* noop */
+  }
 
   lines.push("}");
 

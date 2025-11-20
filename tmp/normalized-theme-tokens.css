@@ -5,15 +5,46 @@
  */
 
 :root {
-  /* Color Tokens */
-    color-scheme: light dark;
+  color-scheme: light dark;
+
+  &[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  &[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+
+  /* Couleur primaire */
+  --primary: var(--color-ocean-600);
+  --on-primary: var(--color-white);
+  --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);
+  --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);
+&[data-theme="light"] {
+    
+
+  }
+
+  &[data-theme="dark"] {
+    
+
+  }
+
+
+  
+/* Color Tokens */
+    
+
   
     &[data-theme="light"] {
-      color-scheme: light;
+      
+
     }
   
     &[data-theme="dark"] {
-      color-scheme: dark;
+      
+
     }
   
     /* Par défaut l'application utilise la palette 'ocean' pour le runtime.
@@ -22,11 +53,8 @@
       placeholder 'raspberry' est géré côté générateur JS pour les fichiers
       exportés; il ne doit pas apparaître dans les styles de l'app. */
   
-    /* Couleur primaire */
-    --primary: var(--color-ocean-600);
-    --on-primary: var(--color-white);
-  
-    /* Couleur d'accent */
+    
+/* Couleur d'accent */
     --accent: light-dark(var(--primary), var(--color-ocean-300));
     --accent-invert: light-dark(var(--color-ocean-300), var(--primary));
   

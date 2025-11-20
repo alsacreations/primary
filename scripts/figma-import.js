@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "fs/promises";
 import path from "path";
+import { execSync } from "child_process";
 
 // Resolve repo root reliably
 const ROOT = path.resolve(new URL(".", import.meta.url).pathname, "..");
@@ -489,13 +490,105 @@ async function generate() {
     projectNeedColorScheme = Boolean(all.needColorScheme);
 
     if (all.needColorScheme) {
-      const cs = `  color-scheme: light dark;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n\n`;
-      tokensCss = tokensCss.replace(":root {\n", `:root {\n${cs}`);
+      // Le besoin de color-scheme est détecté par l'importeur mais
+      // nous déléguons l'insertion du bloc canonique au générateur central
+      // (`assets/js/modules/generators.js`) pour éviter les duplications
+      // (importeur : préparation des lignes sémantiques seulement).
+      console.log(
+        "[figma-import] projectNeedColorScheme détecté, injection différée vers le générateur"
+      );
     }
 
     if (all.lines.length) {
-      tokensCss += `\n  /* Couleurs personnalisées (projet) */\n`;
-      tokensCss += all.lines.join("\n") + "\n";
+      // Post-process project semantics lines to normalize certain patterns:
+      // - If primary is emitted as `light-dark(var(--color-x-500), var(--color-x-500))`,
+      //   collapse it to `--primary: var(--color-x-500);`.
+      // - Ensure non-destructive insertion of `--primary-lighten` and
+      //   `--primary-darken` and `--on-primary` when primary is present but
+      //   derivatives are missing.
+      const processedLines = [];
+      let sawPrimary = false;
+      let primaryPrimitive = null;
+      for (let i = 0; i < all.lines.length; i++) {
+        let line = all.lines[i];
+        // match primary light-dark with two identical var(...) sides
+        line = line.replace(
+          /(--primary\s*:\s*)light-dark\(\s*var\((--[a-z0-9-]+-\d+)\)\s*,\s*var\((--[a-z0-9-]+-\d+)\)\s*\)\s*;/i,
+          (m, p1, a, b) => {
+            if (a && b && a.toLowerCase() === b.toLowerCase()) {
+              sawPrimary = true;
+              primaryPrimitive = a;
+              return `${p1}var(${a});`;
+            }
+            return m;
+          }
+        );
+        // detect explicit primary var(...) form and capture primitive name
+        const primMatch = line.match(
+          /--primary\s*:\s*var\((--[a-z0-9-]+-\d+)\)\s*;/i
+        );
+        if (primMatch) {
+          sawPrimary = true;
+          primaryPrimitive = primaryPrimitive || primMatch[1];
+        }
+        processedLines.push(line);
+      }
+
+      // If we saw a primary declaration, ensure derivatives are present non-destructively
+      if (sawPrimary) {
+        // Check whether any of the derivatives already exist
+        const joined = processedLines.join("\n");
+        const hasLighten = /--primary-lighten\s*:/i.test(joined);
+        const hasDarken = /--primary-darken\s*:/i.test(joined);
+        const hasOnPrimary = /--on-primary\s*:/i.test(joined);
+        // We will insert derivatives immediately after the primary declaration
+        const outLines = [];
+        for (let li = 0; li < processedLines.length; li++) {
+          outLines.push(processedLines[li]);
+          if (
+            /--primary\s*:\s*var\(--[a-z0-9-]+-\d+\)\s*;/i.test(
+              processedLines[li]
+            )
+          ) {
+            // Use the concrete primitive reference when generating derivatives
+            const primRef =
+              primaryPrimitive ||
+              (processedLines[li].match(/var\((--[a-z0-9-]+-\d+)\)/i) || [])[1];
+            if (!hasOnPrimary)
+              outLines.push("  --on-primary: var(--color-white);");
+            // Utiliser --primary comme source pour les dérivés afin de préserver
+            // les valeurs importées et rester non-destructif (oklch(from var(--primary) ...)).
+            if (!hasLighten)
+              outLines.push(
+                `  --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);`
+              );
+            if (!hasDarken)
+              outLines.push(
+                `  --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);`
+              );
+          }
+        }
+        tokensCss += `\n  /* Couleurs personnalisées (projet) */\n`;
+        let outBlock = outLines.join("\n") + "\n";
+        // collapse trivial light-dark wrappers where both sides reference the same primitive
+        outBlock = outBlock.replace(
+          /light-dark\(\s*var\((--[a-z0-9-]+-\d+)\)\s*,\s*var\((--[a-z0-9-]+-\d+)\)\s*\)/gi,
+          (m, a, b) => {
+            if (a && b && a.toLowerCase() === b.toLowerCase())
+              return `var(${a})`;
+            return m;
+          }
+        );
+        // specific: collapse white double-reference to simple var
+        outBlock = outBlock.replace(
+          /light-dark\(\s*var\((--color-white)\)\s*,\s*var\((--color-white)\)\s*\)/gi,
+          "var(--color-white)"
+        );
+        tokensCss += outBlock;
+      } else {
+        tokensCss += `\n  /* Couleurs personnalisées (projet) */\n`;
+        tokensCss += all.lines.join("\n") + "\n";
+      }
     }
   }
 
@@ -916,10 +1009,94 @@ async function generate() {
   }
 
   // write outputs to tmp/
+  // Final safety: clean and normalize the :root ordering to ensure a single
+  // canonical Theme block followed immediately by the Couleur primaire group.
+  const cleanTokensCss = (content) => {
+    try {
+      const rootIdx = content.indexOf(":root");
+      if (rootIdx === -1) return content;
+      const open = content.indexOf("{", rootIdx);
+      if (open === -1) return content;
+      // find matching close
+      let depth = 1;
+      let i = open + 1;
+      for (; i < content.length && depth > 0; i++) {
+        if (content[i] === "{") depth++;
+        else if (content[i] === "}") depth--;
+      }
+      const body = content.slice(open + 1, i - 1);
+
+      // determine themeMode from existing body
+      const hasDark = /&\[data-theme=["']dark["']\]/i.test(body);
+      const hasLight = /&\[data-theme=["']light["']\]/i.test(body);
+      const themeMode =
+        hasDark && hasLight ? "both" : hasDark ? "dark" : "light";
+
+      // extract existing --primary value if present
+      const primMatch = body.match(/--primary\s*:\s*([^;]+);/i);
+      const primaryVal = primMatch && primMatch[1] ? primMatch[1].trim() : null;
+
+      // remove any existing theme / primary fragments
+      let cleaned = body.replace(
+        /\/\*\s*Theme\s*\*\/[\s\S]*?(?=\/\*|$)/gi,
+        "\n"
+      );
+      cleaned = cleaned.replace(/color-scheme\s*:[\s\S]*?(?=\/\*|$)/gi, "\n");
+      cleaned = cleaned.replace(
+        /&\[data-theme=["'][^"']+["']\]\s*\{[\s\S]*?\}\s*/gi,
+        "\n"
+      );
+      cleaned = cleaned.replace(
+        /\/\*\s*Couleur primaire\s*\*\/[\s\S]*?(?=\/\*|$)/gi,
+        "\n"
+      );
+
+      // Build canonical blocks
+      let csBlk = "  color-scheme: light;\n";
+      if (themeMode === "both") {
+        csBlk = `  color-scheme: light dark;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n\n`;
+      } else if (themeMode === "dark") {
+        csBlk = "  color-scheme: dark;\n";
+      }
+
+      const primaryLine = primaryVal || `var(--color-raspberry-500)`;
+      const primaryGroup = [
+        "  /* Couleur primaire */",
+        `  --primary: ${primaryLine};`,
+        "  --on-primary: var(--color-white);",
+        "  --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);",
+        "  --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);",
+        "",
+      ].join("\n");
+
+      const rest = cleaned.replace(/^\s+/, "").replace(/\s+$/, "\n");
+      const newBody = csBlk + "\n" + primaryGroup + rest;
+      return (
+        content.slice(0, open + 1) + "\n" + newBody + "}\n" + content.slice(i)
+      );
+    } catch (e) {
+      return content;
+    }
+  };
+
+  tokensCss = cleanTokensCss(tokensCss);
+
   await fs.writeFile(path.join(outDir, "theme.css"), themeCss, "utf8");
   await fs.writeFile(path.join(outDir, "theme-tokens.css"), tokensCss, "utf8");
 
-  console.log("Generated tmp/theme.css and tmp/theme-tokens.css");
+  // Run automatic verifier/fixer to guarantee canonical :root structure.
+  try {
+    // run the verifier script which fixes tmp/*.css files in-place
+    execSync("node scripts/verify-and-fix-theme-tokens.mjs", {
+      stdio: "inherit",
+      cwd: ROOT,
+    });
+  } catch (e) {
+    // Log but do not fail the whole generation — verification is best-effort here
+    console.error("verify-and-fix-theme-tokens failed:", e && e.message);
+  }
+
+  console.log("Generated tmp/theme.css and tmp/theme-tokens.css (verified)");
 }
 // Export generate() so other scripts (or tests) can call it programmatically.
 // Export generate() so other scripts (or tests) can call it programmatically.

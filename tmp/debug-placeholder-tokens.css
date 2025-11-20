@@ -24,8 +24,10 @@
   --on-primary: var(--color-white);
 
   /* Couleur d'accent */
-  --accent: light-dark(var(--primary), var(--color-raspberry-300));
-  --accent-invert: light-dark(var(--color-raspberry-300), var(--primary));
+  --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);
+  --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);
+  --accent: light-dark(var(--primary), var(--primary-lighten));
+  --accent-invert: light-dark(var(--primary-lighten), var(--primary));
 
   /* Surface du document */
   --surface: light-dark(var(--color-white), var(--color-gray-900));

@@ -1,0 +1,32 @@
+Ordre d'affichage des tokens CSS.
+- Les tokens importés écrasent les valeurs placeholder ou canoniques
+- Si un token n'est pas défini dans les tokens importés, la valeur canonique est utilisée.
+- Si un token importé n'est pas dans la liste canonique, il est ajouté à la fin dans "Tokens complémentaires".
+
+1. /* Theme (color-scheme) */
+2. /* Couleur primaire */
+(ex. --primary, --primary-lighten, --primary-darken, --on-primary)
+3. /* Couleur d'accent */
+(ex. --accent, --accent-invert)
+4. /* Surface du document */
+(ex. --surface, --on-surface)
+5. /* Niveaux de profondeur */
+(ex. --layer-1, --layer-2, --layer-3)
+6. /* Interactions */
+(ex. --link, --link-hover, --link-active)
+7. /* Couleur de sélection */
+(ex. --selection)
+8. /* États d'alerte */
+(ex. --warning, --error, --success, --info)
+9. /* Bordures */
+(ex. --border-light, --border-medium)
+10. /* Tailles de police */
+(ex. --text-s, --text-m, --text-l, --text-xl)
+11. /* Hauteurs de lignes */
+(ex. --line-height-s, --line-height-m, --line-height-l)
+12. /* Espacements */
+(ex. --spacing-s, --spacing-m, --spacing-l)
+13. /* Formulaires */
+(ex. --form-control-background)
+14. /* Tokens complémentaires */
+(ex. --surface-dim, --accent-blue, --on-surface2)

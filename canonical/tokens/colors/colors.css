@@ -1,5 +1,5 @@
 :root {
-  /* Color Tokens */
+  /* Theme */
   color-scheme: light dark;
 
   &[data-theme="light"] {

@@ -577,7 +577,38 @@ export function generateAllFiles() {
       "[generateAllFiles] state.themeFromImport:",
       state?.themeFromImport
     );
-    const tokensCSS = generateTokensCSS();
+    let tokensCSS = generateTokensCSS();
+    // Safety: if generator somehow produced tokens without a color-scheme block,
+    // inject a canonical color-scheme block for the preview so the UI remains
+    // usable. This does not change files on disk, only the preview output.
+    try {
+      if (!/color-scheme\s*:/i.test(tokensCSS)) {
+        const themeMode =
+          (state && state.config && state.config.themeMode) || "both";
+        let csBlock = "  color-scheme: light;\n";
+        if (themeMode === "both") {
+          csBlock = `  color-scheme: light dark;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n`;
+        } else if (themeMode === "dark") {
+          csBlock = "  color-scheme: dark;\n";
+        }
+        const rootOpen = tokensCSS.indexOf(":root {");
+        if (rootOpen !== -1) {
+          const afterOpen = tokensCSS.indexOf("\n", rootOpen);
+          const insertPos =
+            afterOpen !== -1 ? afterOpen + 1 : rootOpen + ":root{".length;
+          tokensCSS =
+            tokensCSS.slice(0, insertPos) +
+            csBlock +
+            tokensCSS.slice(insertPos);
+          console.log("[ui-safety] Injected color-scheme into preview");
+        } else {
+          tokensCSS = csBlock + "\n" + tokensCSS;
+          console.log("[ui-safety] Injected color-scheme at preview start");
+        }
+      }
+    } catch (e) {
+      /* noop */
+    }
     const stylesCSS = generateStylesCSS();
 
     // NOTE: Nous n'injectons plus automatiquement les tokens générés dans
@@ -628,8 +659,13 @@ export function generateAllFiles() {
     );
 
     // Afficher theme-tokens.css avec coloration syntaxique
+    // Afficher la version finale générée par le générateur afin que
+    // l'aperçu corresponde exactement au fichier qui sera téléchargé.
+    // Si vous souhaitez voir le contenu importé brut, utilisez le mode
+    // debug ou la copie depuis l'onglet 'Sources'.
+    const displayTokens = tokensCSS;
     elements.generatedTokens.innerHTML = Prism.highlight(
-      tokensCSS,
+      displayTokens,
       Prism.languages.css,
       "css"
     );

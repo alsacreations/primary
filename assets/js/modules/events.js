@@ -22,7 +22,7 @@ import {
 } from "./ui.js";
 import { applyThemeToDocument, applyTokensToDocument } from "./app-init.js";
 import { copyToClipboard } from "./clipboard.js";
-import { parseColorVariants } from "./generators.js";
+import { parseColorVariants, normalizeTokensContent } from "./generators.js";
 
 /**
  * Navigue vers l'étape précédente
@@ -1001,9 +1001,19 @@ function attachJsonImportHandlers() {
             // À la place, laisser state.tokensContent VIDE et marquer state.themeFromImport = true
             // Le générateur injectera systématiquement les tokens de couleurs canoniques
             console.log(
-              "[events] Import Figma: state.tokensContent laissé vide, tokens canoniques seront injectés"
+              "[events] Import Figma: normalisation et assignation de state.tokensContent depuis out.tokensCss"
             );
-            state.tokensContent = "";
+            try {
+              // Normaliser le contenu des tokens avant de l'exposer à l'UI
+              const normalized = normalizeTokensContent(out.tokensCss || "");
+              state.tokensContent = normalized || "";
+            } catch (e) {
+              console.warn(
+                "[events] normalizeTokensContent a échoué, assignation brute de out.tokensCss",
+                e && e.message
+              );
+              state.tokensContent = String(out.tokensCss || "");
+            }
             console.log(
               "[events] Vérification state.tokensContent après affectation:",
               state.tokensContent.length,
@@ -1047,8 +1057,16 @@ function attachJsonImportHandlers() {
       state.themeContent = String(css || "");
       // provient d'un import utilisateur
       state.themeFromImport = true;
-      // clear any previous tokens override
-      state.tokensContent = "";
+      // assign normalized tokens content generated from the collected vars
+      try {
+        state.tokensContent = normalizeTokensContent(css || "");
+      } catch (e) {
+        console.warn(
+          "[events] normalizeTokensContent failed for built CSS, assigning raw content:",
+          e && e.message
+        );
+        state.tokensContent = String(css || "");
+      }
       updateThemePreview();
       updateColorChoices();
       try {

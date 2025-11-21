@@ -192,7 +192,6 @@
 
           // Vérifier si le CSS est injecté directement (version téléchargée)
           if (window.INJECTED_THEME_CSS && window.INJECTED_TOKENS_CSS) {
-            console.log("Utilisation du CSS injecté (version téléchargée)");
             primitivesCSS = window.INJECTED_THEME_CSS;
             tokensCSS = window.INJECTED_TOKENS_CSS;
           } else {
@@ -211,8 +210,6 @@
                 try {
                   primitivesCSS = generators.generateThemeCSS();
                   tokensCSS = generators.generateTokensCSS();
-
-                  console.log("Utilisation des générateurs runtime (state)");
                 } catch (e) {
                   console.warn(
                     "Générateurs présents mais échec de génération:",
@@ -260,11 +257,6 @@
             }
           }
 
-          // Logs pour déboguer le contenu chargé
-          console.log("=== CONTENU theme.css CHARGÉ ===");
-          console.log(primitivesCSS.substring(0, 1000) + "...");
-          console.log("=== FIN CONTENU ===");
-
           // Injecter le CSS chargé/généré dans le document pour que
           // les variables CSS s'appliquent immédiatement à l'aperçu.
           try {
@@ -292,12 +284,6 @@
           // Parse des variables CSS
           this.tokens = this.parseCSS(tokensCSS);
           this.primitives = this.parseCSS(primitivesCSS);
-
-          console.log("Tokens trouvés:", Object.keys(this.tokens).length);
-          console.log(
-            "Primitives trouvées:",
-            Object.keys(this.primitives).length
-          );
         }
 
         parseCSS(cssContent) {
@@ -332,7 +318,6 @@
             const shouldExclude = excludedVariables.includes(fullName);
 
             if (shouldExclude) {
-              console.log("Variable filtrée:", fullName);
             } else {
               variables[fullName] = value.trim();
             }

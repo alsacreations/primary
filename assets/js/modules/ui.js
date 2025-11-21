@@ -629,14 +629,7 @@ export function generateAllFiles() {
     }
     const appCSS = generateAppCSS();
     const themeCSS = generateThemeCSS();
-    console.log(
-      "[generateAllFiles] Avant generateTokensCSS, state.tokensContent.length:",
-      state?.tokensContent?.length || 0
-    );
-    console.log(
-      "[generateAllFiles] state.themeFromImport:",
-      state?.themeFromImport
-    );
+
     let tokensCSS = generateTokensCSS();
     // Safety: if generator somehow produced tokens without a color-scheme block,
     // inject a canonical color-scheme block for the preview so the UI remains
@@ -660,10 +653,8 @@ export function generateAllFiles() {
             tokensCSS.slice(0, insertPos) +
             csBlock +
             tokensCSS.slice(insertPos);
-          console.log("[ui-safety] Injected color-scheme into preview");
         } else {
           tokensCSS = csBlock + "\n" + tokensCSS;
-          console.log("[ui-safety] Injected color-scheme at preview start");
         }
       }
     } catch (e) {

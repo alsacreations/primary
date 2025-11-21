@@ -49,30 +49,12 @@ function displayImportSummary(out, jsonData = {}) {
     return;
   }
 
-  console.log("[displayImportSummary] jsonData:", jsonData);
-  console.log(
-    "[displayImportSummary] primitives.variables count:",
-    jsonData.primitives?.variables?.length || 0
-  );
-  console.log(
-    "[displayImportSummary] fonts.variables count:",
-    jsonData.fonts?.variables?.length || 0
-  );
-
   // Inspecter la structure d'une variable pour voir comment accéder aux valeurs
   if (
     jsonData.fonts &&
     jsonData.fonts.variables &&
     jsonData.fonts.variables.length > 0
   ) {
-    console.log(
-      "[displayImportSummary] Exemple de variable fonts[0]:",
-      jsonData.fonts.variables[0]
-    );
-    console.log(
-      "[displayImportSummary] resolvedValuesByMode:",
-      jsonData.fonts.variables[0].resolvedValuesByMode
-    );
   }
   if (
     jsonData.primitives &&
@@ -85,14 +67,6 @@ function displayImportSummary(out, jsonData = {}) {
         .includes("spacing")
     );
     if (spacingVar) {
-      console.log(
-        "[displayImportSummary] Exemple de variable spacing:",
-        spacingVar
-      );
-      console.log(
-        "[displayImportSummary] resolvedValuesByMode:",
-        spacingVar.resolvedValuesByMode
-      );
     }
   }
 
@@ -153,7 +127,6 @@ function displayImportSummary(out, jsonData = {}) {
       // Fluide si au moins 2 valeurs différentes entre les modes
       return modeValues.length >= 2 && modeValues[0] !== modeValues[1];
     });
-    console.log("[displayImportSummary] hasFontClamp:", hasFontClamp);
   }
 
   // 4. Compter les line-heights dans themeCss et détecter si fluides
@@ -175,10 +148,6 @@ function displayImportSummary(out, jsonData = {}) {
       // Fluide si au moins 2 valeurs différentes entre les modes
       return modeValues.length >= 2 && modeValues[0] !== modeValues[1];
     });
-    console.log(
-      "[displayImportSummary] hasLineHeightClamp:",
-      hasLineHeightClamp
-    );
   }
 
   // 5. Compter les spacings dans themeCss et détecter si fluides
@@ -199,7 +168,6 @@ function displayImportSummary(out, jsonData = {}) {
       // Fluide si au moins 2 valeurs différentes entre les modes
       return modeValues.length >= 2 && modeValues[0] !== modeValues[1];
     });
-    console.log("[displayImportSummary] hasSpacingClamp:", hasSpacingClamp);
   }
 
   // Mettre à jour le DOM
@@ -233,24 +201,12 @@ function displayImportSummary(out, jsonData = {}) {
   // Afficher/masquer les labels "(fluides)"
   if (summaryFontsFluid) {
     summaryFontsFluid.hidden = !hasFontClamp;
-    console.log(
-      "[displayImportSummary] summaryFontsFluid.hidden =",
-      summaryFontsFluid.hidden
-    );
   }
   if (summaryLineHeightsFluid) {
     summaryLineHeightsFluid.hidden = !hasLineHeightClamp;
-    console.log(
-      "[displayImportSummary] summaryLineHeightsFluid.hidden =",
-      summaryLineHeightsFluid.hidden
-    );
   }
   if (summarySpacingsFluid) {
     summarySpacingsFluid.hidden = !hasSpacingClamp;
-    console.log(
-      "[displayImportSummary] summarySpacingsFluid.hidden =",
-      summarySpacingsFluid.hidden
-    );
   }
 
   // Afficher le résumé
@@ -955,11 +911,6 @@ function attachJsonImportHandlers() {
             state.themeContent = String(generated || "");
           }
           if (out && out.tokensCss) {
-            console.log(
-              "[events] Setting state.tokensContent from Figma import"
-            );
-            console.log("[events] tokensCss length:", out.tokensCss.length);
-
             // Extraire les sections typographie et espacements depuis tokensCss
             // Ces sections sont valides et doivent être préservées même si la couleur primaire est incorrecte
             // La section typo peut inclure plusieurs sous-sections (tailles, line-heights)
@@ -971,28 +922,14 @@ function attachJsonImportHandlers() {
             );
 
             if (typoMatch) {
-              console.log(
-                "[events] Section typo trouvée, longueur:",
-                typoMatch[0].length
-              );
               state.importedTypoSection = typoMatch[0];
             } else {
-              console.log(
-                "[events] ⚠️ Aucune section typo trouvée dans tokensCss"
-              );
               state.importedTypoSection = null;
             }
 
             if (spacingMatch) {
-              console.log(
-                "[events] Section spacing trouvée, longueur:",
-                spacingMatch[0].length
-              );
               state.importedSpacingSection = spacingMatch[0];
             } else {
-              console.log(
-                "[events] ⚠️ Aucune section spacing trouvée dans tokensCss"
-              );
               state.importedSpacingSection = null;
             }
 
@@ -1000,9 +937,7 @@ function attachJsonImportHandlers() {
             // car le regex peut capturer des sections indésirables (espacements, etc.)
             // À la place, laisser state.tokensContent VIDE et marquer state.themeFromImport = true
             // Le générateur injectera systématiquement les tokens de couleurs canoniques
-            console.log(
-              "[events] Import Figma: normalisation et assignation de state.tokensContent depuis out.tokensCss"
-            );
+
             try {
               // Normaliser le contenu des tokens avant de l'exposer à l'UI
               const normalized = normalizeTokensContent(out.tokensCss || "");
@@ -1014,11 +949,6 @@ function attachJsonImportHandlers() {
               );
               state.tokensContent = String(out.tokensCss || "");
             }
-            console.log(
-              "[events] Vérification state.tokensContent après affectation:",
-              state.tokensContent.length,
-              "chars"
-            );
           }
           updateThemePreview();
           updateColorChoices();

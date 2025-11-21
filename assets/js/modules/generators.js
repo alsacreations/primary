@@ -722,14 +722,6 @@ export function generateTokensCSS() {
 
   // PRIORITÉ 1: Si un import Figma a produit du contenu, l'utiliser
   // (même si la config correspond au canonical, on préfère le contenu importé)
-  console.log(
-    "[generateTokensCSS] state.tokensContent length:",
-    state?.tokensContent?.length || 0
-  );
-  console.log(
-    "[generateTokensCSS] state.themeFromImport:",
-    state?.themeFromImport
-  );
 
   // Utiliser la branche import si themeFromImport est vrai
   // OU si `state.tokensContent` est présent (ex: import Figma ou seeds canoniques)
@@ -739,9 +731,6 @@ export function generateTokensCSS() {
     state && state.tokensContent && state.tokensContent.trim().length
   );
   if ((state && state.themeFromImport) || hasTokensContent) {
-    console.log(
-      "[generateTokensCSS] ✅ Mode import/génération depuis tokensContent activé"
-    );
     try {
       // Commencer avec un template vide ou le contenu existant
       let processed = (state.tokensContent || "").trim();
@@ -754,9 +743,6 @@ export function generateTokensCSS() {
         processed = normalizeTokensContent(processed || "");
         usedAstNormalization = true;
         if (processed && processed.length) {
-          console.log(
-            "[generateTokensCSS] Normalized tokensContent via normalizeTokensContent()"
-          );
         }
       } catch (e) {
         console.warn(
@@ -765,20 +751,8 @@ export function generateTokensCSS() {
         );
       }
 
-      console.log(
-        "[generateTokensCSS] processed initial length:",
-        processed.length
-      );
-      console.log(
-        "[generateTokensCSS] processed initial (200 chars):",
-        processed.substring(0, 200)
-      );
-
       // Si tokensContent est vide, initialiser avec :root {}
       if (!processed) {
-        console.log(
-          "[generateTokensCSS] tokensContent vide, initialisation :root {}"
-        );
         processed = ":root {\n}\n";
       }
 
@@ -833,15 +807,8 @@ export function generateTokensCSS() {
             const det = processed.match(/var\(--color-([a-z0-9-]+)-\d+\)/i);
             if (det && det[1]) {
               displayPrimary = det[1];
-              console.log(
-                "[generateTokensCSS] Détection couleur primaire depuis processed (import/theme):",
-                displayPrimary
-              );
             }
           } else {
-            console.log(
-              "[generateTokensCSS] Pas d'import ni de primitives theme; utiliser 'raspberry' (placeholder) par défaut"
-            );
           }
         }
       } catch (e) {
@@ -932,11 +899,6 @@ export function generateTokensCSS() {
         processed = processed.replace(/^\s*\/\*[\s\S]*?\*\/\s*/m, "");
         // Prepend our coherent header
         processed = headerLines + "\n" + processed;
-
-        console.log(
-          "[generators-header] processed après header (200 premiers chars):",
-          processed.substring(0, 200)
-        );
       } catch (e) {
         /* noop */
       }
@@ -960,10 +922,6 @@ export function generateTokensCSS() {
           if (existingVarMatch && !primaryColor) {
             // Preserve imported var(...) only when the user did NOT
             // explicitly select a different primary color.
-            console.log(
-              "[generators-header] préserve --primary importé:",
-              existingVarMatch[1]
-            );
           } else {
             processed = processed.replace(
               /--primary\s*:\s*[^;]*;/gi,
@@ -971,10 +929,6 @@ export function generateTokensCSS() {
                 displayPrimary,
                 [themeCss, tokensSource, customVars].join("\n")
               )});`
-            );
-            console.log(
-              "[generators-header] synchronized --primary to",
-              displayPrimary
             );
           }
         }
@@ -1010,10 +964,6 @@ export function generateTokensCSS() {
       // Les tokens de couleurs doivent TOUJOURS être présents, même avec import Figma
       // Ils s'adaptent à la config (light, dark, both)
       try {
-        console.log(
-          "[generators-colors] Injection des tokens de couleurs canoniques"
-        );
-
         // Vérifier si les tokens canoniques sont déjà présents
         // Consider a color token present only if it has a non-empty value.
         // A bare comment `/* Couleur primaire */` without values does not
@@ -1044,15 +994,6 @@ export function generateTokensCSS() {
           (!hasPrimaryLight || !hasPrimaryDark);
 
         if (needFullInjection) {
-          console.log(
-            "[generators-colors] ✅ Tokens canoniques absents, injection"
-          );
-
-          console.log(
-            "[generators-colors] processed avant injection (300 chars):",
-            processed.substring(0, 300)
-          );
-
           // Construire le bloc de couleurs selon themeMode
           const colorLines = [];
 
@@ -1407,10 +1348,6 @@ export function generateTokensCSS() {
             }
           }
         } else if (needDerivedInjection) {
-          console.log(
-            "[generators-colors] ✅ Primary present but derived tokens missing, injecting derived tokens"
-          );
-
           // Reuse primaryVal / onPrimaryVal computed earlier
           // For derived injection, always emit the canonical oklch(from var(--primary) ...)
           // expressions so derivation is relative to `--primary`, unless the
@@ -1612,9 +1549,6 @@ export function generateTokensCSS() {
             }
           }
         } else {
-          console.log(
-            "[generators-colors] ⚠️ Tokens canoniques déjà présents, skip"
-          );
         }
       } catch (e) {
         console.error("[generators-colors] Erreur injection tokens:", e);
@@ -1630,23 +1564,10 @@ export function generateTokensCSS() {
       try {
         const hasTextM = /--text-m\s*:/i.test(processed);
         const hasAnyText = /--text-[a-z0-9-]*\s*:/i.test(processed);
-        console.log(
-          "[generators-typo] hasTextM:",
-          hasTextM,
-          "typoResponsive:",
-          typoResponsive,
-          "themeFromImport:",
-          state?.themeFromImport,
-          "importedTypoSection:",
-          !!state?.importedTypoSection
-        );
 
         // Priorité 1 : Injecter la section typo importée depuis Figma si disponible
         if (state?.importedTypoSection) {
           if (!hasAnyText) {
-            console.log(
-              "[generators-typo] ✅ Injection de la section typo importée depuis Figma"
-            );
             // Injecter avant la fermeture du :root
             if (/\n}\s*$/.test(processed)) {
               processed = processed.replace(
@@ -1658,14 +1579,8 @@ export function generateTokensCSS() {
                 processed.trimEnd() + "\n" + state.importedTypoSection + "\n";
             }
           } else {
-            console.log(
-              "[generators-typo] ⚠️ Section typo NON injectée car hasAnyText=true"
-            );
           }
         } else {
-          console.log(
-            "[generators-typo] ℹ️ Aucune section typo importée disponible"
-          );
         }
 
         // Priorité 2 : Tokens canoniques responsive si demandé et rien d'importé
@@ -1738,21 +1653,10 @@ export function generateTokensCSS() {
       // Même logique pour les espacements : injecter la section importée si disponible
       try {
         const hasSpacing = /--spacing-[a-z0-9-]*\s*:/i.test(processed);
-        console.log(
-          "[generators-spacing] hasSpacing:",
-          hasSpacing,
-          "spacingResponsive:",
-          spacingResponsive,
-          "importedSpacingSection:",
-          !!state?.importedSpacingSection
-        );
 
         // Priorité 1 : Injecter la section spacing importée depuis Figma si disponible
         if (state?.importedSpacingSection) {
           if (!hasSpacing) {
-            console.log(
-              "[generators-spacing] ✅ Injection de la section spacing importée depuis Figma"
-            );
             // Injecter avant la fermeture du :root
             if (/\n}\s*$/.test(processed)) {
               processed = processed.replace(
@@ -1767,22 +1671,12 @@ export function generateTokensCSS() {
                 "\n";
             }
           } else {
-            console.log(
-              "[generators-spacing] ⚠️ Section spacing NON injectée car hasSpacing=true"
-            );
           }
         } else {
-          console.log(
-            "[generators-spacing] ℹ️ Aucune section spacing importée disponible"
-          );
-
           // Si aucun token d'espacement n'est présent dans l'import,
           // injecter un bloc d'espacements canonique non-destructif afin
           // que la prévisualisation affiche des valeurs cohérentes.
           if (!hasSpacing) {
-            console.log(
-              "[generators-spacing] Aucun token spacing détecté dans l'import — injection canonique de secours"
-            );
             const spacingLines = [];
             spacingLines.push("\n  /* Espacements */");
             spacingLines.push("  --spacing-xs: var(--spacing-4);");
@@ -2018,30 +1912,12 @@ export function generateTokensCSS() {
           /\/\*\s*Typographie\s*[—-]\s*Hauteurs de lignes\s*\*\//i.test(
             processed
           );
-        console.log(
-          "[generators-lh] hasSemanticLineHeightToken:",
-          hasSemanticLineHeightToken
-        );
-        console.log(
-          "[generators-lh] hasLineHeightComment:",
-          hasLineHeightComment
-        );
-        console.log(
-          "[generators-lh] processed preview (300 chars):",
-          processed.substring(0, 300)
-        );
-        console.log(
-          "[generators-lh] state.themeFromImport:",
-          state?.themeFromImport
-        );
+
         if (
           typoResponsive &&
           !hasSemanticLineHeightToken &&
           !hasLineHeightComment
         ) {
-          console.log(
-            "[generators-lh] ⚠️ Ajout du bloc line-height par défaut"
-          );
           // Append canonical-like line-height block so the UI preview includes
           // typical line-height tokens when none were provided by the import.
           const canonicalLH = [
@@ -2065,9 +1941,6 @@ export function generateTokensCSS() {
           !hasSemanticLineHeightToken &&
           !hasLineHeightComment
         ) {
-          console.log(
-            "[generators-lh] ⚠️ Ajout du bloc line-height fixe par défaut"
-          );
           // Fixed typography requested: append simple line-height references
           const fixedLH = [
             "\n  /* Typographie — Hauteurs de lignes */",
@@ -2674,10 +2547,6 @@ export function generateTokensCSS() {
       // Ces tokens doivent être conservés même quand l'utilisateur change
       // spacingResponsive (true/false) car ils sont des nommages métier.
       try {
-        console.log(
-          "[generators-spacing-preserve] Vérification tokens sémantiques personnalisés"
-        );
-
         // Chercher tous les tokens --spacing-{nom} (non numériques) dans processed
         const customSpacingTokensMap = new Map(); // nom → déclaration complète
         const spacingRx =
@@ -2691,29 +2560,13 @@ export function generateTokensCSS() {
           // Ignorer les tokens prédéfinis (xs, s, m, l, xl)
           if (!["xs", "s", "m", "l", "xl"].includes(name)) {
             customSpacingTokensMap.set(name, { decl: fullDecl, value });
-            console.log(
-              "[generators-spacing-preserve] Token personnalisé trouvé:",
-              name,
-              "→",
-              value
-            );
           }
         }
-
-        console.log(
-          "[generators-spacing-preserve] Total tokens personnalisés:",
-          customSpacingTokensMap.size
-        );
 
         // Trier les tokens par valeur croissante (tiny → colossal)
         if (customSpacingTokensMap.size > 0) {
           const sorted = Array.from(customSpacingTokensMap.entries()).sort(
             (a, b) => a[1].value - b[1].value
-          );
-
-          console.log(
-            "[generators-spacing-preserve] Tokens triés par valeur:",
-            sorted.map(([name, { value }]) => `${name}(${value})`).join(", ")
           );
 
           // 1. Supprimer les tokens personnalisés de leur position actuelle
@@ -2743,10 +2596,6 @@ export function generateTokensCSS() {
               processed.slice(0, insertPos) +
               customTokensBlock +
               processed.slice(insertPos);
-
-            console.log(
-              "[generators-spacing-preserve] Tokens réordonnés et insérés après --spacing-xl"
-            );
           }
         }
       } catch (e) {
@@ -3941,8 +3790,6 @@ export function generateTokensCSS() {
   // canonical 'info' seed. Avoid using a non-existent placeholder color
   // in runtime outputs.
   let chosen = primaryColor || "info";
-  console.log("[generateTokensCSS] Initial primaryColor:", primaryColor);
-  console.log("[generateTokensCSS] Initial chosen:", chosen);
 
   // Avoid using runtime-only palettes (e.g. 'ocean') as the generated
   // project's primary color when they are only a runtime styling aid.
@@ -3958,26 +3805,17 @@ export function generateTokensCSS() {
     const appearsInCustom = new RegExp(`--color-${chosen}-`, "i").test(
       customVars
     );
-    console.log(
-      "[generateTokensCSS] isRuntimeOnly:",
-      isRuntimeOnly,
-      "appearsInTheme:",
-      appearsInTheme,
-      "appearsInCustom:",
-      appearsInCustom
-    );
+
     if (isRuntimeOnly && !appearsInTheme && !appearsInCustom) {
       // If the selected color is a runtime-only palette and not present
       // in the loaded theme or custom vars, fall back to a guaranteed
       // canonical seed ('info'). This avoids referencing a non-existent
       // placeholder color in generated tokens.
       chosen = "info";
-      console.log("[generateTokensCSS] Fallback to:", chosen);
     }
   } catch (e) {
     /* noop */
   }
-  console.log("[generateTokensCSS] Final chosen:", chosen);
   const lines = [];
 
   // Header adapted from the canonical template
@@ -4152,9 +3990,6 @@ export function generateTokensCSS() {
   // et seront utilisés via la priorité 1 de generateTokensCSS() ligne 600
   // On ne génère donc des tokens par défaut que si pas d'import
   if (state && state.themeFromImport) {
-    console.log(
-      "[generators-typo] Import Figma: tokens déjà dans tokensContent, skip"
-    );
     // Ne rien générer ici, generateTokensCSS() utilisera state.tokensContent directement
   } else {
     // Génération des tokens par défaut (canonical ou config)
@@ -4163,7 +3998,6 @@ export function generateTokensCSS() {
     const typoSemanticTokens = [];
 
     if (tokensContentForTypo) {
-      console.log("[generators-typo] Extraction tokens depuis tokensContent");
       // Chercher --text-{nom} qui référencent des primitives ou des clamp()
       const typoTokenRx = /--(text-[a-z0-9]+)\s*:\s*([^;]+);/gi;
       let match;
@@ -4186,15 +4020,11 @@ export function generateTokensCSS() {
 
         foundTokens.add(name);
         typoSemanticTokens.push({ name, value, fullMatch });
-        console.log(`[generators-typo] Found token: ${name} = ${value}`);
       }
     }
 
     // Si on a des tokens depuis l'import, les utiliser
     if (typoSemanticTokens.length > 0) {
-      console.log(
-        `[generators-typo] Using ${typoSemanticTokens.length} tokens from import`
-      );
       // Trier par nom pour cohérence (text-s, text-m, text-l, text-xl, text-2xl, etc.)
       typoSemanticTokens.sort((a, b) => {
         const orderMap = {
@@ -4217,7 +4047,6 @@ export function generateTokensCSS() {
       });
     } else {
       // Tokens par défaut si pas d'import
-      console.log("[generators-typo] Using default tokens");
       lines.push("  --text-s: var(--text-14);");
       if (typoResponsive) {
         lines.push(
@@ -4253,9 +4082,6 @@ export function generateTokensCSS() {
 
   // Si import Figma, les tokens d'espacement sont déjà dans tokensContent
   if (state && state.themeFromImport) {
-    console.log(
-      "[generators-spacing] Import Figma: tokens déjà dans tokensContent, skip"
-    );
     // Ne rien générer ici, generateTokensCSS() utilisera state.tokensContent directement
   } else {
     // Génération des tokens d'espacement par défaut
@@ -4284,17 +4110,8 @@ export function generateTokensCSS() {
 
   // Ajouter les tokens sémantiques d'espacement depuis tokensContent importé (si présents)
   // Ces tokens proviennent de l'import Figma et doivent être préservés
-  console.log("[generators-spacing] DEBUT - Vérification state:", {
-    hasState: !!state,
-    hasTokensContent: !!(state && state.tokensContent),
-    tokensContentLength:
-      state && state.tokensContent ? state.tokensContent.length : 0,
-    themeFromImport: state ? state.themeFromImport : undefined,
-  });
 
   const previousTokens = (state && state.tokensContent) || "";
-  console.log("[generators] previousTokens length:", previousTokens.length);
-  console.log("[generators] state.themeFromImport:", state.themeFromImport);
 
   if (previousTokens && state.themeFromImport) {
     const spacingSemanticTokens = [];
@@ -4308,35 +4125,20 @@ export function generateTokensCSS() {
       matchCount++;
       const name = match[1]; // ex: "tiny", "compact", "big"
       const fullMatch = match[0]; // ex: "--spacing-tiny: var(--spacing-2);"
-      console.log(
-        `[generators] Found spacing token #${matchCount}:`,
-        fullMatch.trim()
-      );
 
       // Vérifier que ce n'est pas un token prédéfini (xs, s, m, l, xl)
       if (!["xs", "s", "m", "l", "xl"].includes(name)) {
         spacingSemanticTokens.push(`  ${fullMatch.trim()}`);
       } else {
-        console.log(`  → Skipped (predefined token)`);
       }
     }
-
-    console.log("[generators] Total semantic tokens found:", matchCount);
-    console.log(
-      "[generators] Semantic tokens to add:",
-      spacingSemanticTokens.length
-    );
 
     if (spacingSemanticTokens.length > 0) {
       // Trier par nom pour cohérence
       spacingSemanticTokens.sort();
       spacingSemanticTokens.forEach((token) => lines.push(token));
-      console.log("[generators] Added semantic spacing tokens to output");
     }
   } else {
-    console.log(
-      "[generators] No previous tokens or not from import, skipping semantic tokens"
-    );
   }
 
   lines.push("");
@@ -4864,9 +4666,6 @@ export function generateThemeJSON() {
       extractedFromTheme++;
     }
     if (extractedFromTheme > 0) {
-      console.log(
-        `[theme.json] Extracted ${extractedFromTheme} font sizes from themeCSS`
-      );
     }
 
     // Also extract semantic --text-* tokens from tokensCSS (ex: text-m, text-xl with clamp())
@@ -4888,9 +4687,6 @@ export function generateThemeJSON() {
       }
     }
     if (extractedFromTokens > 0) {
-      console.log(
-        `[theme.json] Extracted ${extractedFromTokens} font sizes from tokensCSS`
-      );
     }
 
     // Provide fuller typography presets when extraction is minimal

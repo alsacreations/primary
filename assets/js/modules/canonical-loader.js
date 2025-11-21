@@ -44,8 +44,6 @@ function parseCssVariables(cssContent) {
  * @returns {Promise<Object>} Objet structuré avec toutes les primitives
  */
 export async function loadCanonicalPrimitives() {
-  console.log("[canonical-loader] Chargement des primitives...");
-
   const [commons, colors, fonts, radius, spacings] = await Promise.all([
     loadCanonicalFile("primitives/commons/commons.css"),
     loadCanonicalFile("primitives/colors/colors.css"),
@@ -83,8 +81,6 @@ export async function loadCanonicalPrimitives() {
  * @returns {Promise<Object>} Objet structuré avec tous les tokens
  */
 export async function loadCanonicalTokens() {
-  console.log("[canonical-loader] Chargement des tokens...");
-
   const [commons, colors, fonts, spacings] = await Promise.all([
     loadCanonicalFile("tokens/commons/commons.css"),
     loadCanonicalFile("tokens/colors/colors.css"),
@@ -117,8 +113,6 @@ export async function loadCanonicalTokens() {
  * @returns {Promise<Object>} Objet JSON parsé
  */
 export async function loadCanonicalThemeJson() {
-  console.log("[canonical-loader] Chargement du theme.json...");
-
   try {
     const response = await fetch("/canonical/theme.json/theme.json");
     if (!response.ok) {
@@ -148,11 +142,8 @@ const cache = {
  */
 export async function loadAllCanonicals(forceReload = false) {
   if (!forceReload && cache.primitives && cache.tokens && cache.themeJson) {
-    console.log("[canonical-loader] Utilisation du cache");
     return cache;
   }
-
-  console.log("[canonical-loader] Chargement complet des canoniques...");
 
   const [primitives, tokens, themeJson] = await Promise.all([
     loadCanonicalPrimitives(),
@@ -163,8 +154,6 @@ export async function loadAllCanonicals(forceReload = false) {
   cache.primitives = primitives;
   cache.tokens = tokens;
   cache.themeJson = themeJson;
-
-  console.log("[canonical-loader] ✅ Canoniques chargés");
 
   return cache;
 }

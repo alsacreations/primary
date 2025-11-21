@@ -473,9 +473,7 @@ form.addEventListener("submit", (e) => {
 });
 
 // ✅ Event listeners modernes
-input.addEventListener("change", ({ target }) => {
-  console.log(target.value);
-});
+input.addEventListener("change", ({ target }) => {});
 ```
 
 ### Manipulation du DOM

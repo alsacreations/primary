@@ -58,13 +58,7 @@ export function validateCustomVars(css) {
 export async function init() {
   // Charger les canoniques en premier (priorité absolue)
   try {
-    console.log("[app-init] 🔄 Chargement des canoniques...");
     const canonicals = await loadAllCanonicals();
-    console.log("[app-init] ✅ Canoniques chargés:", {
-      primitives: Object.keys(canonicals.primitives),
-      tokens: Object.keys(canonicals.tokens),
-      hasThemeJson: !!canonicals.themeJson,
-    });
 
     // Si l'application n'a pas de tokens fournis par import Figma et
     // que state.tokensContent est vide, initialiser state.tokensContent
@@ -93,9 +87,6 @@ export async function init() {
           try {
             // Normaliser avant d'assigner pour éviter les :root imbriqués
             state.tokensContent = normalizeTokensContent(combined);
-            console.log(
-              "[app-init] state.tokensContent initialisé depuis canonical tokens (normalisé)"
-            );
           } catch (e) {
             // fallback: assigner brut si la normalisation échoue
             state.tokensContent = combined;
@@ -144,10 +135,6 @@ export async function init() {
   try {
     const chosen = state.config && state.config.primaryColor;
     if (chosen && state.tokensContent) {
-      console.log(
-        "[app-init] Synchronisation state.tokensContent --primary ->",
-        chosen
-      );
       // Remplacer une déclaration existante --primary: var(--color-...-NUM);
       // Choisir une variante réellement présente (ne pas forcer -500)
       try {
@@ -442,9 +429,6 @@ export function updateColorChoices() {
   // pour inclure les couleurs importées depuis Figma
   const customColors = parseColorVariables(combined);
 
-  console.log("[updateColorChoices] customColors:", customColors);
-  console.log("[updateColorChoices] colorsMap:", colorsMap);
-
   // Construire la liste des couleurs disponibles depuis le thème et
   // depuis les variables personnalisées. Ne pas proposer de placeholder
   // factice qui n'existe pas dans les primitives.
@@ -517,10 +501,6 @@ export function updateColorChoices() {
         try {
           if (state.tokensContent) {
             const chosen = state.config.primaryColor;
-            console.log(
-              "[updateColorChoices] Synchronizing state.tokensContent --primary ->",
-              chosen
-            );
             // Remplacer toute declaration --primary: ...; par la nouvelle valeur
             try {
               const sources =
@@ -574,18 +554,10 @@ export function updateColorChoices() {
     'input[name="primary-color"]:checked'
   );
   if (checkedInput) {
-    console.log(
-      "[updateColorChoices] Syncing primaryColor with checked input:",
-      checkedInput.value
-    );
     state.config.primaryColor = checkedInput.value;
   } else {
     console.warn("[updateColorChoices] No checked input found!");
   }
-  console.log(
-    "[updateColorChoices] Final primaryColor:",
-    state.config.primaryColor
-  );
 }
 
 export function updateUI() {

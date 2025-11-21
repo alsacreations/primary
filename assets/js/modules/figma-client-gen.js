@@ -715,9 +715,6 @@ function generateThemeCss({
     : [];
 
   if (figmaSpacings.length > 0) {
-    console.log(
-      `[generateThemeCss] 📏 ${figmaSpacings.length} espacements Figma extraits`
-    );
   }
 
   // 4. Extraire et convertir les couleurs projet depuis TOUTES les sources Figma
@@ -748,24 +745,7 @@ function generateThemeCss({
     includeColors: true, // Toujours inclure les couleurs globales
   });
 
-  console.log(
-    `[generateThemeCss] 📋 Fonts canoniques ${
-      hasFigmaFonts ? "IGNORÉES (fonts Figma détectées)" : "INCLUSES"
-    }`
-  );
-  console.log(
-    `[generateThemeCss] 📏 Espacements canoniques ${
-      hasFigmaSpacings ? "IGNORÉS (espacements Figma détectés)" : "INCLUS"
-    }`
-  );
-  console.log(
-    `[generateThemeCss] 🎨 ${figmaColors.length} primitives couleurs extraites (${colorsFromPrimitives.length} depuis Primitives.json + ${colorsFromTokens.length} depuis Token colors.json)`
-  );
   if (figmaColors.length > 0) {
-    console.log(
-      "[generateThemeCss] Primitives couleurs :",
-      figmaColors.map((c) => c.name).join(", ")
-    );
   }
 
   // 6. Collecter les sections de couleurs projet
@@ -776,17 +756,10 @@ function generateThemeCss({
     figmaColors,
   });
 
-  console.log(
-    `[generateThemeCss] 📦 ${colorSections.length} sections de couleurs collectées`
-  );
-
   // 7. Collecter les sections d'espacements depuis Figma
   const spacingSections = collectFigmaSpacings(figmaSpacings);
 
   if (spacingSections.length > 0) {
-    console.log(
-      `[generateThemeCss] 📦 ${spacingSections.length} section d'espacements collectée`
-    );
   }
 
   // 8. Fusionner toutes les sections
@@ -1009,12 +982,7 @@ export function generateCanonicalThemeFromFigma({
       (tokenColors && tokenColors.variables && tokenColors.variables.length) ||
       0;
     const fcount = (fonts && fonts.variables && fonts.variables.length) || 0;
-    console.log(
-      "[figma-gen-debug] called with primitives=%d tokenColors=%d fonts=%d",
-      pcount,
-      tcount,
-      fcount
-    );
+
     try {
       if (
         typeof window !== "undefined" &&
@@ -1071,14 +1039,6 @@ export function generateCanonicalThemeFromFigma({
   let detectedPrimaryColor = null;
 
   if (figmaColors.length > 0) {
-    console.log(
-      `[detectPrimaryColor] 🔍 Analyse de ${figmaColors.length} couleurs`
-    );
-    console.log(
-      `[detectPrimaryColor] Noms:`,
-      figmaColors.map((c) => c.name)
-    );
-
     // Stratégie : chercher une couleur "primary" en priorité
     const primaryColor = figmaColors.find((c) => c.name.includes("-primary-"));
     const targetColor = primaryColor || figmaColors[0];
@@ -1133,11 +1093,7 @@ export function generateCanonicalThemeFromFigma({
     hasSemanticColors &&
     semanticColorLines.some((line) => line.includes("light-dark("));
 
-  console.log(
-    `[generateTokensCss] 🎨 ${semanticColorLines.length} tokens sémantiques générés`
-  );
   if (needsColorScheme) {
-    console.log("[generateTokensCss] ✅ color-scheme: light dark détecté");
   }
 
   // Injecter color-scheme si nécessaire
@@ -1214,25 +1170,10 @@ export function generateCanonicalThemeFromFigma({
   }
   const mergedFontVariables = Array.from(fontVarMap.values());
 
-  console.log(
-    `[generateCanonicalThemeFromFigma] 📝 ${
-      mergedFontVariables.length
-    } variables typographiques (${
-      fonts.variables?.length || 0
-    } depuis Token Font.json + ${
-      allFontVariables.length - (fonts.variables?.length || 0)
-    } depuis Primitives.json)`
-  );
-
   const fontSizes = [];
   const lineHeights = [];
   const spacings = [];
   const spacingSemanticMap = new Map();
-
-  console.log(
-    `[generateCanonicalThemeFromFigma] 🔍 Analyse des ${mergedFontVariables.length} variables:`,
-    mergedFontVariables.map((v) => `${v.name} (type: ${v.type})`).slice(0, 10)
-  );
 
   for (const v of mergedFontVariables) {
     const name = v.name || "";
@@ -1441,9 +1382,6 @@ export function generateCanonicalThemeFromFigma({
         themeCss += `  ${p.name}: ${p.rem};\n`;
       }
     } else {
-      console.log(
-        "[figma-gen] ⚠️ Section typo déjà présente, skip ajout primitives fontPrimitives"
-      );
     }
   }
 
@@ -1490,9 +1428,6 @@ export function generateCanonicalThemeFromFigma({
         themeCss += `  ${p.name}: ${p.rem};\n`;
       }
     } else {
-      console.log(
-        "[figma-gen] ⚠️ Section line-height déjà présente, skip ajout primitives linePrimitives"
-      );
     }
   }
 
@@ -1558,9 +1493,7 @@ export function generateCanonicalThemeFromFigma({
         : `${formatNumber(f.maxRem)}rem`;
       const middle = preferredValue(f.minRem, f.maxRem);
       const line = `  ${f.varName}: clamp(${minPart}, ${middle}, ${maxPart});\n`;
-      console.log(
-        `[figma-gen-font] ${f.varName} → min:${f.minRem} (${minPx}px) max:${f.maxRem} (${maxPx}px)`
-      );
+
       fontSizeTokens.push(line);
     }
 

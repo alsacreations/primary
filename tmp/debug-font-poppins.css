@@ -2,7 +2,7 @@
  * Theme-tokens, généré par primary.alsacreations.com
  * Surcouche de theme.css
  * Configuration :
- * - Couleur primaire : pink
+ * - Couleur primaire : blue
  * - Theme : light et dark
  * - Typographie responsive : oui
  * - Espacements responsive : oui
@@ -21,7 +21,7 @@
   }
 
   /* Couleur primaire */
-  --primary: var(--color-pink-300);
+  --primary: var(--color-blue-500);
   --on-primary: var(--color-white);
   --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);
   --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);

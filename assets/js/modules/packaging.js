@@ -87,7 +87,9 @@ export async function downloadAllFiles() {
       );
       if (fontResp.ok) {
         const fontBlob = await fontResp.blob();
-        zip.file("assets/css/fonts/Poppins-Variable-opti.woff2", fontBlob);
+        // Place the font at assets/fonts/ so it matches canonical styles
+        // which reference /assets/fonts/... (and keeps the archive layout logical)
+        zip.file("assets/fonts/Poppins-Variable-opti.woff2", fontBlob);
       }
     }
   } catch (err) {

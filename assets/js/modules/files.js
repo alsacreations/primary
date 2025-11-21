@@ -206,7 +206,19 @@ body {
 `;
 
   // Poppins : contenu vide par défaut (peut être étendu ultérieurement)
-  state.stylesPoppinsContent = "";
+  // Try to load canonical styles for Poppins so that exported `styles.css`
+  // matches the canonical file byte-for-byte when the user selects Poppins.
+  try {
+    const resp = await fetch("/canonical/styles/styles-poppins.css");
+    if (resp.ok) {
+      state.stylesPoppinsContent = await resp.text();
+    } else {
+      state.stylesPoppinsContent = "";
+    }
+  } catch (e) {
+    // Fallback: keep empty and let generators build a sensible fallback
+    state.stylesPoppinsContent = "";
+  }
 }
 
 /**

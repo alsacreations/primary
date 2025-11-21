@@ -192,6 +192,75 @@ export async function init() {
     console.warn("[app-init] Impossible de synchroniser tokensContent:", e);
   }
 
+  // Synchroniser la sélection de police de l'UI avec les primitives
+  // du thème afin que la prévisualisation et les fichiers exportés
+  // reflètent la police choisie (ex: Poppins).
+  try {
+    const fontChoice = state.config && state.config.fontFamily;
+    if (fontChoice) {
+      // Remplacer --font-base et --font-mono dans state.themeContent
+      let theme = state.themeContent || "";
+      if (fontChoice === "poppins") {
+        // valeur sémantique pour Poppins
+        const poppinsBase = "Poppins, sans-serif";
+        const poppinsMono = "ui-monospace, monospace";
+        if (/--font-base\s*:/i.test(theme)) {
+          theme = theme.replace(
+            /(--font-base\s*:\s*)([^;]+);/i,
+            `$1 ${poppinsBase};`
+          );
+        } else {
+          // injecter dans :root si absent
+          theme = theme.replace(
+            /:root\s*\{/,
+            ":root {\n  --font-base: " + poppinsBase + ";"
+          );
+        }
+        if (/--font-mono\s*:/i.test(theme)) {
+          theme = theme.replace(
+            /(--font-mono\s*:\s*)([^;]+);/i,
+            `$1 ${poppinsMono};`
+          );
+        } else {
+          theme = theme.replace(
+            /:root\s*\{/,
+            ":root {\n  --font-mono: " + poppinsMono + ";"
+          );
+        }
+        state.themeContent = theme;
+
+        // Préparer stylesPoppinsContent si vide : inclure @font-face + styles système
+        if (!state.stylesPoppinsContent || !state.stylesPoppinsContent.trim()) {
+          const fontFace = `@font-face {\n  font-family: 'Poppins';\n  src: url('assets/fonts/Poppins-Variable-opti.woff2') format('woff2');\n  font-weight: 100 900;\n  font-style: normal;\n  font-display: swap;\n}\n\n`;
+          state.stylesPoppinsContent =
+            fontFace + (state.stylesSystemContent || "");
+        }
+      } else {
+        // user selected system -> restore canonical primitives if available
+        const systemBase = "system-ui, sans-serif";
+        const systemMono = "ui-monospace, monospace";
+        if (/--font-base\s*:/i.test(theme)) {
+          theme = theme.replace(
+            /(--font-base\s*:\s*)([^;]+);/i,
+            `$1 ${systemBase};`
+          );
+        }
+        if (/--font-mono\s*:/i.test(theme)) {
+          theme = theme.replace(
+            /(--font-mono\s*:\s*)([^;]+);/i,
+            `$1 ${systemMono};`
+          );
+        }
+        state.themeContent = theme;
+      }
+    }
+  } catch (e) {
+    console.warn(
+      "[app-init] Impossible de synchroniser la sélection de police:",
+      e
+    );
+  }
+
   // Si on est en mode debug (ex: ?debug=state), appliquer le thème complet
   // au document pour faciliter le debug visuel local (ne s'active que via URL)
   try {

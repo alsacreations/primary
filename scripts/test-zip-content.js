@@ -85,10 +85,7 @@ global.JSZip.prototype.generateAsync = async function (options) {
     "img/favicon.svg",
   ];
 
-  const optional = [
-    "assets/css/fonts/Poppins-Variable-opti.woff2",
-    "theme.json",
-  ];
+  const optional = ["assets/fonts/Poppins-Variable-opti.woff2", "theme.json"];
 
   console.log("🔍 Vérifications :\n");
 

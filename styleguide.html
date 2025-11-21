@@ -17,7 +17,7 @@
       body {
         max-width: 1440px;
         margin: 0 auto;
-        padding: 2rem;
+        padding: 2rem 1rem;
         background: var(--surface, #ffffff);
         color: var(--on-surface, #000000);
         font-family: system-ui, sans-serif;
@@ -132,8 +132,6 @@
   </head>
   <body>
     <div class="container">
-      <a href="index.html" class="back-link">← Retour à l'application</a>
-
       <header class="header">
         <h1>Styleguide</h1>
         <p>
@@ -142,20 +140,13 @@
         </p>
       </header>
 
-      <div
-        id="source-indicator"
-        style="
-          margin-bottom: 1rem;
-          color: var(--accent, #666666);
-          font-size: 0.95rem;
-        "
-      ></div>
+      <!-- Source indicator removed: the styleguide no longer displays a 'Source des tokens' paragraph -->
 
       <div id="loading" class="loading">
         <p>Chargement des fichiers CSS...</p>
       </div>
 
-      <div id="content" data-layout="autogrid" style="display: none">
+      <div id="content" data-layout="duo" style="gap: 2rem">
         <div>
           <div class="section">
             <h2>Tokens Sémantiques (theme-tokens.css)</h2>
@@ -204,10 +195,6 @@
             console.log("Utilisation du CSS injecté (version téléchargée)");
             primitivesCSS = window.INJECTED_THEME_CSS;
             tokensCSS = window.INJECTED_TOKENS_CSS;
-            const el = document.getElementById("source-indicator");
-            if (el)
-              el.textContent =
-                "Source des tokens : contenu injecté (ZIP généré)";
           } else {
             // Sinon, charger depuis les fichiers externes
             try {
@@ -224,9 +211,7 @@
                 try {
                   primitivesCSS = generators.generateThemeCSS();
                   tokensCSS = generators.generateTokensCSS();
-                  // Afficher l'indicateur de source
-                  document.getElementById("source-indicator").textContent =
-                    "Source des tokens : génération runtime (state/generators)";
+
                   console.log("Utilisation des générateurs runtime (state)");
                 } catch (e) {
                   console.warn(
@@ -262,8 +247,7 @@
                 if (tokensResponse.ok && primitivesResponse.ok) {
                   tokensCSS = await tokensResponse.text();
                   primitivesCSS = await primitivesResponse.text();
-                  document.getElementById("source-indicator").textContent =
-                    "Source des tokens : fichiers assets (prévisualisation)";
+
                   console.warn(
                     "Chargement depuis assets/css/ (mode preview via ?useAssets=true)."
                   );

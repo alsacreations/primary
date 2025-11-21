@@ -3192,7 +3192,278 @@ export function generateTokensCSS() {
                   rx.test(k)
                 );
                 if (matchingKeys.length === 0) {
-                  // nothing to emit for this section
+                  // Aucun header importé pour cette section :
+                  // - Si des propriétés pertinentes existent dans le body, les ignorer ici
+                  //   (elles seront récupérées plus bas dans les 'remaining').
+                  // - Sinon, injecter un bloc canonique minimal non-destructif afin
+                  //   que la sortie génère toujours les sections canoniques visibles
+                  //   dans l'ordre attendu. Les valeurs insérées respectent
+                  //   les primitives disponibles (chooseBestVariant/chooseNumericVariant)
+                  //   et ne remplacent pas les tokens importés.
+                  const hdrLine = canonicalLabels[idx];
+                  const defaultLines = [];
+
+                  // Helper: sources to resolve variants
+                  const _sources_for_defaults =
+                    (state && state.themeContent ? state.themeContent : "") +
+                    "\n" +
+                    (state && state.tokensContent ? state.tokensContent : "") +
+                    "\n" +
+                    (state && state.config && state.config.customVars
+                      ? state.config.customVars
+                      : "");
+
+                  // Build minimal canonical blocks per semantic index
+                  try {
+                    switch (idx) {
+                      case 1: // Couleur primaire
+                        {
+                          const pv = chooseBestVariant(
+                            displayPrimary,
+                            _sources_for_defaults
+                          );
+                          const p300 = chooseNumericVariant(
+                            displayPrimary,
+                            "300",
+                            _sources_for_defaults
+                          );
+                          const p700 = chooseNumericVariant(
+                            displayPrimary,
+                            "700",
+                            _sources_for_defaults
+                          );
+                          defaultLines.push(`  --primary: var(${pv});`);
+                          defaultLines.push(
+                            `  --on-primary: var(--color-white);`
+                          );
+                          defaultLines.push(
+                            `  --primary-lighten: var(${p300});`
+                          );
+                          defaultLines.push(
+                            `  --primary-darken: var(${p700});`
+                          );
+                        }
+                        break;
+                      case 2: // Couleur d'accent
+                        defaultLines.push(
+                          themeMode === "both"
+                            ? `  --accent: light-dark(var(--primary), var(--primary-lighten));\n  --accent-invert: light-dark(var(--primary-lighten), var(--primary));`
+                            : themeMode === "dark"
+                            ? `  --accent: var(--primary-lighten);\n  --accent-invert: var(--primary);`
+                            : `  --accent: var(--primary);\n  --accent-invert: var(--primary-lighten);`
+                        );
+                        break;
+                      case 3: // Surface du document
+                        if (themeMode === "both") {
+                          defaultLines.push(
+                            "  --surface: light-dark(var(--color-white), var(--color-gray-900));"
+                          );
+                          defaultLines.push(
+                            "  --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));"
+                          );
+                        } else if (themeMode === "dark") {
+                          defaultLines.push(
+                            "  --surface: var(--color-gray-900);"
+                          );
+                          defaultLines.push(
+                            "  --on-surface: var(--color-gray-100);"
+                          );
+                        } else {
+                          defaultLines.push("  --surface: var(--color-white);");
+                          defaultLines.push(
+                            "  --on-surface: var(--color-gray-900);"
+                          );
+                        }
+                        break;
+                      case 4: // Niveaux de profondeur
+                        if (themeMode === "both") {
+                          defaultLines.push(
+                            "  --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));"
+                          );
+                          defaultLines.push(
+                            "  --layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));"
+                          );
+                          defaultLines.push(
+                            "  --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));"
+                          );
+                        } else if (themeMode === "dark") {
+                          defaultLines.push(
+                            "  --layer-1: var(--color-gray-800);"
+                          );
+                          defaultLines.push(
+                            "  --layer-2: var(--color-gray-700);"
+                          );
+                          defaultLines.push(
+                            "  --layer-3: var(--color-gray-600);"
+                          );
+                        } else {
+                          defaultLines.push(
+                            "  --layer-1: var(--color-gray-50);"
+                          );
+                          defaultLines.push(
+                            "  --layer-2: var(--color-gray-100);"
+                          );
+                          defaultLines.push(
+                            "  --layer-3: var(--color-gray-200);"
+                          );
+                        }
+                        break;
+                      case 5: // Interactions
+                        if (themeMode === "both") {
+                          defaultLines.push(
+                            `  --link: light-dark(var(--primary), var(--primary-lighten));\n  --link-hover: light-dark(var(--primary-darken), var(--primary));\n  --link-active: light-dark(var(--primary-darken), var(--primary));`
+                          );
+                        } else if (themeMode === "dark") {
+                          defaultLines.push(
+                            "  --link: var(--primary-lighten);"
+                          );
+                          defaultLines.push("  --link-hover: var(--primary);");
+                          defaultLines.push("  --link-active: var(--primary);");
+                        } else {
+                          defaultLines.push("  --link: var(--primary);");
+                          defaultLines.push(
+                            "  --link-hover: var(--primary-darken);"
+                          );
+                          defaultLines.push(
+                            "  --link-active: var(--primary-darken);"
+                          );
+                        }
+                        break;
+                      case 6: // Couleur de sélection
+                        if (themeMode === "both") {
+                          defaultLines.push(
+                            "  --selection: light-dark(var(--primary-lighten), var(--primary-darken));"
+                          );
+                        } else if (themeMode === "dark") {
+                          defaultLines.push("  --selection: var(--primary);");
+                        } else {
+                          defaultLines.push(
+                            "  --selection: var(--primary-lighten);"
+                          );
+                        }
+                        break;
+                      case 7: // États
+                        if (themeMode === "both") {
+                          defaultLines.push(
+                            "  --warning: light-dark(var(--color-warning-500), var(--color-warning-300));"
+                          );
+                          defaultLines.push(
+                            "  --error: light-dark(var(--color-error-500), var(--color-error-300));"
+                          );
+                          defaultLines.push(
+                            "  --success: light-dark(var(--color-success-500), var(--color-success-300));"
+                          );
+                          defaultLines.push(
+                            "  --info: light-dark(var(--color-info-500), var(--color-info-300));"
+                          );
+                        } else if (themeMode === "dark") {
+                          defaultLines.push(
+                            "  --warning: var(--color-warning-300);"
+                          );
+                          defaultLines.push(
+                            "  --error: var(--color-error-300);"
+                          );
+                          defaultLines.push(
+                            "  --success: var(--color-success-300);"
+                          );
+                          defaultLines.push("  --info: var(--color-info-300);");
+                        } else {
+                          defaultLines.push(
+                            "  --warning: var(--color-warning-500);"
+                          );
+                          defaultLines.push(
+                            "  --error: var(--color-error-500);"
+                          );
+                          defaultLines.push(
+                            "  --success: var(--color-success-500);"
+                          );
+                          defaultLines.push("  --info: var(--color-info-500);");
+                        }
+                        break;
+                      case 8: // Bordures
+                        if (themeMode === "both") {
+                          defaultLines.push(
+                            "  --border-light: var(--color-gray-400);"
+                          );
+                          defaultLines.push(
+                            "  --border-medium: var(--color-gray-600);"
+                          );
+                        } else if (themeMode === "dark") {
+                          defaultLines.push(
+                            "  --border-light: var(--color-gray-600);"
+                          );
+                          defaultLines.push(
+                            "  --border-medium: var(--color-gray-600);"
+                          );
+                        } else {
+                          defaultLines.push(
+                            "  --border-light: var(--color-gray-400);"
+                          );
+                          defaultLines.push(
+                            "  --border-medium: var(--color-gray-600);"
+                          );
+                        }
+                        break;
+                      case 9: // Tailles de police
+                        if (typoResponsive) {
+                          defaultLines.push("  --text-s: var(--text-14);");
+                          defaultLines.push(
+                            "  --text-m: clamp(var(--text-16), 0.9565rem + 0.2174vw, var(--text-18));"
+                          );
+                        } else {
+                          defaultLines.push("  --text-s: var(--text-14);");
+                          defaultLines.push("  --text-m: var(--text-16);");
+                        }
+                        break;
+                      case 10: // Hauteurs de lignes
+                        defaultLines.push(
+                          "  --line-height-s: var(--line-height-20);"
+                        );
+                        defaultLines.push(
+                          "  --line-height-m: var(--line-height-24);"
+                        );
+                        break;
+                      case 11: // Espacements
+                        if (spacingResponsive) {
+                          defaultLines.push(
+                            "  --spacing-xs: var(--spacing-4);"
+                          );
+                          defaultLines.push(
+                            "  --spacing-s: clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16));"
+                          );
+                        } else {
+                          defaultLines.push(
+                            "  --spacing-xs: var(--spacing-4);"
+                          );
+                          defaultLines.push("  --spacing-s: var(--spacing-8);");
+                        }
+                        break;
+                      case 12: // Formulaires
+                        defaultLines.push(
+                          themeMode === "both"
+                            ? "  --form-control-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
+                            : "  --form-control-background: var(--color-gray-200);"
+                        );
+                        defaultLines.push(
+                          "  --on-form-control: var(--color-gray-900);"
+                        );
+                        break;
+                      case 13: // Tokens complémentaires
+                        // nothing to auto-generate here; leave empty so that
+                        // imported extras will be appended later
+                        break;
+                      default:
+                        break;
+                    }
+                  } catch (e) {
+                    /* noop default generation */
+                  }
+
+                  if (defaultLines.length) {
+                    orderedParts.push(hdrLine + "\n" + defaultLines.join("\n"));
+                  }
+
+                  // continue to next canonical section
                   continue;
                 }
 
@@ -3555,23 +3826,81 @@ export function generateTokensCSS() {
                 ? state.config.customVars
                 : "");
             const _finalVar = chooseBestVariant(primaryColor, _sources_final);
-            if (/--primary\s*:\s*[^;]*;/i.test(processed)) {
-              // Replace first occurrence only (make it primary)
-              processed = processed.replace(
-                /--primary\s*:\s*[^;]*;/i,
-                `--primary: var(${_finalVar});`
-              );
-            } else {
-              const rootIdx = processed.indexOf(":root {");
-              if (rootIdx !== -1) {
-                const afterOpen = processed.indexOf("\n", rootIdx);
-                const insertPos =
-                  afterOpen !== -1 ? afterOpen + 1 : rootIdx + 7;
+
+            // Compute insertion point: after `color-scheme` and any
+            // following `&[data-theme="..."]` blocks, to respect canonical order.
+            let insertPos = -1;
+            const rootMatch = processed.match(/:root\s*\{/i);
+            if (rootMatch) {
+              const rootIdx = processed.indexOf(rootMatch[0]);
+              insertPos = rootIdx + rootMatch[0].length;
+              try {
+                // find color-scheme occurrence after root
+                const bodyStart = insertPos;
+                const csIndex = processed.indexOf("color-scheme", bodyStart);
+                if (csIndex !== -1) {
+                  // move to end of the color-scheme declaration
+                  let pos = processed.indexOf(";", csIndex);
+                  if (pos === -1) pos = bodyStart;
+                  else pos = pos + 1;
+
+                  // include any following &[data-theme] blocks
+                  while (true) {
+                    const dtIdx = processed.indexOf("&[data-theme", pos);
+                    if (dtIdx === -1) break;
+                    const openBrace = processed.indexOf("{", dtIdx);
+                    if (openBrace === -1) break;
+                    // find matching closing brace
+                    let depth = 1;
+                    let k = openBrace + 1;
+                    while (k < processed.length && depth > 0) {
+                      if (processed[k] === "{") depth++;
+                      else if (processed[k] === "}") depth--;
+                      k++;
+                    }
+                    pos = k; // after closing brace
+                  }
+
+                  insertPos = pos;
+                }
+              } catch (e) {
+                /* noop - fallback to default insertPos */
+              }
+            }
+
+            // Find existing primary declaration (first occurrence)
+            const primaryMatch = /--primary\s*:\s*[^;]*;/i.exec(processed);
+            if (primaryMatch) {
+              const existingIdx = primaryMatch.index;
+              const existingLen = primaryMatch[0].length;
+
+              if (insertPos !== -1 && existingIdx < insertPos) {
+                // remove existing declaration then insert at computed insertPos
+                processed =
+                  processed.slice(0, existingIdx) +
+                  processed.slice(existingIdx + existingLen);
+                // adjust insertPos after removal
+                insertPos = insertPos - existingLen;
                 processed =
                   processed.slice(0, insertPos) +
-                  `  --primary: var(${_finalVar});\n` +
+                  `\n  --primary: var(${_finalVar});\n` +
                   processed.slice(insertPos);
+              } else {
+                // existing primary is after insertion point or no insertion point: replace in place
+                processed = processed.replace(
+                  /--primary\s*:\s*[^;]*;/i,
+                  `--primary: var(${_finalVar});`
+                );
               }
+            } else if (insertPos !== -1) {
+              // no existing primary: insert after theme block
+              processed =
+                processed.slice(0, insertPos) +
+                `\n  --primary: var(${_finalVar});\n` +
+                processed.slice(insertPos);
+            } else {
+              // no root found: prepend at top as fallback
+              processed = `--primary: var(${_finalVar});\n` + processed;
             }
           }
         } catch (e) {
@@ -4173,12 +4502,101 @@ export function generateThemeCSS(options = {}) {
 
   all = all.replace(/\n{3,}/g, "\n\n").trim();
   if (all.length) all += "\n";
+
+  // Appliquer la sélection de police actuelle (UI) sur le thème généré
+  // Règle importante : `--font-base` doit toujours rester la valeur système
+  // (`system-ui, sans-serif`). Quand l'utilisateur choisit Poppins, on ajoute
+  // une variable additionnelle `--font-poppins` pointant vers la police Poppins
+  // afin de ne pas écraser la base système utilisée partout ailleurs.
+  try {
+    const fontChoice = state && state.config ? state.config.fontFamily : null;
+    if (fontChoice) {
+      const poppinsBase = "Poppins, sans-serif";
+      const poppinsMono = "ui-monospace, monospace";
+      const systemBase = "system-ui, sans-serif";
+      const systemMono = "ui-monospace, monospace";
+
+      // Ensure :root exists and canonical font variables are present.
+      if (/:root\s*\{/.test(all)) {
+        // --font-base must always be system
+        if (/--font-base\s*:/i.test(all)) {
+          all = all.replace(
+            /(--font-base\s*:\s*)([^;]+);/i,
+            `$1 ${systemBase};`
+          );
+        } else {
+          all = all.replace(
+            /(:root\s*\{)/i,
+            `$1\n  --font-base: ${systemBase};`
+          );
+        }
+
+        // --font-mono set to system mono (or keep existing if present)
+        if (/--font-mono\s*:/i.test(all)) {
+          all = all.replace(
+            /(--font-mono\s*:\s*)([^;]+);/i,
+            `$1 ${systemMono};`
+          );
+        } else {
+          all = all.replace(
+            /(:root\s*\{)/i,
+            `$1\n  --font-mono: ${systemMono};`
+          );
+        }
+
+        // When Poppins is selected, add --font-poppins variable
+        if (fontChoice === "poppins") {
+          if (/--font-poppins\s*:/i.test(all)) {
+            all = all.replace(
+              /(--font-poppins\s*:\s*)([^;]+);/i,
+              `$1 ${poppinsBase};`
+            );
+          } else {
+            // insert after font-mono if possible, otherwise after :root
+            if (/--font-mono\s*:/i.test(all)) {
+              all = all.replace(
+                /(--font-mono\s*:\s*[^;]+;)/i,
+                `$1\n  --font-poppins: ${poppinsBase};`
+              );
+            } else {
+              all = all.replace(
+                /(:root\s*\{)/i,
+                `$1\n  --font-poppins: ${poppinsBase};`
+              );
+            }
+          }
+        } else {
+          // ensure no leftover --font-poppins if user switched back to system
+          if (/--font-poppins\s*:/i.test(all)) {
+            all = all.replace(/\n?\s*--font-poppins\s*:\s*[^;]+;?/i, "");
+          }
+        }
+      } else {
+        // No :root — prepend a small :root with font primitives
+        const rootBlock = `:root {\n  --font-base: ${systemBase};\n  --font-mono: ${systemMono};${
+          fontChoice === "poppins" ? `\n  --font-poppins: ${poppinsBase};` : ""
+        }\n}\n\n`;
+        all = rootBlock + all;
+      }
+    }
+  } catch (e) {
+    /* noop - non critical */
+  }
   return all;
 }
 
 export function generateStylesCSS() {
   const { fontFamily } = state.config || {};
-  if (fontFamily === "poppins") return state.stylesPoppinsContent || "";
+  if (fontFamily === "poppins") {
+    // If styles for Poppins haven't been prepared yet, build a sensible
+    // fallback synchronously: include a minimal @font-face and the
+    // system styles so the exported `styles.css` isn't empty.
+    if (!state.stylesPoppinsContent || !state.stylesPoppinsContent.trim()) {
+      const fontFace = `@font-face {\n  font-family: 'Poppins';\n  src: url('assets/fonts/Poppins-Variable-opti.woff2') format('woff2');\n  font-weight: 100 900;\n  font-style: normal;\n  font-display: swap;\n}\n\n`;
+      state.stylesPoppinsContent = fontFace + (state.stylesSystemContent || "");
+    }
+    return state.stylesPoppinsContent || "";
+  }
   return state.stylesSystemContent || "";
 }
 

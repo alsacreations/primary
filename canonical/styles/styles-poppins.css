@@ -8,9 +8,9 @@
   font-weight: 100 900;
   font-display: swap;
   /* stylelint-disable */
-  src: url("/fonts/Poppins-Variable-opti.woff2") format("woff2")
+  src: url("/assets/fonts/Poppins-Variable-opti.woff2") format("woff2")
       tech("variations"),
-    url("/fonts/Poppins-Variable-opti.woff2") format("woff2-variations");
+    url("/assets/fonts/Poppins-Variable-opti.woff2") format("woff2-variations");
   /* stylelint-enable */
 }
 

@@ -21,39 +21,39 @@
         { "name": "gray-800", "color": "oklch(0.205 0 0)", "slug": "gray-800" },
         { "name": "gray-900", "color": "oklch(0.145 0 0)", "slug": "gray-900" },
         {
-          "name": "raspberry-100",
+          "name": "info-100",
           "color": "oklch(0.98 0.03 352)",
-          "slug": "raspberry-100"
+          "slug": "info-100"
         },
         {
-          "name": "raspberry-200",
+          "name": "info-200",
           "color": "oklch(0.945 0.12 352)",
-          "slug": "raspberry-200"
+          "slug": "info-200"
         },
         {
-          "name": "raspberry-300",
+          "name": "info-300",
           "color": "oklch(0.845 0.2 352)",
-          "slug": "raspberry-300"
+          "slug": "info-300"
         },
         {
-          "name": "raspberry-400",
+          "name": "info-400",
           "color": "oklch(0.728281 0.1971 352.001)",
-          "slug": "raspberry-400"
+          "slug": "info-400"
         },
         {
-          "name": "raspberry-500",
+          "name": "info-500",
           "color": "oklch(0.645 0.2 352)",
-          "slug": "raspberry-500"
+          "slug": "info-500"
         },
         {
-          "name": "raspberry-600",
+          "name": "info-600",
           "color": "oklch(0.545 0.2 352)",
-          "slug": "raspberry-600"
+          "slug": "info-600"
         },
         {
-          "name": "raspberry-700",
+          "name": "info-700",
           "color": "oklch(0.445 0.2 352)",
-          "slug": "raspberry-700"
+          "slug": "info-700"
         },
         {
           "name": "error-100",
@@ -117,7 +117,7 @@
         },
         {
           "name": "primary",
-          "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
+          "color": "light-dark(var(--color-info-500), var(--color-info-300))",
           "slug": "primary"
         },
         {
@@ -127,12 +127,12 @@
         },
         {
           "name": "accent",
-          "color": "light-dark(var(--color-raspberry-300), var(--color-raspberry-500))",
+          "color": "light-dark(var(--color-info-300), var(--color-info-500))",
           "slug": "accent"
         },
         {
           "name": "accent-invert",
-          "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
+          "color": "light-dark(var(--color-info-500), var(--color-info-300))",
           "slug": "accent-invert"
         },
         {
@@ -162,17 +162,17 @@
         },
         {
           "name": "link",
-          "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
+          "color": "light-dark(var(--color-info-500), var(--color-info-300))",
           "slug": "link"
         },
         {
           "name": "link-hover",
-          "color": "light-dark(var(--color-raspberry-700), var(--color-raspberry-500))",
+          "color": "light-dark(var(--color-info-700), var(--color-info-500))",
           "slug": "link-hover"
         },
         {
           "name": "selection",
-          "color": "light-dark(var(--color-raspberry-300), var(--color-raspberry-500))",
+          "color": "light-dark(var(--color-info-300), var(--color-info-500))",
           "slug": "selection"
         },
         {

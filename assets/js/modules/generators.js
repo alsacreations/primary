@@ -4,7 +4,7 @@
  * - generateMissingVariants
  * - generateTokensCSS (avec cas canonique exact)
  */
-import { state, RUNTIME_ONLY_COLORS, PLACEHOLDER_RASPBERRY } from "./state.js";
+import { state, RUNTIME_ONLY_COLORS } from "./state.js";
 
 // --- Helpers / Parsers ----------------------------------------------------
 export function parseColorVariants(cssText = "") {
@@ -35,6 +35,68 @@ export function parseColorVariables(cssText = "") {
       colors.add(m[1]);
     }
     return Array.from(colors);
+  }
+}
+
+/**
+ * Choose the best available variant for a color base from provided sources.
+ * - sources: string (combined CSS to search: themeContent + tokensContent + customVars)
+ * - returns a string representing the variable name (e.g. "--color-pink-300" or "--color-orange")
+ */
+export function chooseBestVariant(base, sources = "") {
+  try {
+    const map = parseColorVariants(sources || "") || new Map();
+    if (map.has(base)) {
+      const variants = Array.from(map.get(base).keys()).map((k) => String(k));
+      // preferred order
+      const preferred = ["500", "400", "300", "700", "600", "100"];
+      for (const p of preferred) {
+        if (variants.includes(p)) return `--color-${base}-${p}`;
+      }
+      // fallback to any numeric variant found (smallest distance to 500)
+      const numeric = variants.filter((v) => /^\d+$/.test(v)).map(Number);
+      if (numeric.length) {
+        numeric.sort((a, b) => Math.abs(a - 500) - Math.abs(b - 500));
+        return `--color-${base}-${numeric[0]}`;
+      }
+    }
+
+    // Try to find an exact non-numeric variable like --color-orange
+    const rxExact = new RegExp(`--color-${base}\s*:\s*([^;]+);`, "i");
+    const m = rxExact.exec(sources || "");
+    if (m) return `--color-${base}`;
+
+    // If nothing found, conservatively return the 500 form (caller may still use var())
+    return `--color-${base}-500`;
+  } catch (e) {
+    return `--color-${base}-500`;
+  }
+}
+
+/**
+ * Choose a numeric variant close to the preferred one (eg '300' or '700').
+ * If the preferred numeric variant is not available, fall back to chooseBestVariant.
+ */
+export function chooseNumericVariant(base, preferred, sources = "") {
+  try {
+    const map = parseColorVariants(sources || "") || new Map();
+    if (map.has(base)) {
+      const variants = Array.from(map.get(base).keys()).map(String);
+      if (variants.includes(String(preferred))) {
+        return `--color-${base}-${preferred}`;
+      }
+      // fallback: try some sensible neighbors
+      const neighbors = ["500", "400", "300", "700", "600", "100"];
+      for (const n of neighbors) {
+        if (variants.includes(n)) return `--color-${base}-${n}`;
+      }
+    }
+    // else try exact non-numeric
+    const rxExact = new RegExp(`--color-${base}\s*:\s*([^;]+);`, "i");
+    if (rxExact.exec(sources || "")) return `--color-${base}`;
+    return `--color-${base}-${preferred}`;
+  } catch (e) {
+    return `--color-${base}-${preferred}`;
   }
 }
 
@@ -156,7 +218,7 @@ const CANONICAL_THEME_TOKENS = `/* ----------------------------------
   }
 
   /* Couleur primaire */
-  --primary: var(--color-raspberry-500);
+  --primary: var(--color-info-500);
   --on-primary: var(--color-white);
 
   /* Couleur d'accent */
@@ -256,6 +318,7 @@ const CANONICAL_THEME_JSON = `{
         { "name": "gray-500", "color": "oklch(0.439 0 0)", "slug": "gray-500" },
         { "name": "gray-600", "color": "oklch(0.371 0 0)", "slug": "gray-600" },
         { "name": "gray-700", "color": "oklch(0.269 0 0)", "slug": "gray-700" },
+
         { "name": "gray-800", "color": "oklch(0.205 0 0)", "slug": "gray-800" },
         { "name": "gray-900", "color": "oklch(0.145 0 0)", "slug": "gray-900" },
         {
@@ -785,6 +848,58 @@ export function generateTokensCSS() {
         /* noop */
       }
 
+      // If we still have the placeholder 'raspberry' (no detection and
+      // no explicit user primary), but we are in import mode, try to pick
+      // a sensible fallback from the imported primitives so the UI does
+      // not display a non-existent placeholder. This covers cases where
+      // `state.tokensContent` only contained partial sections (eg. Formulaires)
+      // and therefore did not contain a var(--color-...-500) detection.
+      try {
+        if (
+          !primaryColor &&
+          displayPrimary === "raspberry" &&
+          state?.themeFromImport
+        ) {
+          // Search for fallback primitives in multiple sources:
+          // - full theme content (state.themeContent)
+          // - any primitives that may be embedded in tokensContent
+          // - user-provided customVars
+          const themeCssFull = (state && state.themeContent) || "";
+          const tokensSource = (state && state.tokensContent) || "";
+          const customVars =
+            (state && state.config && state.config.customVars) || "";
+          const searchSource = [themeCssFull, tokensSource, customVars].join(
+            "\n"
+          );
+
+          // Use the canonical primitives guaranteed by the project as fallbacks.
+          // We intentionally do NOT include 'blue' here because it may come
+          // from imported JSONs; prefer the project's canonical primitives.
+          const fallbacks = ["info", "warning", "success", "error"];
+          for (const f of fallbacks) {
+            const rx = new RegExp(`--color-${f}-\\d+\\s*:`, "i");
+            if (rx.test(searchSource)) {
+              displayPrimary = f;
+              console.warn(
+                `[generateTokensCSS] Aucun primary détecté dans tokensContent; bascule vers primitive existante '--color-${f}'`
+              );
+              break;
+            }
+          }
+          // If none of the canonical fallbacks are present, use `gray` as
+          // an ultimate fallback because `gray` primitives are provided by
+          // the canonical palette and are always available.
+          if (displayPrimary === "raspberry") {
+            displayPrimary = "gray";
+            console.warn(
+              "[generateTokensCSS] Aucun fallback canonique trouvé; bascule par défaut vers '--color-gray'"
+            );
+          }
+        }
+      } catch (e) {
+        /* noop */
+      }
+
       // Ensure the header comment of generated tokens is always coherent
       // and reflects the current configuration even when `state.tokensContent`
       // comes from an imported JSON. We replace any leading /* ---- */ block
@@ -833,12 +948,18 @@ export function generateTokensCSS() {
       // `--primary: ...;` declaration with the chosen variable.
       try {
         if (displayPrimary && /--primary\s*:/i.test(processed)) {
-          // If the existing declaration already uses a `var(...)`, preserve
-          // it exactly (do not override imported `--primary: var(...)`).
+          // (no-op) debug removed
+          // If the existing declaration already uses a `var(...)`, we
+          // historically preserved it to avoid overwriting user-imported
+          // tokens. However, when the user explicitly selects a primary
+          // color in the UI (`primaryColor`), their choice should take
+          // precedence and we must update the declaration accordingly.
           const existingVarMatch = processed.match(
             /--primary\s*:\s*(var\([^;\n]+\))/i
           );
-          if (existingVarMatch) {
+          if (existingVarMatch && !primaryColor) {
+            // Preserve imported var(...) only when the user did NOT
+            // explicitly select a different primary color.
             console.log(
               "[generators-header] préserve --primary importé:",
               existingVarMatch[1]
@@ -846,7 +967,10 @@ export function generateTokensCSS() {
           } else {
             processed = processed.replace(
               /--primary\s*:\s*[^;]*;/gi,
-              `--primary: var(--color-${displayPrimary}-500);`
+              `--primary: var(${chooseBestVariant(
+                displayPrimary,
+                [themeCss, tokensSource, customVars].join("\n")
+              )});`
             );
             console.log(
               "[generators-header] synchronized --primary to",
@@ -957,10 +1081,21 @@ export function generateTokensCSS() {
           const existingOnPrimaryMatch = processed.match(
             /--on-primary\s*:\s*([^;]+);/i
           );
+          const existingPrimaryLightMatch = processed.match(
+            /--primary-lighten\s*:\s*([^;]+);/i
+          );
+          const existingPrimaryDarkMatch = processed.match(
+            /--primary-darken\s*:\s*([^;]+);/i
+          );
+          // Compute primaryVal: prefer existing explicit value, otherwise
+          // choose a best-available variant (don't force -500 if it doesn't exist)
           const primaryVal =
             existingPrimaryMatch && existingPrimaryMatch[1].trim()
               ? existingPrimaryMatch[1].trim()
-              : `var(--color-${displayPrimary}-500)`;
+              : `var(${chooseBestVariant(
+                  displayPrimary,
+                  [themeCss, tokensSource, customVars].join("\n")
+                )})`;
           const onPrimaryVal =
             existingOnPrimaryMatch && existingOnPrimaryMatch[1].trim()
               ? existingOnPrimaryMatch[1].trim()
@@ -969,33 +1104,30 @@ export function generateTokensCSS() {
           // Compute derived variants preferring palette primitives when possible
           let primaryLightVal = null;
           let primaryDarkVal = null;
+          // Determine derived values for primary. We MUST emit the
+          // `oklch(from var(--primary) ...)` expressions by default so the
+          // derivation is always relative to `--primary` regardless of the
+          // primitive palette. However, if the import already contained
+          // explicit `--primary-lighten` / `--primary-darken` values, we
+          // preserve them (non-destructive behaviour).
           try {
-            const themeVariants = parseColorVariants(
-              (state && state.themeContent) || ""
-            );
-            const varMatch = /var\(--color-([a-z0-9-]+)-(\d+)\)/i.exec(
-              primaryVal
-            );
-            if (varMatch) {
-              const name = varMatch[1];
-              const variantsMap = themeVariants.get(name);
-              if (variantsMap) {
-                if (variantsMap.has("300"))
-                  primaryLightVal = `var(--color-${name}-300)`;
-                if (variantsMap.has("700"))
-                  primaryDarkVal = `var(--color-${name}-700)`;
-              }
+            // If the import provided explicit derived tokens, preserve them.
+            if (existingPrimaryLightMatch && existingPrimaryLightMatch[1]) {
+              primaryLightVal = existingPrimaryLightMatch[1].trim();
+            } else {
+              primaryLightVal = `oklch(from var(--primary) calc(l * 1.2) c h)`;
+            }
+
+            if (existingPrimaryDarkMatch && existingPrimaryDarkMatch[1]) {
+              primaryDarkVal = existingPrimaryDarkMatch[1].trim();
+            } else {
+              primaryDarkVal = `oklch(from var(--primary) calc(l * 0.8) c h)`;
             }
           } catch (e) {
-            /* noop */
+            // Best-effort fallback to canonical expressions
+            primaryLightVal = `oklch(from var(--primary) calc(l * 1.2) c h)`;
+            primaryDarkVal = `oklch(from var(--primary) calc(l * 0.8) c h)`;
           }
-          // Canonical derivation: always derive from the `--primary` token
-          // so generated tokens reference `var(--primary)` instead of
-          // expanding primitive palette variables inline.
-          if (!primaryLightVal)
-            primaryLightVal = `var(--color-${displayPrimary}-300)`;
-          if (!primaryDarkVal)
-            primaryDarkVal = `var(--color-${displayPrimary}-700)`;
 
           colorLines.push("  /* Couleur primaire */");
           colorLines.push(`  --primary: ${primaryVal};`);
@@ -1280,33 +1412,34 @@ export function generateTokensCSS() {
           );
 
           // Reuse primaryVal / onPrimaryVal computed earlier
-          // Compute derived variants preferring palette primitives when possible
+          // For derived injection, always emit the canonical oklch(from var(--primary) ...)
+          // expressions so derivation is relative to `--primary`, unless the
+          // import already provided explicit derived values (preserve them).
           let primaryLightVal = null;
           let primaryDarkVal = null;
           try {
-            const themeVariants = parseColorVariants(
-              (state && state.themeContent) || ""
+            const existingPrimaryLightMatch = processed.match(
+              /--primary-lighten\s*:\s*([^;]+);/i
             );
-            const varMatch = /var\(--color-([a-z0-9-]+)-(\d+)\)/i.exec(
-              primaryVal
+            const existingPrimaryDarkMatch = processed.match(
+              /--primary-darken\s*:\s*([^;]+);/i
             );
-            if (varMatch) {
-              const name = varMatch[1];
-              const variantsMap = themeVariants.get(name);
-              if (variantsMap) {
-                if (variantsMap.has("300"))
-                  primaryLightVal = `var(--color-${name}-300)`;
-                if (variantsMap.has("700"))
-                  primaryDarkVal = `var(--color-${name}-700)`;
-              }
+
+            if (existingPrimaryLightMatch && existingPrimaryLightMatch[1]) {
+              primaryLightVal = existingPrimaryLightMatch[1].trim();
+            } else {
+              primaryLightVal = `oklch(from var(--primary) calc(l * 1.2) c h)`;
+            }
+
+            if (existingPrimaryDarkMatch && existingPrimaryDarkMatch[1]) {
+              primaryDarkVal = existingPrimaryDarkMatch[1].trim();
+            } else {
+              primaryDarkVal = `oklch(from var(--primary) calc(l * 0.8) c h)`;
             }
           } catch (e) {
-            /* noop */
+            primaryLightVal = `oklch(from var(--primary) calc(l * 1.2) c h)`;
+            primaryDarkVal = `oklch(from var(--primary) calc(l * 0.8) c h)`;
           }
-          if (!primaryLightVal)
-            primaryLightVal = `var(--color-${displayPrimary}-300)`;
-          if (!primaryDarkVal)
-            primaryDarkVal = `var(--color-${displayPrimary}-700)`;
 
           const derivedLines = [];
           derivedLines.push("  /* Couleur primaire (dérivés injectés) */");
@@ -2811,6 +2944,63 @@ export function generateTokensCSS() {
                 headerMap.set(s.header, s.body);
               }
 
+              // Ensure form-related declarations are grouped under Formulaires
+              // This moves any `--form-*`, `--on-form-control`, `--checkable-*`
+              // declarations out of other sections (eg. "Bordures") and into
+              // a dedicated Formulaires section so ordering is stable.
+              try {
+                const formPropRx =
+                  /^(--form-[a-z0-9-]*|--on-form-control\b|--checkable-[a-z0-9-]*|--checkables?[a-z0-9-]*)/i;
+                const declRx = /(--[a-z0-9-]+)\s*:[^;]+;/gim;
+                const collectedFormDecls = [];
+
+                for (const [hdr, hbody] of Array.from(headerMap.entries())) {
+                  let bodyStr = hbody || "";
+                  let m3;
+                  const toRemove = [];
+                  while ((m3 = declRx.exec(hbody))) {
+                    const prop = m3[1];
+                    if (formPropRx.test(prop)) {
+                      collectedFormDecls.push(m3[0].trim());
+                      toRemove.push(m3[0]);
+                    }
+                  }
+                  if (toRemove.length) {
+                    for (const tr of toRemove) {
+                      bodyStr = bodyStr.replace(tr, "");
+                    }
+                    headerMap.set(hdr, bodyStr.trim());
+                  }
+                }
+
+                if (collectedFormDecls.length) {
+                  const formHeaderKey = "  /* Formulaires */";
+                  // try to find an existing header that already represents forms
+                  let existingKey = null;
+                  for (const key of headerMap.keys()) {
+                    if (/formulaires/i.test(key)) {
+                      existingKey = key;
+                      break;
+                    }
+                  }
+                  const formatted = collectedFormDecls
+                    .map((d) => (d ? "  " + d : ""))
+                    .join("\n");
+                  if (!existingKey) {
+                    // create a synthetic header entry for forms
+                    headerMap.set(formHeaderKey, formatted);
+                  } else {
+                    const existingBody = headerMap.get(existingKey) || "";
+                    headerMap.set(
+                      existingKey,
+                      (formatted + "\n\n" + existingBody).trim()
+                    );
+                  }
+                }
+              } catch (e) {
+                /* noop - best effort */
+              }
+
               // Normalize header variants into canonical labels so that
               // variants like "/* Couleur primaire (dérivés injectés) */"
               // are grouped under the canonical "/* Couleur primaire */".
@@ -2932,28 +3122,45 @@ export function generateTokensCSS() {
               const orderedParts = [];
               // Insert a canonical Theme prelude (color-scheme + &[data-theme])
               // at the top of :root so ordering is strict and predictable.
-              const themePreludeCanonical = [];
-              // Emit canonical Theme header first
-              themePreludeCanonical.push("  /* Theme (color-scheme) */");
-              if (typeof themeMode !== "undefined" && themeMode === "both") {
-                themePreludeCanonical.push("  color-scheme: light dark;");
-                themePreludeCanonical.push("");
-                themePreludeCanonical.push('  &[data-theme="light"] {');
-                themePreludeCanonical.push("    color-scheme: light;");
-                themePreludeCanonical.push("  }");
-                themePreludeCanonical.push("");
-                themePreludeCanonical.push('  &[data-theme="dark"] {');
-                themePreludeCanonical.push("    color-scheme: dark;");
-                themePreludeCanonical.push("  }");
-              } else if (
-                typeof themeMode !== "undefined" &&
-                themeMode === "dark"
-              ) {
-                themePreludeCanonical.push("  color-scheme: dark;");
+              // Prefer the imported theme prelude (color-scheme + &[data-theme])
+              // if it was present in the import. Otherwise emit a canonical
+              // prelude according to the configured `themeMode`.
+              let themePreludeToEmit = null;
+              if (themePrelude && String(themePrelude).trim()) {
+                // Preserve the exact imported prelude but ensure a canonical
+                // header comment is present for ordering clarity. Also normalize
+                // indentation so the prelude aligns with other :root entries.
+                const preservedRaw = String(themePrelude).trim();
+                const preserved = preservedRaw
+                  .split(/\r?\n/)
+                  .map((l) => (l.trim() ? "  " + l.trim() : ""))
+                  .join("\n");
+                themePreludeToEmit =
+                  "  /* Theme (color-scheme) */\n" + preserved;
               } else {
-                themePreludeCanonical.push("  color-scheme: light;");
+                const tmpPrelude = [];
+                tmpPrelude.push("  /* Theme (color-scheme) */");
+                if (typeof themeMode !== "undefined" && themeMode === "both") {
+                  tmpPrelude.push("  color-scheme: light dark;");
+                  tmpPrelude.push("");
+                  tmpPrelude.push('  &[data-theme="light"] {');
+                  tmpPrelude.push("    color-scheme: light;");
+                  tmpPrelude.push("  }");
+                  tmpPrelude.push("");
+                  tmpPrelude.push('  &[data-theme="dark"] {');
+                  tmpPrelude.push("    color-scheme: dark;");
+                  tmpPrelude.push("  }");
+                } else if (
+                  typeof themeMode !== "undefined" &&
+                  themeMode === "dark"
+                ) {
+                  tmpPrelude.push("  color-scheme: dark;");
+                } else {
+                  tmpPrelude.push("  color-scheme: light;");
+                }
+                themePreludeToEmit = tmpPrelude.join("\n");
               }
-              orderedParts.push(themePreludeCanonical.join("\n"));
+              orderedParts.push(themePreludeToEmit);
 
               const usedKeys = new Set();
               // canonical labels to output (must match tokens-order.txt)
@@ -3164,7 +3371,10 @@ export function generateTokensCSS() {
           } else {
             processed = processed.replace(
               /--primary\s*:\s*;/gi,
-              `--primary: var(--color-${displayPrimary}-500);`
+              `--primary: var(${chooseBestVariant(
+                displayPrimary,
+                [themeCss, tokensSource, customVars].join("\n")
+              )});`
             );
             // filled empty --primary with var(...) based on displayPrimary
           }
@@ -3180,13 +3390,21 @@ export function generateTokensCSS() {
         if (/--primary-lighten\s*:\s*;/.test(processed)) {
           processed = processed.replace(
             /--primary-lighten\s*:\s*;/gi,
-            `--primary-lighten: var(--color-${displayPrimary}-300);`
+            `--primary-lighten: var(${chooseNumericVariant(
+              displayPrimary,
+              "300",
+              [themeCss, tokensSource, customVars].join("\n")
+            )});`
           );
         }
         if (/--primary-darken\s*:\s*;/.test(processed)) {
           processed = processed.replace(
             /--primary-darken\s*:\s*;/gi,
-            `--primary-darken: var(--color-${displayPrimary}-700);`
+            `--primary-darken: var(${chooseNumericVariant(
+              displayPrimary,
+              "700",
+              [themeCss, tokensSource, customVars].join("\n")
+            )});`
           );
         }
 
@@ -3322,6 +3540,43 @@ export function generateTokensCSS() {
         } catch (e) {
           /* noop */
         }
+        // Final synchronization: if the user explicitly chose a primaryColor,
+        // ensure the final processed output includes the corresponding
+        // existing variant (don't force -500). This is a last-resort pass
+        // to avoid earlier dedupe/order issues leaving an old primary in place.
+        try {
+          if (primaryColor) {
+            const _sources_final =
+              (themeCss || "") +
+              "\n" +
+              (state && state.tokensContent ? state.tokensContent : "") +
+              "\n" +
+              (state && state.config && state.config.customVars
+                ? state.config.customVars
+                : "");
+            const _finalVar = chooseBestVariant(primaryColor, _sources_final);
+            if (/--primary\s*:\s*[^;]*;/i.test(processed)) {
+              // Replace first occurrence only (make it primary)
+              processed = processed.replace(
+                /--primary\s*:\s*[^;]*;/i,
+                `--primary: var(${_finalVar});`
+              );
+            } else {
+              const rootIdx = processed.indexOf(":root {");
+              if (rootIdx !== -1) {
+                const afterOpen = processed.indexOf("\n", rootIdx);
+                const insertPos =
+                  afterOpen !== -1 ? afterOpen + 1 : rootIdx + 7;
+                processed =
+                  processed.slice(0, insertPos) +
+                  `  --primary: var(${_finalVar});\n` +
+                  processed.slice(insertPos);
+              }
+            }
+          }
+        } catch (e) {
+          /* noop final sync */
+        }
       } catch (e) {
         /* noop - best-effort */
       }
@@ -3354,8 +3609,9 @@ export function generateTokensCSS() {
   // This avoids brittle text-substitution on a large template and keeps
   // behaviour deterministic while providing a complete tokens file.
   // If user selected a primaryColor, use it. Otherwise default to the
-  // placeholder `raspberry` (business rule) instead of 'info'.
-  let chosen = primaryColor || "raspberry";
+  // canonical 'info' seed. Avoid using a non-existent placeholder color
+  // in runtime outputs.
+  let chosen = primaryColor || "info";
   console.log("[generateTokensCSS] Initial primaryColor:", primaryColor);
   console.log("[generateTokensCSS] Initial chosen:", chosen);
 
@@ -3382,8 +3638,11 @@ export function generateTokensCSS() {
       appearsInCustom
     );
     if (isRuntimeOnly && !appearsInTheme && !appearsInCustom) {
-      chosen =
-        typeof PLACEHOLDER_RASPBERRY !== "undefined" ? "raspberry" : "info";
+      // If the selected color is a runtime-only palette and not present
+      // in the loaded theme or custom vars, fall back to a guaranteed
+      // canonical seed ('info'). This avoids referencing a non-existent
+      // placeholder color in generated tokens.
+      chosen = "info";
       console.log("[generateTokensCSS] Fallback to:", chosen);
     }
   } catch (e) {
@@ -3434,25 +3693,37 @@ export function generateTokensCSS() {
   lines.push("");
   // primary & on-primary
   lines.push("  /* Couleur primaire */");
-  lines.push(`  --primary: var(--color-${chosen}-500);`);
+  // Determine best available variants for the chosen base so we don't
+  // reference non-existing numeric variants (don't force -500).
+  const _sources_for_chosen =
+    (state && state.themeContent ? state.themeContent : "") +
+    "\n" +
+    (state && state.tokensContent ? state.tokensContent : "") +
+    "\n" +
+    (state && state.config && state.config.customVars
+      ? state.config.customVars
+      : "");
+  const _chosenVar = chooseBestVariant(chosen, _sources_for_chosen);
+  const _chosen300 = chooseNumericVariant(chosen, "300", _sources_for_chosen);
+  const _chosen700 = chooseNumericVariant(chosen, "700", _sources_for_chosen);
+
+  lines.push(`  --primary: var(${_chosenVar});`);
   lines.push("  --on-primary: var(--color-white);");
   lines.push("");
 
   // accent: depending on themeMode
   lines.push("  /* Couleur d'accent */");
   if (themeMode === "both") {
+    lines.push(`  --accent: light-dark(var(--primary), var(${_chosen300}));`);
     lines.push(
-      `  --accent: light-dark(var(--primary), var(--color-${chosen}-300));`
-    );
-    lines.push(
-      `  --accent-invert: light-dark(var(--color-${chosen}-300), var(--primary));`
+      `  --accent-invert: light-dark(var(${_chosen300}), var(--primary));`
     );
   } else if (themeMode === "dark") {
-    lines.push(`  --accent: var(--color-${chosen}-300);`);
+    lines.push(`  --accent: var(${_chosen300});`);
     lines.push("  --accent-invert: var(--primary);");
   } else {
     lines.push("  --accent: var(--primary);");
-    lines.push(`  --accent-invert: var(--color-${chosen}-300);`);
+    lines.push(`  --accent-invert: var(${_chosen300});`);
   }
 
   lines.push("");
@@ -3490,22 +3761,14 @@ export function generateTokensCSS() {
     );
     lines.push("");
     lines.push("  /* Interactions */");
+    lines.push(`  --link: light-dark(var(--primary), var(${_chosen300}));`);
     lines.push(
-      "  --link: light-dark(var(--primary), var(--color-" + chosen + "-300));"
-    );
-    lines.push(
-      "  --link-hover: light-dark(var(--color-" +
-        chosen +
-        "-700), var(--primary));"
+      `  --link-hover: light-dark(var(${_chosen700}), var(--primary));`
     );
     lines.push("");
     lines.push("  /* Couleur de sélection */");
     lines.push(
-      "  --selection: light-dark(var(--color-" +
-        chosen +
-        "-300), var(--color-" +
-        chosen +
-        "-500));"
+      `  --selection: light-dark(var(${_chosen300}), var(${_chosenVar}));`
     );
     lines.push("");
     lines.push("  /* États */");
@@ -3528,10 +3791,10 @@ export function generateTokensCSS() {
     lines.push("");
     lines.push("  /* Interactions */");
     lines.push("  --link: var(--primary);");
-    lines.push("  --link-hover: var(--color-" + chosen + "-700);");
+    lines.push(`  --link-hover: var(${_chosen700});`);
     lines.push("");
     lines.push("  /* Couleur de sélection */");
-    lines.push("  --selection: var(--color-" + chosen + "-300);");
+    lines.push(`  --selection: var(${_chosen300});`);
     lines.push("");
     lines.push("  /* États */");
     lines.push("  --warning: var(--color-warning-500);");
@@ -3839,40 +4102,10 @@ export function generateThemeCSS(options = {}) {
         "\n}";
     }
   } else {
-    // No custom vars provided: ensure placeholder raspberry exists inside :root
-    // BUT only inject the placeholder when the theme is NOT the result of a
-    // user import. When the theme comes from an import, the preview must
-    // reflect exactly the imported content (no UI decoration).
-    try {
-      if (!state.themeFromImport) {
-        const hasRaspberry = /--color-raspberry-(?:\d+|fade|bright)\s*:/i.test(
-          all
-        );
-        if (!hasRaspberry && typeof PLACEHOLDER_RASPBERRY !== "undefined") {
-          const ph = PLACEHOLDER_RASPBERRY || {};
-          const order = ["100", "200", "300", "400", "500", "600", "700"];
-          const blockLines = ["/* Couleur projet placeholder : raspberry */"];
-          for (const k of order) {
-            if (ph[k]) blockLines.push(`  --color-raspberry-${k}: ${ph[k]};`);
-          }
-          const block = blockLines.join("\n");
-          if (hasRoot) {
-            const idx = all.lastIndexOf("}");
-            if (idx !== -1) {
-              const before = all.slice(0, idx).trimEnd();
-              const after = all.slice(idx);
-              all = before + "\n\n" + block + "\n" + after;
-            } else {
-              all = all + "\n\n" + block;
-            }
-          } else {
-            all = all + "\n\n" + block;
-          }
-        }
-      }
-    } catch (e) {
-      /* noop */
-    }
+    // Ne pas injecter automatiquement de placeholder de couleur (`raspberry`).
+    // L'application doit refléter fidèlement les primitives fournies par
+    // l'utilisateur ou par les canoniques. Cette logique évite d'introduire
+    // des variables qui n'existent pas dans le thème chargé.
   }
 
   // --- Auto-generate missing numeric color variants (100,300,500,700)

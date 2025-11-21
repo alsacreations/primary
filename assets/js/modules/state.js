@@ -40,15 +40,11 @@ export const state = {
  * quand l'app n'a pas de couleur projet fournie. Ne doit pas être utilisé
  * comme variable runtime globale pour le style de l'application.
  */
-export const PLACEHOLDER_RASPBERRY = {
-  100: "oklch(98% 0.03 352)",
-  200: "oklch(94.5% 0.12 352)",
-  300: "oklch(84.5% 0.2 352)",
-  400: "oklch(72.8281% 0.1971 352.001)",
-  500: "oklch(64.5% 0.2 352)",
-  600: "oklch(54.5% 0.2 352)",
-  700: "oklch(44.5% 0.2 352)",
-};
+// NOTE: Le placeholder 'raspberry' a été retiré. Ne plus exposer
+// de jeu de couleurs factice globalement afin d'éviter que l'UI
+// affiche une couleur qui n'existe pas dans les primitives du
+// projet. Les flows de debug peuvent reconstruire un jeu d'exemple
+// localement si nécessaire.
 
 /**
  * Palette présentes uniquement pour le runtime de l'application (ne doivent

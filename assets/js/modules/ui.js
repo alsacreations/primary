@@ -3,7 +3,7 @@
  * Gestion de l'interface utilisateur
  */
 
-import { state, PLACEHOLDER_RASPBERRY } from "./state.js";
+import { state } from "./state.js";
 import { elements } from "./dom.js";
 import {
   generateTokensCSS,
@@ -12,6 +12,7 @@ import {
   generateStylesCSS,
   generateAppCSS,
   generateMissingVariants,
+  parseColorVariants,
 } from "./generators.js";
 import { showGlobalError, hideGlobalError } from "./validation.js";
 
@@ -210,33 +211,17 @@ export function updateColorChoices() {
       }
     }
 
-    // Déduire les couleurs réellement présentes dans themeContent
-    const themeColors = [
-      "raspberry",
-      "blue",
-      "green",
-      "orange",
-      "purple",
-      "red",
-      "yellow",
-    ];
-    const themeColorsFound = new Set();
+    // Déduire les couleurs réellement présentes en combinant le theme et
+    // les variables personnalisées, via le parseur réutilisable.
+    const combined =
+      (state.themeContent || "") + "\n" + (state.config?.customVars || "");
+    let colorsMap = new Map();
     try {
-      // Pattern 1: couleurs standard --color-{nom}-{numéro|fade|bright}
-      const rx1 = /--color-([a-z0-9-]+)-(?:\d+|fade|bright)\s*:/gim;
-      let m;
-      while ((m = rx1.exec(state.themeContent || ""))) {
-        themeColorsFound.add(m[1]);
-      }
-
-      // Pattern 2: couleurs Figma --color-primary|secondary|tertiary-{nom}
-      const rx2 = /--color-(primary|secondary|tertiary)-([a-z0-9-]+)\s*:/gim;
-      while ((m = rx2.exec(state.themeContent || ""))) {
-        themeColorsFound.add(m[1]); // ajouter "primary", "secondary", "tertiary"
-      }
+      colorsMap = parseColorVariants(combined) || new Map();
     } catch (e) {
-      /* noop */
+      colorsMap = new Map();
     }
+    const themeColorsFound = new Set(Array.from(colorsMap.keys()));
 
     // Regrouper les colors custom par base
     const getBaseName = (varName) =>
@@ -246,20 +231,50 @@ export function updateColorChoices() {
       customBases.add(getBaseName(varName));
     }
 
-    // Générer les options (préserver l'ordre des themeColors)
-    let options = "";
-    themeColors.forEach((color) => {
-      if (themeColorsFound.size === 0 || themeColorsFound.has(color)) {
-        const selected = state.config.primaryColor === color ? " selected" : "";
-        options += `<option value="${color}"${selected}>${color}</option>`;
-      }
-    });
+    // Construire la liste finale d'options à afficher pour le <select>.
+    // - Si des couleurs sont détectées dans le thème importé, les afficher
+    //   (en privilégiant un ordre canonique si possible).
+    // - Sinon, proposer une liste de secours canonique.
+    const canonicalOrder = [
+      "gray",
+      "info",
+      "warning",
+      "success",
+      "error",
+      "blue",
+      "green",
+      "orange",
+      "purple",
+      "red",
+      "yellow",
+    ];
 
+    let allOptions = [];
+    if (themeColorsFound.size > 0) {
+      // Privilégier l'ordre canonique puis ajouter les autres détectées
+      canonicalOrder.forEach((c) => {
+        if (themeColorsFound.has(c)) allOptions.push(c);
+      });
+      Array.from(themeColorsFound).forEach((c) => {
+        if (!allOptions.includes(c)) allOptions.push(c);
+      });
+    } else if (customBases.size > 0) {
+      allOptions = Array.from(customBases);
+    } else {
+      allOptions = canonicalOrder.slice();
+    }
+
+    // Construire HTML des options
+    let options = "";
+    for (const color of allOptions) {
+      const selected = state.config.primaryColor === color ? " selected" : "";
+      options += `<option value="${color}"${selected}>${color}</option>`;
+    }
+
+    // Ajouter éventuelles couleurs personnalisées qui ne sont pas déjà listées
     if (customBases.size > 0) {
-      // Ne pas ajouter de label/optgroup visible pour les couleurs
-      // personnalisées — ajouter directement les options.
       for (const baseName of customBases) {
-        if (themeColorsFound.has(baseName)) continue;
+        if (allOptions.includes(baseName)) continue;
         const selected =
           state.config.primaryColor === baseName ? " selected" : "";
         options += `<option value="${baseName}"${selected}>${baseName}</option>`;
@@ -267,6 +282,26 @@ export function updateColorChoices() {
     }
 
     elements.primaryColorSelect.innerHTML = options;
+    // Si aucune couleur primaire n'est encore sélectionnée, choisir
+    // `gray` (ou la première option disponible) par défaut afin que
+    // l'UI propose une sélection cohérente immédiatement.
+    try {
+      const optVals = allOptions;
+      if (
+        !state.config.primaryColor ||
+        !optVals.includes(state.config.primaryColor)
+      ) {
+        state.config.primaryColor = optVals[0];
+        // Mettre à jour la sélection visuelle si c'est un <select>
+        try {
+          elements.primaryColorSelect.value = state.config.primaryColor;
+        } catch (e) {
+          /* noop */
+        }
+      }
+    } catch (e) {
+      /* noop */
+    }
     return;
   }
 
@@ -293,15 +328,7 @@ export function updateColorChoices() {
   }
 
   // Déduire les couleurs présentes dans le thème (state.themeContent)
-  const themeColors = [
-    "raspberry",
-    "blue",
-    "green",
-    "orange",
-    "purple",
-    "red",
-    "yellow",
-  ];
+  const themeColors = ["blue", "green", "orange", "purple", "red", "yellow"];
   const themeColorsFound = new Set();
   try {
     // Pattern 1: couleurs standard --color-{nom}-{numéro|fade|bright}
@@ -395,14 +422,9 @@ export function updateColorChoices() {
         /* noop */
       }
 
-      // 3) raspberry placeholder
-      if (
-        base === "raspberry" &&
-        typeof PLACEHOLDER_RASPBERRY !== "undefined"
-      ) {
-        if (PLACEHOLDER_RASPBERRY[variant])
-          return PLACEHOLDER_RASPBERRY[variant];
-      }
+      // 3) Aucun placeholder local injecté — fallback vers la variable CSS
+      //    explicite afin que l'UI n'affiche jamais une couleur non présente
+      //    dans le thème chargé.
 
       // 4) fallback to CSS variable reference
       return `var(--color-${base}-${variant})`;
@@ -448,12 +470,50 @@ export function updateColorChoices() {
     return label;
   };
 
-  // Append theme colors that actually exist in the themeContent (keeps ordering)
-  for (const color of themeColors) {
-    if (themeColorsFound.size === 0 || themeColorsFound.has(color)) {
-      const choice = buildChoice(color, color, false);
-      container.appendChild(choice);
-    }
+  // Construire la liste d'affichage : si des couleurs sont détectées, les
+  // afficher (en privilégiant l'ordre canonique : gray, info, warning, success, error).
+  const canonicalOrder = [
+    "gray",
+    "info",
+    "warning",
+    "success",
+    "error",
+    "blue",
+    "green",
+    "orange",
+    "purple",
+    "red",
+    "yellow",
+  ];
+
+  // Détecter les couleurs via parseColorVariants (combine theme + customVars)
+  const combined2 =
+    (state.themeContent || "") + "\n" + (state.config?.customVars || "");
+  let colorsMap2 = new Map();
+  try {
+    colorsMap2 = parseColorVariants(combined2) || new Map();
+  } catch (e) {
+    colorsMap2 = new Map();
+  }
+  const detected = new Set(Array.from(colorsMap2.keys()));
+
+  let allColors = [];
+  if (detected.size > 0) {
+    canonicalOrder.forEach((c) => {
+      if (detected.has(c)) allColors.push(c);
+    });
+    Array.from(detected).forEach((c) => {
+      if (!allColors.includes(c)) allColors.push(c);
+    });
+  } else if (customBases.size > 0) {
+    allColors = Array.from(customBases.keys());
+  } else {
+    allColors = canonicalOrder.slice();
+  }
+
+  for (const color of allColors) {
+    const choice = buildChoice(color, color, false);
+    container.appendChild(choice);
   }
 
   // Append custom color bases that are not part of the theme (grouped)
@@ -463,7 +523,7 @@ export function updateColorChoices() {
     // les choix personnalisés après les couleurs du thème.
     for (const [baseName, variants] of customBases.entries()) {
       // Skip if this base is already shown as a theme color
-      if (themeColorsFound.has(baseName)) continue;
+      if (detected.has(baseName)) continue;
 
       const choice = buildChoice(baseName, `${baseName}`, true);
       container.appendChild(choice);

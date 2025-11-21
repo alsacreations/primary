@@ -1,4 +1,4 @@
-import { state, PLACEHOLDER_RASPBERRY, RUNTIME_ONLY_COLORS } from "./state.js";
+import { state, RUNTIME_ONLY_COLORS } from "./state.js";
 import { setupEventListeners as __modulesSetupEventListeners } from "./events.js";
 import {
   parseColorVariants,
@@ -6,6 +6,8 @@ import {
   generateMissingVariants,
   generateTokensCSS,
   normalizeTokensContent,
+  chooseBestVariant,
+  chooseNumericVariant,
 } from "./generators.js";
 import { elements } from "./dom.js";
 import { loadAllCanonicals } from "./canonical-loader.js";
@@ -147,16 +149,30 @@ export async function init() {
         chosen
       );
       // Remplacer une déclaration existante --primary: var(--color-...-NUM);
-      state.tokensContent = state.tokensContent.replace(
-        /(--primary\s*:\s*)var\(--color-[a-z0-9-]+-\d+\)\s*;/gi,
-        `$1var(--color-${chosen}-500);`
-      );
+      // Choisir une variante réellement présente (ne pas forcer -500)
+      try {
+        const sources =
+          (state.themeContent || "") +
+          "\n" +
+          (state.tokensContent || "") +
+          "\n" +
+          (state.config && state.config.customVars
+            ? state.config.customVars
+            : "");
+        const chosenVar = chooseBestVariant(chosen, sources);
+        state.tokensContent = state.tokensContent.replace(
+          /(--primary\s*:\s*)var\(--color-[a-z0-9-]+-\d+\)\s*;/gi,
+          `$1var(${chosenVar});`
+        );
 
-      // Si la déclaration --primary existe mais vide (cas de template), la remplir
-      state.tokensContent = state.tokensContent.replace(
-        /(--primary\s*:\s*)(;)/gi,
-        `$1var(--color-${chosen}-500);`
-      );
+        // Si la déclaration --primary existe mais vide (cas de template), la remplir
+        state.tokensContent = state.tokensContent.replace(
+          /(--primary\s*:\s*)(;)/gi,
+          `$1var(${chosenVar});`
+        );
+      } catch (e) {
+        /* noop fallback */
+      }
       // Remplacer aussi la ligne d'entête indiquant la couleur primaire
       // dans le bloc de commentaire initial (s'il existe) pour garder
       // `state.tokensContent` cohérent avec l'UI.
@@ -220,32 +236,11 @@ export function updateThemePreview() {
     preview = preview.replace(importRx, "");
     preview = preview.replace(/\n{3,}/g, "\n\n");
   }
-  // Si le thème affiché provient des fichiers intégrés (chargement normal)
-  // ET que l'utilisateur n'a pas chargé d'import JSON, injecter un exemple
-  // de couleur projet 'raspberry' dans l'aperçu pour servir d'exemple.
-  // Ne pas injecter ce bloc si le thème provient d'un import utilisateur
-  // (state.themeFromImport === true).
-  if (!state.themeFromImport) {
-    const hasCustom = customVars.trim().length > 0;
-    if (!hasCustom) {
-      const hasRasp = /--color-raspberry-/.test(preview);
-      if (!hasRasp) {
-        const raspLines = Object.entries(PLACEHOLDER_RASPBERRY)
-          .map(
-            ([variant, value]) => `  --color-raspberry-${variant}: ${value};`
-          )
-          .join("\n");
-        const raspBlock = `\n  /* Couleur projet placeholder : raspberry */\n${raspLines}\n`;
-        const lastBrace = preview.lastIndexOf("}");
-        if (lastBrace !== -1) {
-          preview =
-            preview.slice(0, lastBrace) + raspBlock + preview.slice(lastBrace);
-        } else {
-          preview += raspBlock;
-        }
-      }
-    }
-  }
+  // NOTE: injection du placeholder 'raspberry' désactivée.
+  // L'application ne doit pas ajouter automatiquement une couleur
+  // projet d'exemple dans la prévisualisation afin d'éviter que
+  // l'UI affiche une couleur qui n'existe pas dans le thème.
+  // Si besoin, la logique d'injection peut être réactivée plus tard.
 
   if (customVars.trim()) {
     const lastBraceIndex = preview.lastIndexOf("}");
@@ -381,45 +376,36 @@ export function updateColorChoices() {
   console.log("[updateColorChoices] customColors:", customColors);
   console.log("[updateColorChoices] colorsMap:", colorsMap);
 
-  // Toujours proposer le placeholder `raspberry` en premier dans la liste
-  // des choix afin qu'il soit proposé par défaut quand l'utilisateur n'a
-  // pas encore choisi de couleur (business rule). S'il y a des couleurs
-  // importées, elles suivent après le placeholder.
-  let allColors;
+  // Construire la liste des couleurs disponibles depuis le thème et
+  // depuis les variables personnalisées. Ne pas proposer de placeholder
+  // factice qui n'existe pas dans les primitives.
+  let allColors = [];
   if (customColors.length > 0) {
-    allColors = ["raspberry", ...customColors];
+    allColors = customColors.slice();
   } else {
-    allColors = ["raspberry"];
+    const detected = Array.from(colorsMap.keys());
+    if (detected.length > 0) allColors = detected;
+  }
+  if (allColors.length === 0) {
+    allColors = ["info", "blue", "green", "orange", "purple", "red", "yellow"];
   }
 
   const swatchMarkup = (color) => {
     const variantsOrder = ["100", "300", "500", "700"];
-    let variantsAvailable = [];
-    if (color === "raspberry" && !colorsMap.has("raspberry")) {
-      variantsAvailable = variantsOrder.filter(
-        (v) => typeof PLACEHOLDER_RASPBERRY[v] !== "undefined"
-      );
-    } else {
-      variantsAvailable = variantsOrder.filter((v) =>
-        colorsMap.has(color) ? colorsMap.get(color).has(v) : false
-      );
-      if (variantsAvailable.length === 0) {
-        if (colorsMap.has(color)) {
-          const keys = Array.from(colorsMap.get(color).keys());
-          if (keys.length > 0) variantsAvailable.push(keys[0]);
-          else variantsAvailable.push("500");
-        } else {
-          variantsAvailable.push("500");
-        }
+    let variantsAvailable = variantsOrder.filter((v) =>
+      colorsMap.has(color) ? colorsMap.get(color).has(v) : false
+    );
+    if (variantsAvailable.length === 0) {
+      if (colorsMap.has(color)) {
+        const keys = Array.from(colorsMap.get(color).keys());
+        if (keys.length > 0) variantsAvailable.push(keys[0]);
+        else variantsAvailable.push("500");
+      } else {
+        variantsAvailable.push("500");
       }
     }
 
-    const getVariantValue = (c, v) => {
-      if (c === "raspberry" && PLACEHOLDER_RASPBERRY[v]) {
-        return PLACEHOLDER_RASPBERRY[v];
-      }
-      return `var(--color-${c}-${v})`;
-    };
+    const getVariantValue = (c, v) => `var(--color-${c}-${v})`;
 
     if (variantsAvailable.length > 1) {
       const segments = variantsAvailable
@@ -467,15 +453,31 @@ export function updateColorChoices() {
               chosen
             );
             // Remplacer toute declaration --primary: ...; par la nouvelle valeur
-            state.tokensContent = state.tokensContent.replace(
-              /--primary\s*:\s*[^;]*;/gi,
-              `--primary: var(--color-${chosen}-500);`
-            );
-            // Remplir un placeholder éventuel
-            state.tokensContent = state.tokensContent.replace(
-              /(--primary\s*:\s*)(;)/gi,
-              `$1var(--color-${chosen}-500);`
-            );
+            try {
+              const sources =
+                (state.themeContent || "") +
+                "\n" +
+                (state.tokensContent || "") +
+                "\n" +
+                (state.config && state.config.customVars
+                  ? state.config.customVars
+                  : "");
+              const chosenVar = chooseBestVariant(chosen, sources);
+              state.tokensContent = state.tokensContent.replace(
+                /--primary\s*:\s*[^;]*;/gi,
+                `--primary: var(${chosenVar});`
+              );
+              // Remplir un placeholder éventuel
+              state.tokensContent = state.tokensContent.replace(
+                /(--primary\s*:\s*)(;)/gi,
+                `$1var(${chosenVar});`
+              );
+            } catch (err) {
+              console.warn(
+                "[updateColorChoices] chooseBestVariant failed:",
+                err
+              );
+            }
             // Mettre à jour la ligne d'entête indiquant la couleur primaire
             try {
               state.tokensContent = state.tokensContent.replace(

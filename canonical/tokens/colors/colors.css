@@ -11,7 +11,7 @@
   }
 
   /* Couleur primaire */
-  --primary: var(--color-raspberry-500);
+  --primary: var(--color-info-500);
   --on-primary: var(--color-white);
   --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);
   --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);

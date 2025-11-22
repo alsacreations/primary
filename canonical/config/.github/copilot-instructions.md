@@ -102,19 +102,26 @@ Gère l'accessibilité dans les composants dynamiques :
 - Utilise des commentaires JSDoc pour toutes les fonctions et composants dans les fichiers JavaScript
 - Maintiens le README.md à jour avec la configuration du projet et les guidelines de contribution
 
-## Messages de commit
+## Commit messages (CRITICAL)
 
-- Utilise TOUJOURS Conventional Commits
-- Utilise la langue française dans les messages de commit
-- Utilise le mode impératif dans les messages de commit
-- Utilise le présent (Ajoute fonctionnalité et non Ajout fonctionnalité)
-- Préfixe TOUJOURS les titres de commit avec un type (en anglais) : feat, fix, perf, refactor, style, docs, chore suivi du scope optionnel, puis des deux-points et espace obligatoires
-- Utilise le type feat pour les nouvelles fonctionnalités
-- Utilise le type fix pour les corrections de bugs
-- Utilise le type refactor pour la refactorisation du code
-- Utilise le type docs pour les modifications de documentation
-- Utilise le type chore pour les tâches de maintenance (exemple : mise à jour des dépendances, formatage de fichiers, etc.)
-- Un scope peut être fourni après un type. Un scope doit être un nom décrivant une section du codebase entouré de parenthèses, exemple : fix(parser):
+> [!IMPORTANT] > **ALWAYS** generate commit messages in **FRENCH**.
+> **ALWAYS** follow the **Conventional Commits** format.
+
+- **Language**: French (Français) ONLY.
+- **Format**: `<type>(<scope>): <description>`
+- **Tense**: Imperative, present tense (e.g., "Ajoute", "Corrige", "Supprime").
+- **Types**:
+  - `feat`: New feature (Fonctionnalité)
+  - `fix`: Bug fix (Correction)
+  - `perf`: Performance improvement
+  - `refactor`: Code refactoring
+  - `style`: Style changes (formatting, etc.)
+  - `docs`: Documentation
+  - `chore`: Maintenance
+- **Examples**:
+  - `feat(css): ajoute une nouvelle variable pour les couleurs`
+  - `fix(nav): corrige le lien cassé dans le menu`
+  - `docs(readme): met à jour les instructions d'installation`
 
 ## Références
 

@@ -46,10 +46,5 @@
   ],
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
-  "github.copilot.chat.commitMessageGeneration.instructions": [
-    "Use the French language for the description.",
-    "Do not use English for the description.",
-    "Use the imperative mood (e.g. 'Ajoute', 'Corrige', 'Supprime').",
-    "Follow the Conventional Commits format: <type>(<scope>): <description>."
-  ]
+  "github.copilot.chat.locale": "fr"
 }

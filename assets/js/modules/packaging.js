@@ -133,6 +133,127 @@ export async function downloadAllFiles() {
     console.warn("Erreur lors de l'ajout des fichiers de config:", err);
   }
 
+  // Improved config files inclusion: prefer embedded JSON (avoids server dotfile restrictions), fallback to index.json
+  try {
+    const includeConfigCheckbox = document.getElementById(
+      "include-config-files"
+    );
+    if (includeConfigCheckbox && includeConfigCheckbox.checked) {
+      const embeddedUrl = new URL(
+        "canonical/config/embedded-config.json",
+        window.location.href
+      ).toString();
+      let usedEmbedded = false;
+
+      try {
+        const embResp = await fetch(embeddedUrl);
+        if (embResp.ok) {
+          const embedded = await embResp.json();
+          // Try to load index.json to resolve destination names (dotfiles mapping)
+          let indexMapping = null;
+          try {
+            const idxResp = await fetch(
+              new URL(
+                "canonical/config/index.json",
+                window.location.href
+              ).toString()
+            );
+            if (idxResp.ok) indexMapping = await idxResp.json();
+          } catch (e) {
+            console.warn(
+              "Impossible de charger index.json pour mapping des configs:",
+              e
+            );
+          }
+
+          for (const [sourceFile, content] of Object.entries(embedded)) {
+            let dest = sourceFile;
+            // Prefer explicit mapping from index.json when available
+            if (
+              indexMapping &&
+              Object.prototype.hasOwnProperty.call(indexMapping, sourceFile)
+            ) {
+              dest = indexMapping[sourceFile];
+            } else if (
+              !sourceFile.startsWith(".") &&
+              sourceFile.endsWith(".txt")
+            ) {
+              // common convention: editorconfig.txt -> .editorconfig, gitignore.txt -> .gitignore
+              const base = sourceFile.replace(/\.txt$/, "");
+              dest = base.startsWith(".") ? base : `.${base}`;
+            }
+
+            zip.file(dest, content);
+          }
+          usedEmbedded = true;
+        }
+      } catch (err) {
+        console.warn("embedded-config.json non utilisable:", err);
+      }
+
+      if (!usedEmbedded) {
+        // fallback to index.json mapping and absolute fetch per-file
+        const indexUrl = new URL(
+          "canonical/config/index.json",
+          window.location.href
+        ).toString();
+        const indexResp = await fetch(indexUrl);
+        if (indexResp.ok) {
+          const configMapping = await indexResp.json();
+          const missingFiles = [];
+
+          for (const [sourceFile, destFile] of Object.entries(configMapping)) {
+            const fileUrl = new URL(
+              `canonical/config/${sourceFile}`,
+              window.location.href
+            ).toString();
+            try {
+              const configResp = await fetch(fileUrl);
+              if (configResp.ok) {
+                const configContent = await configResp.text();
+                zip.file(destFile, configContent);
+              } else {
+                console.warn(
+                  `config ${sourceFile} not found (status ${configResp.status}) at ${fileUrl}`
+                );
+                missingFiles.push({
+                  sourceFile,
+                  status: configResp.status,
+                  url: fileUrl,
+                });
+              }
+            } catch (err) {
+              console.warn(`Erreur lors du fetch de ${sourceFile} :`, err);
+              missingFiles.push({
+                sourceFile,
+                error: String(err),
+                url: fileUrl,
+              });
+            }
+          }
+
+          if (missingFiles.length) {
+            console.warn(
+              "Fichiers de config manquants ou non accessibles:",
+              missingFiles
+            );
+          }
+        } else {
+          console.warn(
+            "index.json non trouvé pour les fichiers de config",
+            indexUrl,
+            indexResp.status
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(
+      "Erreur lors de l'ajout des fichiers de config (improved flow):",
+      err
+    );
+  }
+
   // Générer le blob et déclencher le téléchargement
   try {
     const content = await zip.generateAsync({ type: "blob" });

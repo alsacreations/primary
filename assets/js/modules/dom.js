@@ -20,10 +20,7 @@ export const elements = {
   themePreview: document.getElementById("theme-preview"),
   // Aligné avec l'ID présent dans index.html
   customVarsInput: document.getElementById("custom-vars-input"),
-  // Checkbox pour activer l'extrapolation/synthèse des couleurs du projet
-  synthesizeProjectColorsCheckbox: document.getElementById(
-    "synthesize-project-colors"
-  ),
+
   // JSON import UI (file + paste + actions)
   jsonImportFile: document.getElementById("json-import-file"),
   // Paste input removed: JSON will be provided via downloaded files only

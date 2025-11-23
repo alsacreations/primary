@@ -4265,59 +4265,6 @@ export function generateThemeCSS(options = {}) {
     // des variables qui n'existent pas dans le thème chargé.
   }
 
-  // --- Auto-generate missing numeric color variants (100,300,500,700)
-  // If a base color has at least one numeric variant present, generate
-  // the missing ones so previews and downstream tokens can rely on a full
-  // set of semantic variants.
-  try {
-    // Only auto-generate extrapolated color variants when the user has
-    // explicitly enabled project synthesis (checkbox). Do NOT treat the
-    // presence of `customVars` as an implicit request to extrapolate.
-    const allowExtrapolation = Boolean(
-      state && state.config && state.config.synthesizeProjectPrimitives
-    );
-    if (!allowExtrapolation) {
-      // Skip extrapolation entirely
-    } else {
-      const variantsMap = parseColorVariants(all);
-      const required = ["100", "300", "500", "700"];
-      // Collect all missing extrapolated variants across bases, then
-      // emit them under a single explanatory comment to avoid repeated
-      // identical headings.
-      const globalMissing = [];
-      for (const [base, map] of variantsMap.entries()) {
-        // consider only numeric variants presence
-        const numericKeys = Array.from(map.keys()).filter((k) =>
-          /^\d+$/.test(k)
-        );
-        if (!numericKeys.length) continue;
-
-        const completed = generateMissingVariants(map);
-        for (const r of required) {
-          if (!map.has(r) && completed.has(r)) {
-            globalMissing.push(`  --color-${base}-${r}: ${completed.get(r)};`);
-          }
-        }
-      }
-
-      if (globalMissing.length) {
-        const idx = all.lastIndexOf("}");
-        const extrapolatedBlock =
-          "/* Couleurs personnalisées extrapolées */\n" +
-          globalMissing.join("\n");
-        if (idx !== -1) {
-          const before = all.slice(0, idx).trimEnd();
-          const after = all.slice(idx);
-          all = before + "\n\n" + extrapolatedBlock + "\n" + after;
-        } else {
-          all = all + "\n\n" + ":root {\n" + extrapolatedBlock + "\n}";
-        }
-      }
-    }
-  } catch (e) {
-    /* noop - don't break preview generation on edge cases */
-  }
-
   // Normalize excessive blank lines and ensure trailing newline
   // Remove any @import lines referencing runtime palettes (eg. palettes/ocean.css)
   // These palette imports are app/runtime-only and must not appear in the

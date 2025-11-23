@@ -966,7 +966,7 @@ export function generateCanonicalThemeFromFigma({
   // Flag: when true, synthesize project primitives (extrapolated colors)
   // from semantic tokens and aliases; when false, skip emitting the
   // "Couleurs personnalisées (projet) - primitives synthétisées" block.
-  synthesizeProjectPrimitives = true,
+  synthesizeProjectPrimitives = false,
   // Couleurs personnalisées depuis textarea (optionnel)
   customColors = "",
   // Mode thème depuis l'UI : "light", "dark", ou "both"

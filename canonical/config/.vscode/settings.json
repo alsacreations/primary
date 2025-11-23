@@ -46,5 +46,11 @@
   ],
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
-  "github.copilot.chat.locale": "fr"
+  "github.copilot.chat.locale": "fr",
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    "Generate the commit message in French language ONLY.",
+    "Do NOT use English.",
+    "Use Conventional Commits format.",
+    "Provide a descriptive summary of the changes (not just 'Remove')."
+  ]
 }

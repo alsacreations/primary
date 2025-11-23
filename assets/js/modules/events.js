@@ -321,24 +321,6 @@ function attachConfigHandlers() {
   });
   // Attach the custom variables handler if the input exists
   if (elements.customVarsInput) attachCustomVarsHandler();
-  // Attach synthesis checkbox handler (option explicite pour l'utilisateur)
-  attachSynthesisCheckboxHandler();
-}
-
-function attachSynthesisCheckboxHandler() {
-  const cb = elements.synthesizeProjectColorsCheckbox;
-  if (!cb) return;
-  // Initialize config value from the checkbox state
-  try {
-    state.config.synthesizeProjectPrimitives = Boolean(cb.checked);
-  } catch (e) {
-    /* noop */
-  }
-  cb.addEventListener("change", (e) => {
-    state.config.synthesizeProjectPrimitives = Boolean(e.target.checked);
-    // if on generation step, refresh generated files
-    if (state.currentStep === 3) generateAllFiles();
-  });
 }
 
 function attachCustomVarsHandler() {
@@ -556,90 +538,6 @@ function finalizeGeneratedTheme(
   tokenColors = { variables: [] }
 ) {
   if (!generated) return String(generated || "");
-
-  try {
-    // collect user-provided variable names (if any)
-    const userText = String((state.config && state.config.customVars) || "");
-    const userNames = new Set(
-      [...userText.matchAll(/--[A-Za-z0-9_-]+/g)].map((m) =>
-        sanitizeVarName(m[0])
-      )
-    );
-
-    const allowSynthesis = Boolean(
-      state.config && state.config.synthesizeProjectPrimitives
-    );
-
-    if (allowSynthesis) {
-      const rxColor = /--color-[a-z0-9-]+-\d+\s*:/gi;
-      const genColors = new Set(
-        (generated.match(rxColor) || []).map((s) =>
-          s.replace(/\s*:.*/, "").trim()
-        )
-      );
-
-      const importedMap = new Map();
-      for (const pv of primitives.variables || []) {
-        const nm = sanitizeVarName(pv.name || "");
-        importedMap.set(nm, pv);
-      }
-      for (const tv of tokenColors.variables || []) {
-        const modes = tv.resolvedValuesByMode || {};
-        for (const mk of Object.keys(modes || {})) {
-          const entry = modes[mk] || {};
-          if (entry && entry.aliasName)
-            importedMap.set(sanitizeVarName(entry.aliasName), entry);
-        }
-      }
-
-      const missing = [];
-      for (const [name] of importedMap) {
-        if (!genColors.has(name) && !userNames.has(name)) missing.push(name);
-      }
-
-      if (missing.length) {
-        const insertLines = [];
-        for (const m of missing) {
-          const pv = importedMap.get(m);
-          if (!pv) continue;
-          try {
-            const smallOut = fgClient.generateCanonicalThemeFromFigma({
-              primitives: { variables: [pv] },
-              synthesizeProjectPrimitives: false,
-              customColors: state.config.customVars || "",
-            });
-            const smallCss = smallOut.themeCss || "";
-            const rxLine = new RegExp(`^\\s*${m}\\s*:\\s*(.*);?$`, "m");
-            const mm = smallCss.match(rxLine);
-            if (mm) {
-              const val = String(mm[1] || "").replace(/;\s*$/, "");
-              insertLines.push(`  ${m}: ${val};`);
-            }
-          } catch (err) {
-            /* noop */
-          }
-        }
-        if (insertLines.length) {
-          const lastBrace = generated.lastIndexOf("}");
-          if (lastBrace !== -1) {
-            generated =
-              generated.slice(0, lastBrace) +
-              "\n\n  /* Couleurs personnalisées (projet - synthèse) */\n" +
-              insertLines.join("\n") +
-              "\n" +
-              generated.slice(lastBrace);
-          } else {
-            generated +=
-              "\n\n  /* Couleurs personnalisées (projet - synthèse) */\n" +
-              insertLines.join("\n") +
-              "\n";
-          }
-        }
-      }
-    }
-  } catch (e) {
-    /* noop */
-  }
 
   // Append user-provided custom vars so they override synthesized ones
   try {
@@ -886,8 +784,8 @@ function attachJsonImportHandlers() {
             primitives,
             fonts,
             tokenColors,
-            // Project primitives must always be generated.
-            synthesizeProjectPrimitives: true,
+            // Project primitives synthesis disabled
+            synthesizeProjectPrimitives: false,
             customColors: state.config.customVars || "",
             themeMode: state.config.themeMode || "both",
           });

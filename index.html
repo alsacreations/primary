@@ -145,16 +145,21 @@
           </details>
 
           <header>
-            <h2 id="step-sources-title" class="step-title">1.&nbsp;Sources</h2>
-            <p class="step-description">
+            <h2 id="step-sources-title" class="step-title">Sources</h2>
+            <!-- <p class="step-description">
               Variables primitives du thème ou import JSON depuis Figma.
-            </p>
+            </p> -->
           </header>
 
           <div class="container">
             <!-- Affichage theme.css -->
             <div class="source-display">
-              <h3 class="source-title">theme.css (variables primitives)</h3>
+              <h3 class="source-title">Theme par défaut</h3>
+              <p class="custom-vars-hint">
+                Pas de fichier de config sous la main&#8239;? Alors partez de
+                zéro à partir des variables primitives communes à tous les
+                projets.
+              </p>
               <pre
                 class="source-code"
                 aria-label="Contenu du fichier theme.css"
@@ -172,7 +177,7 @@
               <p class="custom-vars-hint" id="custom-vars-hint">
                 Ajoutez vos propres variables de couleurs au format OKLCH.<br />
                 Exemple :
-                <code>--color-info-500: oklch(51.33% 0.18 256.37);</code>
+                <code>--raspberry-400: oklch(0.728281 0.1971 352.001);</code>
               </p>
               <textarea
                 id="custom-vars-input"
@@ -180,26 +185,19 @@
                 aria-describedby="custom-vars-hint"
                 rows="10"
               ></textarea>
-
-              <div class="custom-vars-extra">
-                <label class="config-checkbox">
-                  <input type="checkbox" id="synthesize-project-colors" />
-                  <span>Extrapoler les couleurs du projet (optionnel)</span>
-                </label>
-              </div>
             </div>
 
             <!-- Import JSON (Figma tokens) -->
             <div class="json-import" aria-live="polite">
               <h3 class="source-title">
-                Importer depuis un JSON Figma (optionnel)
+                <span class="accent">ou</span> Import depuis un JSON Figma
               </h3>
 
               <div data-layout="stack" data-gap="s">
                 <p class="custom-vars-hint">
                   Importez un ou plusieurs fichiers JSON d'export de tokens
-                  (Figma / autre). Le parseur est tolérant : il cherchera des
-                  paires clé/valeur et les transformera en variables CSS.
+                  Figma. Le parseur est tolérant&#8239;: il cherchera des paires
+                  clé/valeur et les transformera en variables CSS.
                 </p>
                 <label for="json-import-file" class="visually-hidden"
                   >Choisir un fichier JSON</label
@@ -262,9 +260,7 @@
       >
         <div data-layout="stack" data-gap="l">
           <header>
-            <h2 id="step-config-title" class="step-title">
-              2.&nbsp;Configuration
-            </h2>
+            <h2 id="step-config-title" class="step-title">Configuration</h2>
             <p class="step-description">Personnalisez vos tokens sémantiques</p>
           </header>
 
@@ -404,9 +400,7 @@
             <!-- Colonne de gauche : Informations -->
             <div data-layout="stack" data-gap="m">
               <div>
-                <h2 id="step-generate-title" class="step-title">
-                  3.&nbsp;Et voilà !
-                </h2>
+                <h2 id="step-generate-title" class="step-title">Et voilà !</h2>
                 <p class="info-description">
                   Voici tous vos fichiers CSS personnalisés pour votre projet
                 </p>

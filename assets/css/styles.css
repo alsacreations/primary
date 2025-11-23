@@ -208,12 +208,16 @@ body {
   font-size: var(--text-m);
 }
 
+.accent {
+  color: var(--accent);
+}
+
 /* Sources */
 .source-display {
-  padding: var(--spacing-m);
+  /* padding: var(--spacing-m);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-16);
-  background: var(--layer-2);
+  background: var(--layer-2); */
 }
 
 .source-title {

@@ -3288,14 +3288,40 @@ export function generateTokensCSS() {
                         }
                         break;
                       case 12: // Formulaires
-                        defaultLines.push(
-                          themeMode === "both"
-                            ? "  --form-control-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
-                            : "  --form-control-background: var(--color-gray-200);"
-                        );
-                        defaultLines.push(
-                          "  --on-form-control: var(--color-gray-900);"
-                        );
+                        // Only inject defaults for form tokens that are not
+                        // already present in the processed source. This
+                        // avoids duplicating imported declarations which
+                        // should take precedence.
+                        try {
+                          const hasFormBackground =
+                            /--form-control-background\s*:/i.test(processed);
+                          const hasOnFormControl =
+                            /--on-form-control\s*:/i.test(processed);
+
+                          if (!hasFormBackground) {
+                            defaultLines.push(
+                              themeMode === "both"
+                                ? "  --form-control-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
+                                : "  --form-control-background: var(--color-gray-200);"
+                            );
+                          }
+
+                          if (!hasOnFormControl) {
+                            defaultLines.push(
+                              "  --on-form-control: var(--color-gray-900);"
+                            );
+                          }
+                        } catch (e) {
+                          // if any error occurs, fall back to injecting defaults
+                          defaultLines.push(
+                            themeMode === "both"
+                              ? "  --form-control-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
+                              : "  --form-control-background: var(--color-gray-200);"
+                          );
+                          defaultLines.push(
+                            "  --on-form-control: var(--color-gray-900);"
+                          );
+                        }
                         break;
                       case 13: // Tokens complémentaires
                         // nothing to auto-generate here; leave empty so that

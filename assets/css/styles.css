@@ -535,7 +535,7 @@ body {
 .container,
 .config-form {
   display: grid;
-  gap: var(--gap-l);
+  gap: var(--gap-m) var(--gap-l);
 
   @media (width >= 48rem) {
     grid-template-columns: repeat(2, 1fr);

@@ -153,6 +153,7 @@
 
           <div class="container">
             <!-- Affichage theme.css -->
+            <!-- Affichage theme.css -->
             <div class="source-display">
               <h3 class="source-title">Theme par défaut</h3>
               <p class="custom-vars-hint">
@@ -160,10 +161,33 @@
                 zéro à partir des variables primitives communes à tous les
                 projets.
               </p>
-              <pre
-                class="source-code"
-                aria-label="Contenu du fichier theme.css"
-              ><code id="theme-preview"><!-- Sera rempli par JS --></code></pre>
+
+              <details>
+                <summary>
+                  <svg
+                    class="file-icon file-icon--css"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <use href="#icon-file"></use>
+                  </svg>
+                  <strong>theme.css</strong>
+                </summary>
+                <div class="code-wrapper">
+                  <button
+                    type="button"
+                    class="btn-copy-overlay"
+                    id="btn-copy-theme-preview"
+                    aria-label="Copier le code de theme.css"
+                  >
+                    Copier
+                  </button>
+                  <pre
+                    class="source-code"
+                    aria-label="Contenu du fichier theme.css"
+                  ><code id="theme-preview"><!-- Sera rempli par JS --></code></pre>
+                </div>
+              </details>
             </div>
 
             <!-- Variables personnalisées -->

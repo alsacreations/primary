@@ -18,6 +18,7 @@ export const elements = {
 
   // Étape 1 - Sources
   themePreview: document.getElementById("theme-preview"),
+  btnCopyThemePreview: document.getElementById("btn-copy-theme-preview"),
   // Aligné avec l'ID présent dans index.html
   customVarsInput: document.getElementById("custom-vars-input"),
 

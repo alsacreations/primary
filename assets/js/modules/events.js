@@ -603,6 +603,14 @@ function attachActionHandlers() {
       copyToClipboard(elements.generatedStyles)
     );
 
+  // Bouton de copie preview theme (étape 1)
+  if (elements.btnCopyThemePreview) {
+    elements.btnCopyThemePreview.addEventListener("click", () => {
+      // On copie le textContent de l'élément code
+      copyToClipboard(elements.themePreview);
+    });
+  }
+
   // Bouton de téléchargement
   if (elements.btnDownloadAll) {
     elements.btnDownloadAll.addEventListener("click", downloadAllFiles);

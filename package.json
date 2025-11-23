@@ -7,6 +7,8 @@
     "precommit:check-assets": "node scripts/prevent-assets-modify.js",
     "test": "node scripts/test-generate.js",
     "lint": "stylelint assets/css/**/*.css --fix",
+    "lint:js": "eslint . --fix",
+    "format": "prettier --write .",
     "format:generated": "npx stylelint \"tmp/*.css\" --fix",
     "generate:tokens": "node scripts/figma-import.js && npm run format:generated",
     "import:step1": "node scripts/import-step1.js --source=project",

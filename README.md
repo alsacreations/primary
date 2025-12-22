@@ -68,7 +68,7 @@ index.html            # Page de démonstration des styles
 - Couleurs : `--primary`, `--accent`, `--surface`, `--layer-1/2/3`, `--link`, `--success/warning/error/info`
 - Typographie : `--text-s/m/l/xl/2xl/3xl/4xl`
 - Espacements : `--spacing-xs/s/m/l/xl`
-- Formulaires : `--input-background`, `--input-border-color`, `--checkable-size`
+- Formulaires : `--form-background`, `--form-border-color`, `--checkable-size`
 
 **Variables primitives :**
 

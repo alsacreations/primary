@@ -283,15 +283,15 @@ const CANONICAL_THEME_TOKENS = `/* ----------------------------------
   );
 
   /* Formulaires */
-  --input-background: light-dark(
+  --form-background: light-dark(
     var(--color-gray-200),
     var(--color-gray-700)
   );
-  --on-input: light-dark(var(--color-gray-900), var(--color-gray-100));
-  --input-spacing: var(--spacing-12) var(--spacing-16);
-  --input-border-width: 1px;
-  --input-border-color: var(--color-gray-400);
-  --input-border-radius: var(--radius-16);
+  --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));
+  --form-spacing: var(--spacing-12) var(--spacing-16);
+  --form-border-width: 1px;
+  --form-border-color: var(--color-gray-400);
+  --form-border-radius: var(--radius-16);
   --checkables-border-color: var(--color-gray-400);
   --checkable-size: 1.25em;
 }
@@ -2742,7 +2742,7 @@ export function generateTokensCSS() {
               try {
                 const declRx = /(--[a-z0-9-]+)\s*:[^;]+;/gim
                 const canonicalPropRx =
-                  /^(--primary$|--on-primary$|--primary-lighten$|--primary-darken$|--accent$|--accent-invert$|--surface$|--on-surface$|--layer-|--link$|--link-hover$|--link-active$|--selection$|--warning$|--error$|--success$|--info$|--border-|--text-|--line-height-|--spacing-|--gap-|--form-|--on-input|--checkables?-|--checkable-)/i
+                  /^(--primary$|--on-primary$|--primary-lighten$|--primary-darken$|--accent$|--accent-invert$|--surface$|--on-surface$|--layer-|--link$|--link-hover$|--link-active$|--selection$|--warning$|--error$|--success$|--info$|--border-|--text-|--line-height-|--spacing-|--gap-|--form-|--on-form|--checkables?-|--checkable-)/i
                 const orphanDecls = []
                 let m2
                 // Collect declarations that do NOT match canonical prefixes
@@ -2791,12 +2791,12 @@ export function generateTokensCSS() {
               }
 
               // Ensure form-related declarations are grouped under Formulaires
-              // This moves any `--form-*`, `--on-input`, `--checkable-*`
+              // This moves any `--form-*`, `--on-form`, `--checkable-*`
               // declarations out of other sections (eg. "Bordures") and into
               // a dedicated Formulaires section so ordering is stable.
               try {
                 const formPropRx =
-                  /^(--form-[a-z0-9-]*|--on-input\b|--checkable-[a-z0-9-]*|--checkables?[a-z0-9-]*)/i
+                  /^(--form-[a-z0-9-]*|--on-form\b|--checkable-[a-z0-9-]*|--checkables?[a-z0-9-]*)/i
                 const declRx = /(--[a-z0-9-]+)\s*:[^;]+;/gim
                 const collectedFormDecls = []
 
@@ -3283,33 +3283,33 @@ export function generateTokensCSS() {
                         // should take precedence.
                         try {
                           const hasFormBackground =
-                            /--input-background\s*:/i.test(processed)
-                          const hasOnFormControl = /--on-input\s*:/i.test(
+                            /--form-background\s*:/i.test(processed)
+                          const hasOnFormControl = /--on-form\s*:/i.test(
                             processed,
                           )
 
                           if (!hasFormBackground) {
                             defaultLines.push(
                               themeMode === "both"
-                                ? "  --input-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
-                                : "  --input-background: var(--color-gray-200);",
+                                ? "  --form-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
+                                : "  --form-background: var(--color-gray-200);",
                             )
                           }
 
                           if (!hasOnFormControl) {
                             defaultLines.push(
-                              "  --on-input: var(--color-gray-900);",
+                              "  --on-form: var(--color-gray-900);",
                             )
                           }
                         } catch (e) {
                           // if any error occurs, fall back to injecting defaults
                           defaultLines.push(
                             themeMode === "both"
-                              ? "  --input-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
-                              : "  --input-background: var(--color-gray-200);",
+                              ? "  --form-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
+                              : "  --form-background: var(--color-gray-200);",
                           )
                           defaultLines.push(
-                            "  --on-input: var(--color-gray-900);",
+                            "  --on-form: var(--color-gray-900);",
                           )
                         }
                         break
@@ -3617,26 +3617,26 @@ export function generateTokensCSS() {
 
         // If form tokens are missing, append canonical form tokens
         try {
-          if (!/--input-background\s*:/i.test(processed)) {
+          if (!/--form-background\s*:/i.test(processed)) {
             const formLines = []
             formLines.push("\n  /* Formulaires */")
             if (themeMode === "both") {
               formLines.push(
-                "  --input-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );",
+                "  --form-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );",
               )
               formLines.push(
-                "  --on-input: light-dark(var(--color-gray-900), var(--color-gray-100));",
+                "  --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));",
               )
             } else {
-              formLines.push("  --input-background: var(--color-gray-200);")
-              formLines.push("  --on-input: var(--color-gray-900);")
+              formLines.push("  --form-background: var(--color-gray-200);")
+              formLines.push("  --on-form: var(--color-gray-900);")
             }
             formLines.push(
-              "  --input-spacing: var(--spacing-12) var(--spacing-16);",
+              "  --form-spacing: var(--spacing-12) var(--spacing-16);",
             )
-            formLines.push("  --input-border-width: 1px;")
-            formLines.push("  --input-border-color: var(--color-gray-400);")
-            formLines.push("  --input-border-radius: var(--radius-16);")
+            formLines.push("  --form-border-width: 1px;")
+            formLines.push("  --form-border-color: var(--color-gray-400);")
+            formLines.push("  --form-border-radius: var(--radius-16);")
             formLines.push(
               "  --checkables-border-color: var(--color-gray-400);",
             )
@@ -4157,19 +4157,19 @@ export function generateTokensCSS() {
   lines.push("  /* Formulaires */")
   if (themeMode === "both") {
     lines.push(
-      "  --input-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );",
+      "  --form-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );",
     )
     lines.push(
-      "  --on-input: light-dark(var(--color-gray-900), var(--color-gray-100));",
+      "  --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));",
     )
   } else {
-    lines.push("  --input-background: var(--color-gray-200);")
-    lines.push("  --on-input: var(--color-gray-900);")
+    lines.push("  --form-background: var(--color-gray-200);")
+    lines.push("  --on-form: var(--color-gray-900);")
   }
-  lines.push("  --input-spacing: var(--spacing-12) var(--spacing-16);")
-  lines.push("  --input-border-width: 1px;")
-  lines.push("  --input-border-color: var(--color-gray-400);")
-  lines.push("  --input-border-radius: var(--radius-16);")
+  lines.push("  --form-spacing: var(--spacing-12) var(--spacing-16);")
+  lines.push("  --form-border-width: 1px;")
+  lines.push("  --form-border-color: var(--color-gray-400);")
+  lines.push("  --form-border-radius: var(--radius-16);")
   lines.push("  --checkables-border-color: var(--color-gray-400);")
   lines.push("  --checkable-size: 1.25em;")
 

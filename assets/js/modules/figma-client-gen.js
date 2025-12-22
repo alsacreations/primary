@@ -1610,18 +1610,18 @@ export function generateCanonicalThemeFromFigma({
   tokensCss += `\n  /* Formulaires */\n`
   // Utiliser themeMode pour déterminer si on génère light-dark()
   if (themeMode === "both") {
-    tokensCss += `  --input-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );\n`
-    tokensCss += `  --on-input: light-dark(var(--color-gray-900), var(--color-gray-100));\n`
+    tokensCss += `  --form-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );\n`
+    tokensCss += `  --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));\n`
   } else {
-    tokensCss += `  --input-background: var(--color-gray-200);\n`
-    tokensCss += `  --on-input: var(--color-gray-900);\n`
+    tokensCss += `  --form-background: var(--color-gray-200);\n`
+    tokensCss += `  --on-form: var(--color-gray-900);\n`
   }
-  tokensCss += `  --input-spacing: var(--spacing-12) var(--spacing-16);\n`
-  tokensCss += `  --input-border-width: 1px;\n`
+  tokensCss += `  --form-spacing: var(--spacing-12) var(--spacing-16);\n`
+  tokensCss += `  --form-border-width: 1px;\n`
   if (themeMode === "both") {
-    tokensCss += `  --input-border-color: light-dark(var(--color-gray-400), var(--color-gray-600));\n`
+    tokensCss += `  --form-border-color: light-dark(var(--color-gray-400), var(--color-gray-600));\n`
   } else {
-    tokensCss += `  --input-border-color: var(--color-gray-400);\n`
+    tokensCss += `  --form-border-color: var(--color-gray-400);\n`
   }
   // choose radius fallback
   ;(function () {
@@ -1638,7 +1638,7 @@ export function generateCanonicalThemeFromFigma({
     if (!chosen)
       chosen = Array.from(primitiveNames).find((n) => /^--radius-\d+$/.test(n))
     if (!chosen) chosen = "--radius-none"
-    tokensCss += `  --input-border-radius: var(${chosen});\n`
+    tokensCss += `  --form-border-radius: var(${chosen});\n`
   })()
   if (themeMode === "both") {
     tokensCss += `  --checkables-border-color: light-dark(var(--color-gray-400), var(--color-gray-600));\n`

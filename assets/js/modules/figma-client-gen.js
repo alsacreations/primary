@@ -1610,11 +1610,11 @@ export function generateCanonicalThemeFromFigma({
   tokensCss += `\n  /* Formulaires */\n`
   // Utiliser themeMode pour déterminer si on génère light-dark()
   if (themeMode === "both") {
-    tokensCss += `  --form-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );\n`
+    tokensCss += `  --form-background: light-dark(\n    var(--color-gray-50),\n    var(--color-gray-800)\n  );\n`
     tokensCss += `  --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));\n`
   } else {
-    tokensCss += `  --form-background: var(--color-gray-200);\n`
-    tokensCss += `  --on-form: var(--color-gray-900);\n`
+    tokensCss += `  --form-background: var(--color-gray-50);\n`
+    tokensCss += `  --on-form: var(--color-gray-800);\n`
   }
   tokensCss += `  --form-spacing: var(--spacing-12) var(--spacing-16);\n`
   tokensCss += `  --form-border-width: 1px;\n`

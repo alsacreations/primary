@@ -10,7 +10,7 @@
 
 :root {
   /* Formulaires */
-  --form-background: light-dark(var(--color-gray-200), var(--color-gray-700));
+  --form-background: light-dark(var(--color-gray-50), var(--color-gray-800));
   --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));
   --form-spacing: var(--spacing-12) var(--spacing-16);
   --form-border-width: 1px;

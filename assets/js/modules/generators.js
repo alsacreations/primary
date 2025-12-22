@@ -284,8 +284,8 @@ const CANONICAL_THEME_TOKENS = `/* ----------------------------------
 
   /* Formulaires */
   --form-background: light-dark(
-    var(--color-gray-200),
-    var(--color-gray-700)
+    var(--color-gray-50),
+    var(--color-gray-800)
   );
   --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));
   --form-spacing: var(--spacing-12) var(--spacing-16);
@@ -3291,8 +3291,8 @@ export function generateTokensCSS() {
                           if (!hasFormBackground) {
                             defaultLines.push(
                               themeMode === "both"
-                                ? "  --form-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
-                                : "  --form-background: var(--color-gray-200);",
+                                ? "  --form-background: light-dark(var(--color-gray-50), var(--color-gray-800));"
+                                : "  --form-background: var(--color-gray-50);",
                             )
                           }
 
@@ -3305,8 +3305,8 @@ export function generateTokensCSS() {
                           // if any error occurs, fall back to injecting defaults
                           defaultLines.push(
                             themeMode === "both"
-                              ? "  --form-background: light-dark(var(--color-gray-200), var(--color-gray-700));"
-                              : "  --form-background: var(--color-gray-200);",
+                              ? "  --form-background: light-dark(var(--color-gray-50), var(--color-gray-800));"
+                              : "  --form-background: var(--color-gray-50);",
                           )
                           defaultLines.push(
                             "  --on-form: var(--color-gray-900);",
@@ -3622,14 +3622,14 @@ export function generateTokensCSS() {
             formLines.push("\n  /* Formulaires */")
             if (themeMode === "both") {
               formLines.push(
-                "  --form-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );",
+                "  --form-background: light-dark(\n    var(--color-gray-50),\n    var(--color-gray-800)\n  );",
               )
               formLines.push(
                 "  --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));",
               )
             } else {
-              formLines.push("  --form-background: var(--color-gray-200);")
-              formLines.push("  --on-form: var(--color-gray-900);")
+              formLines.push("  --form-background: var(--color-gray-50);")
+              formLines.push("  --on-form: var(--color-gray-800);")
             }
             formLines.push(
               "  --form-spacing: var(--spacing-12) var(--spacing-16);",
@@ -4157,14 +4157,14 @@ export function generateTokensCSS() {
   lines.push("  /* Formulaires */")
   if (themeMode === "both") {
     lines.push(
-      "  --form-background: light-dark(\n    var(--color-gray-200),\n    var(--color-gray-700)\n  );",
+      "  --form-background: light-dark(\n    var(--color-gray-50),\n    var(--color-gray-800)\n  );",
     )
     lines.push(
       "  --on-form: light-dark(var(--color-gray-900), var(--color-gray-100));",
     )
   } else {
-    lines.push("  --form-background: var(--color-gray-200);")
-    lines.push("  --on-form: var(--color-gray-900);")
+    lines.push("  --form-background: var(--color-gray-50);")
+    lines.push("  --on-form: var(--color-gray-800);")
   }
   lines.push("  --form-spacing: var(--spacing-12) var(--spacing-16);")
   lines.push("  --form-border-width: 1px;")

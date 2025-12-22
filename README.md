@@ -68,7 +68,7 @@ index.html            # Page de démonstration des styles
 - Couleurs : `--primary`, `--accent`, `--surface`, `--layer-1/2/3`, `--link`, `--success/warning/error/info`
 - Typographie : `--text-s/m/l/xl/2xl/3xl/4xl`
 - Espacements : `--spacing-xs/s/m/l/xl`
-- Formulaires : `--form-control-background`, `--form-control-border-color`, `--checkable-size`
+- Formulaires : `--input-background`, `--input-border-color`, `--checkable-size`
 
 **Variables primitives :**
 
@@ -80,9 +80,21 @@ index.html            # Page de démonstration des styles
 ## Layouts Bretzel
 
 ```html
-<div data-layout="stack" data-gap="s">...</div>
-<div data-layout="autogrid" data-gap="l">...</div>
-<div data-layout="duo" data-split="1-2">...</div>
+<div
+  data-layout="stack"
+  data-gap="s">
+  ...
+</div>
+<div
+  data-layout="autogrid"
+  data-gap="l">
+  ...
+</div>
+<div
+  data-layout="duo"
+  data-split="1-2">
+  ...
+</div>
 ```
 
 [Documentation](https://bretzel.alsacreations.com/)

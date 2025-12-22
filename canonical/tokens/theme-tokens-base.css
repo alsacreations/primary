@@ -75,12 +75,12 @@
   --spacing-xl: ;
 
   /* Formulaires */
-  --form-control-background: ;
-  --on-form-control: ;
-  --form-control-spacing: ;
-  --form-control-border-width: ;
-  --form-control-border-color: ;
-  --form-control-border-radius: ;
+  --input-background: ;
+  --on-input: ;
+  --input-spacing: ;
+  --input-border-width: ;
+  --input-border-color: ;
+  --input-border-radius: ;
   --checkables-border-color: ;
   --checkable-size: ;
 }

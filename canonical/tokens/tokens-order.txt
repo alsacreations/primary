@@ -27,6 +27,6 @@ Ordre d'affichage des tokens CSS.
 12. /* Espacements */
 (ex. --spacing-s, --spacing-m, --spacing-l)
 13. /* Formulaires */
-(ex. --form-control-background)
+(ex. --input-background)
 14. /* Tokens complémentaires */
 (ex. --surface-dim, --accent-blue, --on-surface2)

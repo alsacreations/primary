@@ -9,7 +9,12 @@
 }
 
 /* Base */
+html {
+  overflow-x: hidden;
+}
+
 body {
+  overflow-x: clip;
   background-color: var(--surface);
   color: var(--on-surface);
   font-family: var(--font-base);

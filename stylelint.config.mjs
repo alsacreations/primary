@@ -88,6 +88,7 @@ export default {
     // Polices
     "font-family-no-duplicate-names": null,
     "font-weight-notation": "numeric", // on force la notation numérique pour les poids de police
+    "at-rule-descriptor-value-no-unknown": null, // on désactive la règle pour les descripteurs d'@font-face (Variable Fonts)
 
     // Couleurs
     "color-hex-length": "long", // on force la notation longue pour les couleurs hexadécimales
@@ -97,4 +98,4 @@ export default {
     "hue-degree-notation": "number",
     "lightness-notation": null, // on autorise la notation décimale (0-1) pour la lightness
   },
-};
+}

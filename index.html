@@ -1,887 +1,222 @@
 <!doctype html>
 <html lang="fr">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0" />
-    <title>
-      Primary : Configurateur CSS et Générateur de tokens pour projets web
-    </title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="assets/images/favicon.svg" />
+      content="width=device-width,initial-scale=1" />
+    <title>Primary — Générateur de thème (UI)</title>
     <link
       rel="stylesheet"
       href="assets/css/app.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+    <meta
+      name="description"
+      content="Générateur de theme.css, primitives.json, tokens.json et theme.json à partir d'exports Mode JSON Figma" />
   </head>
   <body>
-    <!-- Zone d'erreurs -->
-    <div
-      id="global-error"
-      class="global-error"
-      role="alert"
-      aria-live="polite"
-      hidden
-      data-layout="boxed">
-      <!-- Messages d'erreur globaux apparaîtront ici -->
-    </div>
     <header
-      class="header"
-      role="banner"
-      data-layout="repel boxed">
-      <div>
-        <h1
-          class="title"
-          data-layout="cluster">
-          <img
-            src="assets/images/primary.svg"
-            width="61"
-            height="56"
-            alt="" />
-          <span>Primary</span>
-        </h1>
-        <p class="subtitle">
-          Pour <span title="débuter">starter</span> ses projets avec style.
-        </p>
-      </div>
-
-      <!-- Indicateur d'étapes -->
-      <nav
-        class="steps-nav"
-        aria-label="Étapes de configuration"
-        role="navigation">
-        <ol
-          class="steps-list"
-          role="list"
+      class="app-header"
+      role="banner">
+      <div
+        class="container"
+        data-layout="duo"
+        data-gap="m">
+        <h1 class="app-title">Primary — Générateur de thème</h1>
+        <nav
+          aria-label="Actions"
           data-layout="cluster"
-          data-justify="center">
-          <li class="step is-active">
-            <button
-              type="button"
-              class="step-button"
-              data-step="1"
-              aria-current="step">
-              <span class="step-number">1</span>
-              <span class="step-label">Sources</span>
-            </button>
-          </li>
-          <li class="step">
-            <button
-              type="button"
-              class="step-button"
-              data-step="2">
-              <span class="step-number">2</span>
-              <span class="step-label">Configuration</span>
-            </button>
-          </li>
-          <li class="step">
-            <button
-              type="button"
-              class="step-button"
-              data-step="3">
-              <span class="step-number">3</span>
-              <span class="step-label">Génération</span>
-            </button>
-          </li>
-        </ol>
-      </nav>
+          data-gap="s">
+          <button
+            id="btn-download-zip"
+            type="button"
+            class="btn"
+            disabled>
+            Télécharger tout (zip)
+          </button>
+          <button
+            id="btn-clear"
+            type="button"
+            class="btn">
+            Réinitialiser
+          </button>
+        </nav>
+      </div>
     </header>
 
     <main
-      class="main"
+      class="app-main"
       role="main">
-      <!-- Étape 1 : Sources -->
       <section
-        class="step-section is-visible"
-        id="step-sources"
-        aria-labelledby="step-sources-title"
-        data-layout="boxed">
+        class="uploader"
+        aria-labelledby="uploader-title"
+        data-layout="stack"
+        data-gap="m">
+        <h2 id="uploader-title">Importer vos fichiers Mode JSON</h2>
+
         <div
-          data-layout="stack"
-          data-gap="l">
-          <!-- Comment ça marche ? -->
-          <details open>
-            <summary><strong>Comment ça marche ?</strong></summary>
+          id="dropzone"
+          class="dropzone"
+          role="region"
+          aria-label="Zone de dépôt"
+          tabindex="0">
+          <input
+            id="file-input"
+            type="file"
+            accept="application/json"
+            multiple
+            aria-label="Sélectionnez des fichiers JSON" />
+          <div
+            class="dropzone-visual"
+            aria-hidden="true">
             <div
-              data-layout="stack"
-              data-gap="s">
-              <p>
-                <strong>Primary</strong> est un outil de génération de fichiers
-                CSS pour les projets Alsacréations, avec configuration et
-                téléchargement d'un kit CSS complet (avec tokens, thématisation
-                et layouts).
-              </p>
-              <ol
-                data-layout="stack"
-                data-gap="s">
-                <li>
-                  <strong>Sources</strong> : deux possibilités.
-                  <ul>
-                    <li>
-                      Le fichier statique d'exemple
-                      <code>theme.css</code> contenant les variables CSS
-                      primitives (couleurs, espacements, typographie). S'en
-                      servir de référence et modifier/ajouter ses propres
-                      variables CSS.
-                    </li>
-                    <li>
-                      Import d'un ou plusieurs fichiers
-                      <code>.json</code> exportés de Figma, ils seront
-                      automatiquement analysés pour en extraire les styles et
-                      les variables.
-                    </li>
-                  </ul>
-                </li>
-
-                <li>
-                  <strong>Configuration</strong> : Personnalisation entière du
-                  thème.
-                  <ul>
-                    <li>
-                      Couleur primaire du thème (sera utilisée sous le nom
-                      "primary")
-                    </li>
-                    <li>Thème de couleur (light, dark, ou les deux)</li>
-                    <li>Typographie responsive ou fixe</li>
-                    <li>Espacements responsive ou fixes</li>
-                    <li>Police de caractères (système ou Poppins)</li>
-                    <li>
-                      Techno statique ou WordPress (génère automatiquement le
-                      fichier <code>theme.json</code>)
-                    </li>
-                  </ul>
-                </li>
-
-                <li>
-                  <strong>Génération</strong> : Visualisation de tous les
-                  fichiers CSS (et JSON) générés. Kit complet téléchargeable en
-                  un clic (fichier <code>primary-css.zip</code>)
-                  contenant&#8239;:
-                  <ul>
-                    <li>
-                      Les fichiers CSS du projet (app.css, reset.css,
-                      layouts.css, natives.css, theme.css, theme-tokens.css,
-                      styles.css)
-                    </li>
-                    <li>la police Poppins si sélectionnée</li>
-                    <li>
-                      les recommandations spécifiques VSCode :
-                      <code>.vscode/settings.json</code> et
-                      <code>.vscode/extensions.json</code>
-                    </li>
-                    <li>
-                      fichiers de configuration :
-                      <code>.editorconfig</code>, <code>.gitignore</code>,
-                      <code>postcss.config.mjs</code>,
-                      <code>prettier.config.mjs</code>,
-                      <code>stylelint.config.mjs</code>,
-                      <code>vite.config.js</code>
-                    </li>
-                  </ul>
-                  <strong>Fichiers toujours à jour :</strong> reset.css,
-                  layouts.css et natives.css sont automatiquement récupérés
-                  depuis leurs sources officielles.
-                </li>
-              </ol>
+              class="drop-illustration"
+              aria-hidden="true">
+              <!-- decorative -->
             </div>
-          </details>
-
-          <header>
-            <h2
-              id="step-sources-title"
-              class="step-title">
-              Sources
-            </h2>
-            <!-- <p class="step-description">
-              Variables primitives du thème ou import JSON depuis Figma.
-            </p> -->
-          </header>
-
-          <div class="container">
-            <div class="source-display">
-              <h3 class="source-title">Theme par défaut</h3>
-              <p class="custom-vars-hint">
-                Pas de fichier de config sous la main&#8239;? Alors partez de
-                zéro à partir des variables primitives communes à tous les
-                projets.
-              </p>
-
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon file-icon--css"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>theme.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-theme-preview"
-                    aria-label="Copier le code de theme.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="source-code"
-                    aria-label="Contenu du fichier theme.css"><code id="theme-preview"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-            </div>
-
-            <!-- Variables personnalisées -->
-            <div
-              class="custom-vars"
-              data-layout="stack"
-              data-gap="s">
-              <label
-                for="custom-vars-input"
-                class="custom-vars-label visually-hidden">
-                Variables de couleurs personnalisées (optionnel)
-              </label>
-              <p
-                class="custom-vars-hint"
-                id="custom-vars-hint">
-                Ajoutez vos propres variables de couleurs au format OKLCH.<br />
-                Exemple :
-                <code>--raspberry-400: oklch(0.728281 0.1971 352.001);</code>
-              </p>
-              <textarea
-                id="custom-vars-input"
-                class="custom-vars-input"
-                aria-describedby="custom-vars-hint"
-                rows="10"></textarea>
-            </div>
-
-            <!-- Import JSON (Figma tokens) -->
-            <div
-              class="json-import"
-              aria-live="polite">
-              <h3 class="source-title">
-                <span class="accent">ou</span> Import depuis un JSON Figma
-              </h3>
-
-              <div
-                data-layout="stack"
-                data-gap="s">
-                <p class="custom-vars-hint">
-                  Importez un ou plusieurs fichiers JSON d'export de tokens
-                  Figma. Le parseur est tolérant&#8239;: il cherchera des paires
-                  clé/valeur et les transformera en variables CSS.
-                </p>
-                <label
-                  for="json-import-file"
-                  class="visually-hidden"
-                  >Choisir un fichier JSON</label
-                >
-                <input
-                  type="file"
-                  id="json-import-file"
-                  accept=".json,application/json"
-                  multiple />
-                <!-- JSON paste removed: imports are performed from downloaded files only -->
-                <p
-                  id="json-import-status"
-                  class="muted"
-                  aria-live="polite"></p>
-                <div
-                  id="json-import-summary"
-                  class="import-summary"
-                  hidden>
-                  <h3 class="import-summary-title">Données récupérées :</h3>
-                  <dl class="import-summary-list">
-                    <dt>Couleurs :</dt>
-                    <dd>
-                      <span id="summary-colors">-</span>
-                      <span
-                        id="summary-colors-mode"
-                        hidden>
-                        (light/dark)</span
-                      >
-                    </dd>
-                    <dt id="summary-semantics-label">Tokens sémantiques :</dt>
-                    <dd>
-                      <span id="summary-semantics">-</span>
-                      <span
-                        id="summary-semantics-mode"
-                        hidden>
-                        (light/dark)</span
-                      >
-                    </dd>
-                    <dt id="summary-fonts-label">Tailles de polices :</dt>
-                    <dd>
-                      <span id="summary-fonts">-</span>
-                      <span
-                        id="summary-fonts-fluid"
-                        hidden>
-                        (fluides)</span
-                      >
-                    </dd>
-                    <dt id="summary-lineheights-label">Hauteurs de ligne :</dt>
-                    <dd>
-                      <span id="summary-lineheights">-</span>
-                      <span
-                        id="summary-lineheights-fluid"
-                        hidden>
-                        (fluides)</span
-                      >
-                    </dd>
-                    <dt id="summary-spacings-label">Espacements :</dt>
-                    <dd>
-                      <span id="summary-spacings">-</span>
-                      <span
-                        id="summary-spacings-fluid"
-                        hidden>
-                        (fluides)</span
-                      >
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+            <p class="drop-title">Importer un ou plusieurs fichiers JSON</p>
+            <p class="drop-sub">ou glisser et déposer</p>
           </div>
         </div>
-      </section>
 
-      <!-- Étape 2 : Configuration -->
-      <section
-        class="step-section"
-        id="step-config"
-        aria-labelledby="step-config-title"
-        hidden
-        data-layout="boxed">
         <div
-          data-layout="stack"
-          data-gap="l">
-          <header>
-            <h2
-              id="step-config-title"
-              class="step-title">
-              Configuration
-            </h2>
-            <p class="step-description">Personnalisez vos tokens sémantiques</p>
-          </header>
+          class="uploader-hint visually-hidden"
+          id="uploader-hint">
+          Glisser un ou plusieurs fichiers JSON exportés depuis Figma ici.
+        </div>
 
-          <form
-            class="config-form"
-            data-layout="stack"
-            data-gap="l"
-            role="form">
-            <!-- Couleur primaire -->
-            <fieldset class="config-fieldset">
-              <legend class="config-legend">Couleur primaire</legend>
-              <div
-                class="color-choices"
-                data-layout="cluster"
-                data-gap="s"></div>
-            </fieldset>
-
-            <!-- Mode thème -->
-            <fieldset class="config-fieldset">
-              <legend class="config-legend">Mode thème</legend>
-              <div
-                data-layout="stack"
-                data-gap="s">
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="theme-mode"
-                    value="both"
-                    checked />
-                  <span>Light et dark (avec <code>light-dark()</code>)</span>
-                </label>
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="theme-mode"
-                    value="light" />
-                  <span>Light uniquement</span>
-                </label>
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="theme-mode"
-                    value="dark" />
-                  <span>Dark uniquement</span>
-                </label>
-              </div>
-            </fieldset>
-
-            <!-- Typographie responsive -->
-            <fieldset class="config-fieldset">
-              <legend class="config-legend">Typographie</legend>
-              <div
-                data-layout="stack"
-                data-gap="s">
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="typo-responsive"
-                    value="true"
-                    checked />
-                  <span
-                    >Tailles de texte responsive (avec
-                    <code>clamp()</code>)</span
-                  >
-                </label>
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="typo-responsive"
-                    value="false" />
-                  <span>Tailles de texte fixes</span>
-                </label>
-              </div>
-            </fieldset>
-
-            <!-- Espacements responsive -->
-            <fieldset class="config-fieldset">
-              <legend class="config-legend">Espacements</legend>
-              <div
-                data-layout="stack"
-                data-gap="s">
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="spacing-responsive"
-                    value="true"
-                    checked />
-                  <span
-                    >Espacements responsive (avec <code>clamp()</code>)</span
-                  >
-                </label>
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="spacing-responsive"
-                    value="false" />
-                  <span>Espacements fixes</span>
-                </label>
-              </div>
-            </fieldset>
-
-            <!-- Famille de police -->
-            <fieldset class="config-fieldset">
-              <legend class="config-legend">Famille de police</legend>
-              <div
-                data-layout="stack"
-                data-gap="s">
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="font-family"
-                    value="system"
-                    checked />
-                  <span>Police système</span>
-                </label>
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="font-family"
-                    value="poppins" />
-                  <span>Police personnalisée (Poppins)</span>
-                </label>
-              </div>
-            </fieldset>
-
-            <!-- Technologie / Format de génération -->
-            <fieldset class="config-fieldset">
-              <legend class="config-legend">Format de génération</legend>
-              <div
-                data-layout="stack"
-                data-gap="s">
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="technology"
-                    value="static"
-                    checked />
-                  <span>Statique (fichiers CSS)</span>
-                </label>
-                <label class="config-radio">
-                  <input
-                    type="radio"
-                    name="technology"
-                    value="wordpress" />
-                  <span>WordPress (génère <code>theme.json</code>)</span>
-                </label>
-              </div>
-            </fieldset>
-          </form>
+        <div
+          class="uploader-actions"
+          data-layout="cluster"
+          data-gap="s">
+          <button
+            id="btn-empty-project"
+            class="btn btn-secondary"
+            type="button"
+            aria-label="Générer un projet vide">
+            Projet vide (sans JSON)
+          </button>
         </div>
       </section>
 
-      <!-- Étape 3 : Génération -->
       <section
-        class="step-section"
-        id="step-generate"
-        aria-labelledby="step-generate-title"
-        hidden
-        data-layout="boxed">
+        class="results"
+        aria-labelledby="results-title"
+        data-layout="stack"
+        data-gap="m">
+        <h2 id="results-title">Résultats</h2>
+
         <div
-          data-layout="stack"
-          data-gap="l">
-          <div class="generated-output">
-            <!-- Colonne de gauche : Informations -->
+          class="previews"
+          data-layout="switcher"
+          data-gap="m">
+          <div
+            class="preview"
+            data-layout="stack">
+            <h3>Preview — theme.css</h3>
             <div
-              data-layout="stack"
-              data-gap="m">
-              <div>
-                <h2
-                  id="step-generate-title"
-                  class="step-title">
-                  Et voilà !
-                </h2>
-                <p class="info-description">
-                  Voici tous vos fichiers CSS personnalisés pour votre projet
-                </p>
-              </div>
-
-              <div>
-                <h4 class="config-legend">Architecture recommandée</h4>
-                <pre class="architecture-preview"><code>css/
-├── app.css           # Point d'entrée principal
-├── reset.css         # Reset
-├── theme.css         # Variables primitives
-├── theme-tokens.css  # Tokens sémantiques
-├── layouts.css       # Styles des Layouts (Bretzel)
-├── natives.css       # Styles des éléments natifs (KNACSS)
-└── styles.css        # Styles de base (body, typo, liens, etc.)</code></pre>
-              </div>
-            </div>
-
-            <!-- Colonne de droite : Fichiers -->
-            <div
-              data-layout="stack"
+              class="preview-actions"
+              data-layout="cluster"
               data-gap="s">
-              <!-- app.css -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon file-icon--css"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>app.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-app"
-                    aria-label="Copier le code de app.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-app"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-
-              <!-- reset.css -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon file-icon--css"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>reset.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-reset"
-                    aria-label="Copier le code de reset.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-reset"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-
-              <!-- theme.css -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon file-icon--css"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>theme.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-theme"
-                    aria-label="Copier le code de theme.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-theme"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-
-              <!-- theme.json (WordPress) -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon file-icon--xml"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-xml"></use>
-                  </svg>
-                  <strong>theme.json</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-theme-json"
-                    aria-label="Copier le code de theme.json">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-theme-json"><!-- Sera rempli par JS (theme.json) --></code></pre>
-                </div>
-              </details>
-
-              <!-- theme-tokens.css -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon file-icon--css"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>theme-tokens.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-tokens"
-                    aria-label="Copier le code de theme-tokens.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-tokens"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-
-              <!-- layouts.css -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon file-icon--css"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>layouts.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-layouts"
-                    aria-label="Copier le code de layouts.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-layouts"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-
-              <!-- natives.css -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>natives.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-natives"
-                    aria-label="Copier le code de natives.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-natives"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-
-              <!-- styles.css -->
-              <details>
-                <summary>
-                  <svg
-                    class="file-icon"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-file"></use>
-                  </svg>
-                  <strong>styles.css</strong>
-                </summary>
-                <div class="code-wrapper">
-                  <button
-                    type="button"
-                    class="btn-copy-overlay"
-                    id="btn-copy-styles"
-                    aria-label="Copier le code de styles.css">
-                    Copier
-                  </button>
-                  <pre
-                    class="generated-code"><code id="generated-styles"><!-- Sera rempli par JS --></code></pre>
-                </div>
-              </details>
-
-              <!-- Bouton de téléchargement unique -->
-              <div
-                data-layout="duo"
-                data-split="auto-1"
-                data-gap="s">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  id="btn-download-all">
-                  <svg
-                    class="file-icon file-icon--download"
-                    aria-hidden="true"
-                    focusable="false">
-                    <use href="#icon-download"></use>
-                  </svg>
-                  Tout télécharger
-                </button>
-
-                <div class="config-checkbox">
-                  <input
-                    type="checkbox"
-                    id="include-config-files"
-                    name="include-config-files" />
-                  <label for="include-config-files">
-                    Ajouter fichiers de config (<code>.editorconfig</code>,
-                    linters, etc.)
-                  </label>
-                </div>
-              </div>
+              <button
+                id="btn-download-themecss"
+                class="btn"
+                disabled>
+                Télécharger theme.css
+              </button>
+              <button
+                id="btn-apply-theme"
+                class="btn"
+                disabled>
+                Appliquer
+              </button>
             </div>
+            <pre
+              id="preview-themecss"
+              class="code-preview"
+              tabindex="0"></pre>
+          </div>
+
+          <div
+            class="preview"
+            data-layout="stack">
+            <h3>Preview — theme.json</h3>
+            <div
+              class="preview-actions"
+              data-layout="cluster"
+              data-gap="s">
+              <button
+                id="btn-download-themejson"
+                class="btn"
+                disabled>
+                Télécharger theme.json
+              </button>
+            </div>
+            <pre
+              id="preview-themejson"
+              class="code-preview"
+              tabindex="0"></pre>
           </div>
         </div>
-      </section>
 
-      <!-- Navigation -->
-      <nav
-        class="step-actions"
-        data-layout="repel boxed"
-        aria-label="Navigation entre les étapes"
-        role="navigation">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          id="btn-prev"
-          disabled>
-          Précédent
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          id="btn-next">
-          Suivant
-        </button>
-      </nav>
+        <div
+          class="files"
+          data-layout="stack">
+          <h3>Fichiers générés</h3>
+          <ul
+            id="generated-list"
+            class="generated-list"
+            aria-live="polite"></ul>
+        </div>
+
+        <div
+          class="results-controls"
+          aria-hidden="false">
+          <label class="log-debug debug-toggle-main">
+            <input
+              id="debug-toggle"
+              type="checkbox"
+              aria-label="Afficher les logs techniques" />
+            <span>Debug</span>
+          </label>
+        </div>
+
+        <div
+          class="logs"
+          aria-live="polite"
+          aria-atomic="true">
+          <div
+            class="log-controls"
+            role="toolbar"
+            aria-label="Log controls">
+            <h3>Logs techniques</h3>
+          </div>
+          <pre
+            id="log-output"
+            class="log-output"
+            tabindex="0"></pre>
+        </div>
+      </section>
     </main>
 
     <footer
-      class="footer"
+      class="app-footer"
       role="contentinfo">
-      <div
-        class="footer-alsa"
-        data-layout="boxed">
-        <p>KNACSS est un projet <i>fifoo</i> conçu avec ❤️ par</p>
-        <a
-          class="logo-link"
-          href="https://www.alsacreations.fr/"
-          ><svg
-            role="img"
-            aria-labelledby="title-alsacreations-footer"
-            class="logo-alsacreations"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 241 45"
-            width="241"
-            height="45">
-            <title id="title-alsacreations-footer">Alsacreations</title>
-            <g class="logo-alsacreations-pepins-group">
-              <path
-                class="logo-alsacreations-pepins-outer"
-                d="M232 18.5c2.2-1.1 3.5-2.4 4-4 .6-1.9-.2-4-2.2-6.2-1.7-2-3.5-2.7-5.3-2.2-1.5.4-2.9 1.7-4.2 3.7-1.1 1.7-2 3.8-2.6 5.9-.6 2.1-.7 3.6-.4 4.5.9.3 2.3.3 4.5 0a14 14 0 0 0 6.2-1.7zm-12-9.1c1.1-2.2 1.4-4 .8-5.5-.7-1.9-2.5-3.1-5.4-3.7-2.5-.6-4.4-.1-5.5 1.4-.9 1.2-1.4 3-1.2 5.5.1 2.1.6 4.2 1.5 6.4.8 2 1.5 3.3 2.3 3.9a20 20 0 0 0 7.5-8zm13.6 24.3c2.4.4 4.2.1 5.5-.9 1.5-1.2 2.1-3.3 1.8-6.3-.2-2.6-1.3-4.1-3-4.8-1.5-.5-3.3-.3-5.6.6-1.9.8-3.8 1.9-5.5 3.3-1.7 1.4-2.7 2.5-2.9 3.5.6.7 1.7 1.6 3.6 2.6 2.1 1.1 4.1 1.8 6.1 2z"></path>
-              <path
-                class="logo-alsacreations-pepins-inner"
-                d="M214.4 7.8c-.9-.2-1.5 0-1.9.5-.3.4-.5 1.1-.4 1.9.1.7.2 1.5.5 2.2.2.7.6 1.2.8 1.4l1.2-.9c.6-.6 1.1-1.2 1.4-1.8.4-.7.5-1.4.3-1.9-.3-.7-1-1.2-1.9-1.4zm14 6.1c-.6-.7-1.2-.9-1.9-.7-.5.1-1 .6-1.5 1.3-.4.6-.7 1.3-.9 2.1-.2.7-.2 1.2-.1 1.5h1.5c.8-.1 1.5-.3 2.2-.7.7-.4 1.2-.8 1.4-1.4.2-.6 0-1.4-.7-2.1zm4.9 14c-.1-.9-.4-1.5-1.1-1.7-.5-.2-1.2-.1-2 .2-.7.3-1.4.7-1.9 1.2-.6.5-.9.9-1.1 1.2.2.2.6.6 1.3.9.7.4 1.5.6 2.2.7.8.1 1.5 0 1.9-.3.6-.5.9-1.2.7-2.2z"></path>
-            </g>
-            <path
-              class="logo-alsacreations-alsa"
-              d="m1.5 25.1-.1-.6.1-.6a12.7 12.7 0 0 1 9-2.2c3.8.2 5 2.6 5 6.7v2l-.1 5.3-.1 4s-.1 2.1 1.3 1.9l-.1 2c-.4.6-1.5 1.3-2.9 1.3a4 4 0 0 1-2.8-1.4l-1.1.7c-1.1.6-2.3.7-3.6.7-3.1 0-6.1-2-6.1-6.3 0-5.7 5.3-7.4 8.2-7.7l1.4-.1 1.1.1v-2.3c0-2-.2-3-1.7-3s-3.3.7-4.7 1.2c-.5.2-1.1.4-1.7.4-.8-.9-1-1.7-1.1-2.1zm9.1 12V34h-.5l-1.5.1h.1c-2 .4-3.8 1.3-3.8 4 0 2.2.9 3 2 3h.3c1.2 0 2.7-.6 3.2-1.4l-.1.1.1-.6c.2-.5.2-1.2.2-2.1zm16.2 4.4-.1 2c-.5.7-1.5 1.3-2.9 1.3-.7 0-1.4-.3-1.9-.7a3 3 0 0 1-1.4-2.5v-24l-.1-5.2c.6-1.3 2.3-1.5 4.6-1.5.3 1.1.3 2.2.3 4.6v24.1c.1.1 0 2.2 1.5 1.9zm11.6-19.9c3 .2 4.4 1.5 4.6 2.1 0 .6-.4 1.7-.9 2.4l-.9-.2-1.5-.4c-.7-.3-1.4-.4-2.1-.4-1.7 0-2.7.9-2.7 2.2 0 .7.3 1.4 1.3 2.2l2 1.4 2.7 2c2 1.7 2.9 3.3 2.9 5.3 0 4.5-3.6 6.7-8.2 6.7-3 0-5.7-.9-6.2-2.3 0-.7.4-1.8.9-2.5h.5c.4 0 .9.1 1.4.4v-.1c1 .4 2.2.7 3.3.7l.9-.1c1.4-.1 2.3-1.1 2.3-2.5 0-1.1-.5-1.9-1.8-2.8l-.6-.4c-1.1-.7-2.3-1.7-3.2-2.5l-1.3-.8c-1.5-1.5-2.2-2.9-2.2-4.6 0-3.7 3-5.9 7.5-5.9l1.3.1zm8.9 3.5-.1-.6.1-.6a12.7 12.7 0 0 1 9-2.2c3.8.2 5 2.6 5 6.7v2l-.1 5.3-.1 4s-.1 2.1 1.3 1.9l-.1 2c-.4.6-1.5 1.3-2.9 1.3a4 4 0 0 1-2.8-1.4l-1.1.7c-1.1.6-2.3.7-3.6.7-3.2 0-6.2-2-6.2-6.4 0-5.7 5.3-7.4 8.2-7.7l1.4-.1 1.1.1v-2.3c0-2-.2-3-1.7-3s-3.3.7-4.7 1.2c-.5.2-1.1.4-1.7.4-.8-.8-.9-1.6-1-2zm9.1 12V34h-.5l-1.5.1h.1c-2 .4-3.8 1.3-3.8 4 0 2.2.9 3 2 3h.3c1.2 0 2.7-.6 3.2-1.4l-.1.1.1-.6c.2-.5.2-1.2.2-2.1z"></path>
-            <path
-              class="logo-alsacreations-creations"
-              d="M80.8 23.6c0 .6-.3 1.7-.7 2.5h-.6a4 4 0 0 1-1.5-.3 7 7 0 0 0-2.5-.6 1 1 0 0 0-.5.1c-2.7.2-4.6 2.7-4.6 8.1 0 6.5 2.7 7.9 5.4 7.9 1.5 0 3.1-.5 4.3-1.1l.4 1.8c-.1.7-.6 1.5-1.2 2-.9.7-2.5 1.1-4.4 1.1-5.2 0-9.8-1.9-9.8-11.4 0-4.9 1.7-8 3.5-9.8a9.8 9.8 0 0 1 6.7-2.3c3-.1 5.3 1.3 5.5 2zm8.3 3.5V42c0 .7-.1 1.3-.5 1.9-.7.6-1.5.6-4.5.6l.1-9.3.1-7.9c0-1.5-.3-2.6-.6-3.5.4-.4 1-.7 2-1.2l.7-.1c1 0 1.4.3 1.7.9.9-.6 1.9-1.1 2.8-1.4.8-.3 1.9-.5 2.7-.4 1.4.1 2.2.6 2.3 1.3 0 .7-.2 2-.9 3l-.7.1-1.4-.1-.6-.1c-1.3.1-2.3.4-3.2 1.3zM113 39.7c.3.9.4 1.9.5 2.3-.1 1-1.6 2-3 2.5h.1c-.7.2-2.2.5-3.6.5-2.3 0-4.8-.4-6.6-2.3-1.7-1.8-2.6-4.8-2.6-8.6 0-9.2 4-12.5 9.3-12.5 4.5 0 6.8 2.7 7.2 6.7l.1 2.3-.2 2.8c-.6.5-2.3 1.1-3.6 1.3-1.5.2-3.8.3-6.1.3h-1.7c.1 4.7 2 6.2 5 6.2 1.6-.2 3.4-.5 5.2-1.5zM106.2 25c-1.7.2-3.3 2.2-3.6 6.4h1.3l4.5-.1.7-.2.2-1.4-.1-.5v-.5c-.2-2.5-1.1-3.7-2.8-3.7h-.2zm11.7.1-.1-.6.1-.6a12.7 12.7 0 0 1 9-2.2c3.8.2 5 2.6 5 6.7v2l-.1 5.3-.1 4s-.1 2.1 1.3 1.9l-.1 2c-.4.6-1.5 1.3-2.9 1.3a4 4 0 0 1-2.8-1.4l-1.1.7c-1.1.6-2.3.7-3.6.7-3.2 0-6.2-2-6.2-6.4 0-5.7 5.3-7.4 8.2-7.7l1.4-.1 1.1.1v-2.3c0-2-.2-3-1.7-3s-3.3.7-4.7 1.2c-.5.2-1.1.4-1.7.4-.7-.8-.9-1.6-1-2zm9.1 12V34h-.5l-1.5.1h.1c-2 .4-3.8 1.3-3.8 4 0 2.2.9 3 2 3h.3c1.2 0 2.7-.6 3.2-1.4l-.1.1.1-.6c.2-.5.2-1.2.2-2.1zm21.6 3.4.1 1.1-.1 1.3c-.1.3-.3.6-.7.9a8.7 8.7 0 0 1-4.4 1.1c-4.7 0-5.6-4.2-5.6-8V25.8a6.3 6.3 0 0 1-2.8-.7c0-1.4.1-1.4.4-1.7.7-.5 1.4-.7 2-.9l.7-.1.2-4.1c.4-1.1 1.6-2 4.5-2.2v.7l-.1 5.3h6c-.1 2.7-.5 3.2-1.5 3.5l-1.2.1-3.3.1-.1 6.1.1 3v2.2c.2 2.5.5 4.2 2 4.2.6.1 2.5-.6 2.8-.9l1 .1zm6.3-29c2.2 0 2.7.9 2.6 2.7-.1 1.8-.6 3-2.8 3-1.9 0-2.7-.9-2.7-2.9 0-1.8 1-2.8 2.9-2.8zm1.9 10.6c.4.7.4 1.4.4 3.4v15.8c0 1.1-.2 1.9-.7 2.6-.3.5-1.1.5-4.4.6v-3.8l.1-4.3v-8.2l-.1-4.8c.6-1.2 2.2-1.3 4.3-1.3h.4zm13.6 22.8c-6 0-9.4-3.5-9.4-11.7 0-8.1 4-11.8 9.5-11.8 6.2 0 9.3 4 9.3 11.5 0 8-4 12-9.4 12zm.1-3.4c2.2 0 4.1-2.1 4.1-8.3 0-5.9-1.7-8.1-4.2-8.1-2.2 0-4.2 2.2-4.2 8 0 6.3 1.8 8.4 4.3 8.4zm18-14.2.1-.1v14.5c0 1.1-.1 1.6-.6 2.3-.7.6-1.2.6-3.3.6h-1.2l.1-9.3v-7.9c0-1.5-.2-2.6-.5-3.5.3-.4.9-.7 2-1.2l.7-.1c.9 0 1.4.4 1.7 1a10 10 0 0 1 5.8-1.9c5.9 0 7 3 7 8.3v7l.1 6.7c-.6.6-1.5.7-4.6.7a4 4 0 0 1-.5-2.1V30c0-3.4-.8-4.6-3.2-4.6-1.4 0-2.7.8-3.6 1.9zm24.7-5.7c3 .2 4.4 1.5 4.6 2.1 0 .6-.4 1.7-.9 2.4l-.9-.2-1.5-.4c-.7-.3-1.4-.4-2.1-.4-1.7 0-2.7.9-2.7 2.2 0 .7.3 1.4 1.3 2.2l2 1.4 2.7 2c2 1.7 2.9 3.3 2.9 5.3 0 4.5-3.6 6.7-8.2 6.7-3 0-5.7-.9-6.2-2.3 0-.7.4-1.8.9-2.5h.5c.4 0 .9.1 1.4.4v-.1c1 .4 2.2.7 3.3.7l.9-.1c1.4-.1 2.3-1.1 2.3-2.5 0-1.1-.5-1.9-1.8-2.8l-.6-.4c-1.1-.7-2.3-1.7-3.2-2.5l-1.2-.9c-1.5-1.5-2.2-2.9-2.2-4.6 0-3.7 3-5.9 7.5-5.9l1.2.2zm-110.1-3.4s.5-3.2 1.9-5.1c1.5-2.1 3.9-3.3 5.5-1.3 1.2 1.4.9 2.9-1.6 4.5-3.1 1.9-5.8 1.9-5.8 1.9z"></path>
-          </svg>
-        </a>
-      </div>
+      <p>Primary — UI pour l'extracteur Figma — Déployé sur GH Pages</p>
     </footer>
 
-    <!-- SVG sprite : icônes réutilisables -->
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      style="position: absolute; width: 0; height: 0; overflow: hidden"
-      xmlns="http://www.w3.org/2000/svg">
-      <symbol
-        id="icon-file"
-        viewBox="0 0 24 24">
-        <!-- Icon from Material Design Icons by Pictogrammers - https://github.com/Templarian/MaterialDesign/blob/master/LICENSE -->
-        <path
-          fill="currentColor"
-          d="m5 3l-.65 3.34h13.59L17.5 8.5H3.92l-.66 3.33h13.59l-.76 3.81l-5.48 1.81l-4.75-1.81l.33-1.64H2.85l-.79 4l7.85 3l9.05-3l1.2-6.03l.24-1.21L21.94 3z" />
-      </symbol>
-      <symbol
-        id="icon-xml"
-        viewBox="0 0 24 24">
-        <path
-          fill="currentColor"
-          d="m12.89 3l1.96.4L11.11 21l-1.96-.4zm6.7 9L16 8.41V5.58L22.42 12L16 18.41v-2.83zM1.58 12L8 5.58v2.83L4.41 12L8 15.58v2.83z" />
-      </symbol>
-      <symbol
-        id="icon-download"
-        viewBox="0 0 16 16">
-        <path
-          d="M8 11L4 7h2.5V1h3v6H12L8 11zM2 13v2h12v-2H2z"
-          fill="currentColor" />
-      </symbol>
-    </svg>
-
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <!-- External libs -->
     <script
-      src="assets/js/app.js"
-      type="module"></script>
+      src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"
+      integrity="sha512-3c4Zg0p2xm6nX6t9g1Qzlz4eQeHd0o2rhQ9V9k5rNw6wJxITn9c6k5YQZVS1Kf3+uvyU9uGCeGRTg4hPFAxK/Q=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"></script>
+
+    <!-- App scripts -->
+    <script
+      type="module"
+      src="assets/js/client-utils.mjs"></script>
+    <script
+      type="module"
+      src="assets/js/app.js"></script>
   </body>
 </html>

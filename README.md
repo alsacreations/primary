@@ -1,111 +1,49 @@
-# Primary - Générateur CSS Alsacréations
+# figmatocss
 
-Outil de génération de fichiers CSS pour les projets Alsacréations, avec configuration et téléchargement d'un kit CSS complet (tokens, thématisation et layouts).
+Small, modular CLI to convert Figma Mode JSON exports into CSS variables and artifacts.
 
-� **[primary.alsacreations.com](https://primary.alsacreations.com)**
+Usage:
 
-## Comment ça marche ?
-
-### 1. Sources
-
-Deux possibilités :
-
-- **Fichier statique** `theme.css` : variables CSS primitives (couleurs, espacements, typographie). Ajoutez vos couleurs personnalisées si nécessaire.
-- **Import Figma** : fichiers `.json` exportés de Figma, automatiquement analysés pour extraire styles et variables.
+1. Place one or more Mode JSON files (export from Figma) into the `source/` folder.
+2. Run:
 
 ```bash
-# Import depuis le projet (par défaut)
-npm run import:step1
+# node exec (generate CSS + primitives)
+node scripts/figmatocss.js source dist
 
-# Import depuis Figma
-node scripts/import-step1.js --source=figma
+# generate theme.json from dist
+node scripts/generateThemeJson.js --in dist
+
+# or with npm scripts (recommended)
+npm run wp-theme   # generate theme.json from dist
+npm run build      # run figmatocss then generateThemeJson (recommended)
 ```
 
-### 2. Configuration
+Output:
 
-Personnalisez votre thème :
+- `dist/theme.css` — generated CSS
+- `dist/primitives.json` — extracted primitives (colors)
+- `dist/tokens.json` — resolved tokens (colors, spacing, fonts)
 
-- **Couleur primaire** : info, error, success, warning, raspberry
-- **Thème** : light, dark, ou les deux
-- **Typographie** : responsive (avec `clamp()`) ou fixes
-- **Espacements** : responsive (avec `clamp()`) ou fixes
-- **Police** : système ou Poppins
-- **Techno** : statique ou WordPress (génère `theme.json`)
+Modules:
 
-### 3. Génération
+- `scripts/extract/colors.js`
+- `scripts/extract/spacing.js`
+- `scripts/extract/fonts.js`
+- `scripts/utils.js`
 
-Visualisation et téléchargement du kit complet `primary-css.zip` contenant :
+Notes:
 
-- `app.css`, `reset.css`, `theme.css`, `theme-tokens.css`
-- `layouts.css`, `natives.css`, `styles.css`
-- `theme.json` (si WordPress)
-- Police Poppins (si sélectionnée)
+- This tool expects Mode JSON exports from Figma (see `instructions.md`).
+- The generator handles color primitives, spacing and basic font sizes/line-heights. Light/dark pairing and mobile/desktop clamps are supported in basic form.
 
-**Fichiers toujours à jour :** `reset.css`, `layouts.css` et `natives.css` sont automatiquement récupérés depuis leurs sources officielles.
+Fallback primitives when `source/` is empty:
 
-## 📦 Contenu du kit téléchargé
+- When no Mode JSON files are present in `source/`, the CLI injects a minimal set of **global fallback primitives** so `theme.css` and `theme.json` can be produced without missing‑reference warnings. These fallbacks include:
+  - Colors: `--color-white`, `--color-black`, `--color-gray-*` (50..900), `--color-error-*`, `--color-success-*`, `--color-warning-*`, `--color-info-*`.
+  - Spacing primitives: `--spacing-0`, `--spacing-2`, `--spacing-4`, `--spacing-8`, `--spacing-12`, `--spacing-16`, `--spacing-24`, `--spacing-32`, `--spacing-48`.
+  - Font sizes: `--text-14`, `--text-16`, `--text-18`, `--text-20`, `--text-24`, `--text-30`, `--text-48`.
+  - Border radii: `--radius-none`, `--radius-4`, `--radius-8`, `--radius-12`, `--radius-16`, `--radius-24`, `--radius-full`.
+  - Other: `--font-base` (system default), `--font-weight-regular`.
 
-Le fichier `primary-css.zip` contient une architecture complète :
-
-```text
-css/
-├── app.css              # Point d'entrée avec @import et @layer
-├── reset.css            # Reset CSS (Alsacréations)
-├── theme.css            # Variables primitives
-├── theme-tokens.css     # Tokens sémantiques générés
-├── layouts.css          # Bretzel Layouts
-├── natives.css          # Styles éléments natifs (KNACSS)
-├── styles.css           # Styles de base (selon config police)
-└── fonts/               # Police Poppins (si sélectionnée)
-    └── Poppins-Variable-opti.woff2
-index.html            # Page de démonstration des styles
-```
-
-## Variables CSS principales
-
-**Tokens sémantiques :**
-
-- Couleurs : `--primary`, `--accent`, `--surface`, `--layer-1/2/3`, `--link`, `--success/warning/error/info`
-- Typographie : `--text-s/m/l/xl/2xl/3xl/4xl`
-- Espacements : `--spacing-xs/s/m/l/xl`
-- Formulaires : `--form-background`, `--form-border-color`, `--checkable-size`
-
-**Variables primitives :**
-
-- Espacements : `--spacing-0` à `--spacing-160`
-- Tailles : `--text-10` à `--text-80`
-- Rayons : `--radius-none` à `--radius-full`
-- Couleurs : `--color-gray-50` à `--color-gray-900`, palettes complètes error/success/warning/info/raspberry
-
-## Layouts Bretzel
-
-```html
-<div
-  data-layout="stack"
-  data-gap="s">
-  ...
-</div>
-<div
-  data-layout="autogrid"
-  data-gap="l">
-  ...
-</div>
-<div
-  data-layout="duo"
-  data-split="1-2">
-  ...
-</div>
-```
-
-[Documentation](https://bretzel.alsacreations.com/)
-
-## Ressources
-
-- [Guidelines CSS](guidelines-css.md)
-- [Reset CSS](https://reset.alsacreations.com/)
-- [Bretzel Layouts](https://bretzel.alsacreations.com/)
-- [KNACSS](https://knacss.com/)
-
----
-
-**Problème ou suggestion ?** Contactez l'équipe Alsacréations.
+  These values are **fallbacks** only — any primitives present in `source/` override them.

@@ -1,18 +1,12 @@
 /* ==========================================
- * Alsa Reset CSS et print
- * Made par Alsacréations
+ * Reset CSS et print, made par Alsacréations
  * Consignes : à placer dans un layer inférieur aux autres layers
- * Mise à jour : 2025-10-23
+ * Mise à jour : 2025-12-24
  * ========================================== */
 
-/* ==========================================
- * CONFIGURATION GLOBALE
- * ========================================== */
-
-/* Couleurs système pour adaptation automatique dark/light mode */
-:root {
-  color-scheme: light dark;
-}
+/* ----------------------------
+ * Modèle de boîte
+ * ---------------------------- */
 
 /* Modèle de boîte uniforme et prévention des débordements flex/grid */
 *,
@@ -22,19 +16,22 @@
   min-width: 0;
 }
 
-/* ==========================================
- * ÉLÉMENTS DE BASE (HTML/BODY)
- * ========================================== */
+/* ----------------------------
+ * Document global
+ * ---------------------------- */
 
-/* Configuration globale de la page */
 html {
+  overflow-x: hidden;
   interpolate-size: allow-keywords;
   overflow-wrap: break-word;
+  /* stylelint-disable-next-line property-no-vendor-prefix */
+  -webkit-text-size-adjust: none;
   text-size-adjust: none;
+  hanging-punctuation: first allow-end last;
 }
 
-/* Styles de base du document */
 body {
+  overflow-x: clip;
   min-height: 100dvh;
   margin: 0;
   font-family: system-ui, sans-serif;
@@ -42,26 +39,21 @@ body {
   text-rendering: optimizespeed;
 }
 
-/* ==========================================
- * NAVIGATION ET FOCUS
- * ========================================== */
+/* ----------------------------
+ * Navigation et focus
+ * ---------------------------- */
 
-/* Masquage de l'outline pour les interactions à la souris/touch */
-:focus:not(:focus-visible) {
+:focus {
   outline: none;
 }
 
-/* Outline uniquement pour la navigation au clavier */
+/* Focus clavier */
 :focus-visible {
-  outline: 2px solid light-dark(#4285f4, #8ab4f8);
+  outline: 2px solid;
+  outline-color: light-dark(#4285f4, #8ab4f8); /* Default color */
+  outline-color: -webkit-focus-ring-color; /* WebKit/Chromium */
+  outline-color: -moz-focusring; /* Firefox */
   outline-offset: 2px;
-}
-
-/* Moderne: utilisation de la couleur d'accent système */
-@supports (outline-color: AccentColor) {
-  :focus-visible {
-    outline-color: AccentColor;
-  }
 }
 
 /* Marge au-dessus des ancres ciblées */
@@ -74,15 +66,17 @@ a:not([class]) {
   text-decoration-skip-ink: auto;
 }
 
-/* ==========================================
- * TYPOGRAPHIE
- * ========================================== */
+/* ----------------------------
+ * Typographie
+ * ---------------------------- */
 
 /* Hauteur de ligne réduite sur les éléments de titre */
 h1,
 h2,
 h3,
 h4,
+h5,
+h6,
 button,
 input,
 label {
@@ -108,12 +102,12 @@ figcaption {
 
 /* Guillemets français */
 q {
-  quotes: "«\00A0""\00A0»";
+  quotes: "«\00A0" "\00A0»";
 }
 
-/* ==========================================
- * LISTES
- * ========================================== */
+/* ----------------------------
+ * Listes
+ * ---------------------------- */
 
 ul,
 ol {
@@ -122,6 +116,8 @@ ol {
   list-style-position: outside;
 
   /* Suppression des styles des listes avec classe (version accessible) */
+
+  /* Attention : nécessite attribut role dans le HTML */
   &[role="list"] {
     padding-inline-start: 0;
     list-style: none;
@@ -132,9 +128,9 @@ ol {
   }
 }
 
-/* ==========================================
- * ÉLÉMENTS MÉDIA ET CONTENU
- * ========================================== */
+/* ----------------------------
+ * Média et contenus
+ * ---------------------------- */
 
 /* Prévention des débordements */
 img,
@@ -176,9 +172,9 @@ figure {
   margin: 0;
 }
 
-/* ==========================================
- * FORMULAIRES
- * ========================================== */
+/* ----------------------------
+ * Formulaires
+ * ---------------------------- */
 
 /* Normalisation des éléments de formulaire */
 input,
@@ -213,7 +209,6 @@ legend {
   white-space: normal;
 }
 
-/* Éléments interactifs */
 label {
   display: inline-block;
   cursor: pointer;
@@ -225,7 +220,6 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Configuration spécifique textarea */
 textarea {
   overflow: auto;
   vertical-align: top;
@@ -233,11 +227,10 @@ textarea {
   resize: vertical;
 }
 
-/* ==========================================
- * ÉLÉMENTS PRÉFORMATÉS
- * ========================================== */
+/* ----------------------------
+ * Éléments préformatés
+ * ---------------------------- */
 
-/* Famille de polices et taille pour le code */
 pre,
 code,
 kbd,
@@ -246,7 +239,6 @@ samp {
   font-size: 1em;
 }
 
-/* Configuration spécifique pre */
 pre {
   overflow: auto;
   line-height: normal;
@@ -254,7 +246,6 @@ pre {
   tab-size: 2;
 }
 
-/* Configuration spécifique code */
 :where(:not(pre)) > code {
   padding: 2px 6px;
   border-radius: 6px;
@@ -262,16 +253,15 @@ pre {
   font-size: 0.9em;
 }
 
-/* ==========================================
+/* ----------------------------
  * SVG
- * ========================================== */
+ * ---------------------------- */
 
 /* Couleur par défaut des SVG */
 svg:not([fill]) {
   fill: currentcolor;
 }
 
-/* Configuration d'affichage des SVG */
 svg {
   overflow: visible;
 }
@@ -285,11 +275,10 @@ svg:has(symbol) {
   display: none;
 }
 
-/* ==========================================
- * ACCESSIBILITÉ (ARIA)
- * ========================================== */
+/* ----------------------------
+ * Accessibilité (ARIA)
+ * ---------------------------- */
 
-/* États ARIA avec curseurs appropriés */
 [aria-busy="true"] {
   cursor: progress;
 }
@@ -303,19 +292,9 @@ svg:has(symbol) {
   cursor: not-allowed;
 }
 
-/* Gestion des éléments cachés mais accessibles */
-[aria-hidden="false"][hidden] {
-  display: revert;
-}
-
-[aria-hidden="false"][hidden]:not(:focus) {
-  position: absolute;
-  clip: rect(0, 0, 0, 0);
-}
-
-/* ==========================================
- * MASQUAGE ACCESSIBLE
- * ========================================== */
+/* ----------------------------
+ * Masquage visuel accessible
+ * ---------------------------- */
 
 /* Masquage du contenu visuellement tout en le gardant accessible aux technologies d'assistance. */
 .visually-hidden {
@@ -328,9 +307,9 @@ svg:has(symbol) {
   clip-path: inset(50%) !important;
 }
 
-/* ==========================================
- * PRÉFÉRENCES UTILISATEUR ANIMATIONS
- * ========================================== */
+/* ----------------------------
+ * Préférences animations
+ * ---------------------------- */
 
 /* Désactivation des animations pour les utilisateurs sensibles */
 @media (prefers-reduced-motion: reduce) {
@@ -347,9 +326,9 @@ svg:has(symbol) {
   }
 }
 
-/* ==========================================
- * RESET PRINT
- * ========================================== */
+/* ----------------------------
+ * Reset print
+ * ---------------------------- */
 
 @media print {
   /* Dimension et marges de page */
@@ -360,9 +339,7 @@ svg:has(symbol) {
 
   /* Reset général */
   * {
-    display: revert;
     box-sizing: border-box;
-    all: unset;
   }
 
   img {
@@ -381,7 +358,6 @@ svg:has(symbol) {
     margin: 0;
     background-color: #ffffff !important;
     color: #000000 !important;
-    font-family: serif;
     font-family: Georgia, serif;
     font-size: 12pt;
     line-height: 1.5;
@@ -394,6 +370,7 @@ svg:has(symbol) {
   ul,
   ol {
     margin-block: 0 15pt;
+    color: #000000 !important;
   }
 
   p:last-child {
@@ -403,6 +380,7 @@ svg:has(symbol) {
   /* Titrages (24pt = 32px) */
   h1 {
     margin-block: 0 24pt;
+    color: #000000 !important;
     font-size: 18pt;
     font-weight: 700;
     line-height: 1.1;
@@ -410,6 +388,7 @@ svg:has(symbol) {
 
   h2 {
     margin-block: 0 18pt;
+    color: #000000 !important;
     font-size: 16pt;
     font-weight: 700;
     line-height: 1.1;
@@ -417,12 +396,14 @@ svg:has(symbol) {
 
   h3 {
     margin-block: 0 15pt;
+    color: #000000 !important;
     font-size: 14pt;
     font-weight: 700;
   }
 
   h4 {
     margin-block: 0 12pt;
+    color: #000000 !important;
     font-size: 12pt;
     font-weight: 700;
   }
@@ -444,13 +425,12 @@ svg:has(symbol) {
   }
 
   /* Pas de saut de page au sein de ces éléments */
-  blockquote,
   ul,
+  blockquote,
   ol,
   figure,
   table {
     break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   /* Pas de saut de page après ces éléments */
@@ -460,7 +440,6 @@ svg:has(symbol) {
   h4,
   caption {
     break-after: avoid;
-    page-break-after: avoid;
   }
 
   /* Styles des liens */
@@ -468,16 +447,17 @@ svg:has(symbol) {
   a:link,
   a:visited {
     background: transparent !important;
-    color: unset;
+    color: #000000 !important;
     font-weight: 700;
     text-decoration: underline !important;
   }
 
   /* On affiche l'URL des liens externes */
-  a[href^="http"]::after,
+
+  /* a[href^="http"]::after,
   a[href^="https"]::after {
     content: " (" attr(href) ")";
-  }
+  } */
 
   /* On masque les vidéos */
   video,
@@ -490,6 +470,6 @@ svg:has(symbol) {
   }
 }
 
-/* ==========================================
- * FIN DU RESET CSS
- * ========================================== */
+/* ----------------------------
+ * Fin du reset CSS
+ * ---------------------------- */

@@ -1,42 +1,40 @@
 {
-  "name": "primary-css-generator",
+  "name": "figmatocss",
   "version": "1.0.0",
-  "description": "Configurateur CSS pour projets Alsacréations - Générateur de tokens et thèmes personnalisés",
-  "main": "index.html",
+  "description": "Convert Figma Mode JSON exports into CSS variables and WordPress theme artifacts",
+  "main": "scripts/figmatocss.js",
   "scripts": {
-    "precommit:check-assets": "node scripts/prevent-assets-modify.js",
-    "test": "node scripts/test-generate.js",
-    "lint": "stylelint assets/css/**/*.css --fix",
-    "lint:js": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:generated": "npx stylelint \"tmp/*.css\" --fix",
-    "generate:tokens": "node scripts/figma-import.js && npm run format:generated",
-    "import:step1": "node scripts/import-step1.js --source=project",
-    "update:config": "node scripts/update-config-index.js",
-    "serve": "npx http-server . -p 8080",
-    "build": "echo 'No build step required - static files only'"
+    "figmatocss": "node scripts/figmatocss.js source dist",
+    "wp-theme": "node scripts/generateThemeJson.js",
+    "build": "node scripts/figmatocss.js source dist && node scripts/generateThemeJson.js --in dist",
+    "test:global-colors": "node scripts/tests/check-global-colors.js",
+    "test:project-colors": "node scripts/tests/check-project-colors.js",
+    "test:global-tokens": "node scripts/tests/check-global-tokens.js",
+    "test:project-tokens": "node scripts/tests/check-project-tokens.js",
+    "test:global-tokens-replaced": "node scripts/tests/check-global-tokens-replaced.js",
+    "test:other-primitives-defaults": "node scripts/tests/check-other-primitives-defaults.js",
+    "test:other-primitives-replaced": "node scripts/tests/check-other-primitives-replaced.js",
+    "test:other-primitives-step9": "node scripts/tests/check-other-primitives-step9-only.js",
+    "test:spacing-project": "node scripts/tests/check-spacing-primitives-project.js",
+    "test:spacing-fallback": "node scripts/tests/check-spacing-primitives-fallback.js",
+    "test:spacing-order": "node scripts/tests/check-spacing-order.js",
+    "test:fontsize-order": "node scripts/tests/check-fontsize-order.js",
+    "test:lineheight-order": "node scripts/tests/check-lineheight-order.js",
+    "test:spacing-tokens-project": "node scripts/tests/check-spacing-tokens-project.js",
+    "test:spacing-tokens-simple": "node scripts/tests/check-spacing-tokens-simple.js"
   },
-  "devDependencies": {
-    "@axe-core/cli": "^4.11.0",
-    "http-server": "^14.1.1",
-    "stylelint": "^16.0.0",
-    "stylelint-config-html": "^1.1.0",
-    "stylelint-config-property-sort-order-smacss": "^10.0.0",
-    "stylelint-config-standard": "^36.0.0",
-    "stylelint-order": "^7.0.0"
-  },
-  "author": "Alsacréations",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/alsacreations/primary"
+  "engines": {
+    "node": ">=18"
   },
-  "keywords": [
-    "css",
-    "generator",
-    "tokens",
-    "alsacreations",
-    "design-system"
+  "files": [
+    "dist",
+    "scripts"
   ],
-  "type": "module"
+  "keywords": [
+    "figma",
+    "css",
+    "tokens",
+    "theme"
+  ]
 }

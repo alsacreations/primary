@@ -5,16 +5,13 @@ const fileInput = document.getElementById("file-input")
 const logOutput = document.getElementById("log-output")
 const previewThemed = document.getElementById("preview-themecss")
 const previewThemeJson = document.getElementById("preview-themejson")
-const generatedList = document.getElementById("generated-list")
-const btnDownloadThemeCss = document.getElementById("btn-download-themecss")
-const btnDownloadThemeJson = document.getElementById("btn-download-themejson")
-const btnDownloadZip = document.getElementById("btn-download-zip")
-const btnClear = document.getElementById("btn-clear")
-const btnApplyTheme = document.getElementById("btn-apply-theme")
+// Note: generated files are shown inside the generation summary; the dedicated `generated-list` element was removed from the DOM
+// Download/reset/apply buttons removed; copy buttons are provided on code previews.
 
 let lastArtifacts = null
 let lastLogs = []
 let lastFiles = null
+let summaryBlobUrls = []
 
 function log(...args) {
   const str = args.join(" ")
@@ -30,6 +27,27 @@ function resetUi() {
   previewThemed.textContent = ""
   previewThemeJson.textContent = ""
 
+  // clear generation summary (remove title, list items or any pre-existing text)
+  // revoke any blob URLs created for the generation summary links to avoid memory leaks
+  if (summaryBlobUrls && summaryBlobUrls.length) {
+    summaryBlobUrls.forEach((u) => {
+      try {
+        URL.revokeObjectURL(u)
+      } catch (e) {
+        /* ignore */
+      }
+    })
+    summaryBlobUrls = []
+  }
+  const genSummaryEl = document.getElementById("generation-summary")
+  if (genSummaryEl) {
+    const ul = genSummaryEl.querySelector("#generation-summary-list")
+    const title = genSummaryEl.querySelector(".generation-summary-title")
+    if (title) title.remove()
+    if (ul) ul.innerHTML = ""
+    else genSummaryEl.textContent = ""
+  }
+
   // hide theme.json preview panel by default
   const panelThemeJson = document.getElementById("panel-preview-themejson")
   if (panelThemeJson) {
@@ -37,17 +55,26 @@ function resetUi() {
     panelThemeJson.setAttribute("aria-hidden", "true")
   }
 
-  generatedList.innerHTML = ""
-  btnDownloadThemeCss.disabled = true
-  btnDownloadThemeJson.disabled = true
-  btnDownloadZip.disabled = true
-  btnApplyTheme.disabled = true
+  // no download/apply buttons — clear artifacts cache
   lastArtifacts = null
 }
 
 async function handleFiles(files) {
   resetUi()
   lastFiles = Array.from(files) // remember files for later regeneration
+
+  // If a previous run left a raw summary string inside the container, convert it to list for consistency
+  const genSummaryContainer = document.getElementById("generation-summary")
+  if (genSummaryContainer && genSummaryContainer.textContent.trim()) {
+    const txt = genSummaryContainer.textContent.trim()
+    renderGenerationSummaryText(genSummaryContainer, txt)
+    // clear the raw text node if any
+    if (
+      genSummaryContainer.firstChild &&
+      genSummaryContainer.firstChild.nodeType === Node.TEXT_NODE
+    )
+      genSummaryContainer.firstChild.textContent = ""
+  }
 
   // Do not print parsing/technical logs unless debug enabled
   const debugFlag = !!(
@@ -83,6 +110,16 @@ async function handleFiles(files) {
   // show artifacts
   previewThemed.textContent = artifacts["theme.css"]
 
+  // show generation summary just above results (if provided)
+  const genSummaryEl = document.getElementById("generation-summary")
+  if (genSummaryEl) {
+    const txt = artifacts["generation-summary.txt"] || ""
+    renderGenerationSummaryText(genSummaryEl, txt, artifacts)
+    // also remove any stray plain text node inside container (legacy)
+    const first = genSummaryEl.firstChild
+    if (first && first.nodeType === Node.TEXT_NODE) first.textContent = ""
+  }
+
   // Show/hide theme.json preview depending on the checkbox
   const generateJson = !!(
     document.getElementById("generate-themejson-toggle") &&
@@ -95,38 +132,18 @@ async function handleFiles(files) {
       panelThemeJson.classList.add("is-visible")
       panelThemeJson.setAttribute("aria-hidden", "false")
     }
-    btnDownloadThemeJson.disabled = false
   } else {
     previewThemeJson.textContent = ""
     if (panelThemeJson) {
       panelThemeJson.classList.remove("is-visible")
       panelThemeJson.setAttribute("aria-hidden", "true")
     }
-    btnDownloadThemeJson.disabled = true
   }
 
-  // list generated files
-  generatedList.innerHTML = ""
-  Object.keys(artifacts).forEach((k) => {
-    const li = document.createElement("li")
-    const a = document.createElement("a")
-    a.href = URL.createObjectURL(
-      new Blob([artifacts[k]], {
-        type: k.endsWith(".json") ? "application/json" : "text/css",
-      }),
-    )
-    a.download = k
-    a.textContent = k
-    li.appendChild(a)
-    generatedList.appendChild(li)
-  })
+  // The list of generated files is now rendered inside the generation summary as linked items. (No separate list element.)
+  // Nothing to do here.
 
-  // enable downloads
-  btnDownloadThemeCss.disabled = false
-  btnDownloadThemeJson.disabled = false
-  btnDownloadZip.disabled = false
-  btnApplyTheme.disabled = false
-
+  // copy buttons handle user interactions now
   lastArtifacts = artifacts
 }
 
@@ -149,64 +166,6 @@ fileInput.addEventListener("change", (e) => {
   const files = e.target.files
   if (files && files.length) handleFiles(files)
 })
-
-btnDownloadThemeCss.addEventListener("click", () => {
-  if (!lastArtifacts) return
-  const blob = new Blob([lastArtifacts["theme.css"]], { type: "text/css" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = "theme.css"
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
-})
-
-btnDownloadThemeJson.addEventListener("click", () => {
-  if (!lastArtifacts) return
-  const blob = new Blob([lastArtifacts["theme.json"]], {
-    type: "application/json",
-  })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = "theme.json"
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
-})
-
-btnDownloadZip.addEventListener("click", async () => {
-  if (!lastArtifacts) return
-  const zip = new JSZip()
-  Object.keys(lastArtifacts).forEach((k) => zip.file(k, lastArtifacts[k]))
-  const content = await zip.generateAsync({ type: "blob" })
-  const url = URL.createObjectURL(content)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = "primary-theme-artifacts.zip"
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
-})
-
-btnApplyTheme.addEventListener("click", () => {
-  if (!lastArtifacts) return
-  // Inject style into the page for preview
-  let el = document.getElementById("preview-theme-style")
-  if (!el) {
-    el = document.createElement("style")
-    el.id = "preview-theme-style"
-    document.head.appendChild(el)
-  }
-  el.textContent = lastArtifacts["theme.css"]
-  log("Thème appliqué en aperçu (non persistant)")
-})
-
-btnClear.addEventListener("click", resetUi)
 
 // keyboard accessibility: enter on dropzone opens file input
 dropzone.addEventListener("keydown", (e) => {
@@ -328,52 +287,188 @@ if (btnEmptyProject) {
     // show artifacts
     previewThemed.textContent = artifacts["theme.css"]
 
-    // Show/hide theme.json preview depending on the checkbox
-    const generateJson = !!(
-      document.getElementById("generate-themejson-toggle") &&
-      document.getElementById("generate-themejson-toggle").checked
-    )
-    const panelThemeJson = document.getElementById("panel-preview-themejson")
-    if (generateJson && artifacts["theme.json"]) {
-      previewThemeJson.textContent = artifacts["theme.json"]
-      if (panelThemeJson) {
-        panelThemeJson.classList.add("is-visible")
-        panelThemeJson.setAttribute("aria-hidden", "false")
+    // show generation summary just above results (if provided)
+    const genSummaryEl = document.getElementById("generation-summary")
+    if (genSummaryEl) {
+      const txt = artifacts["generation-summary.txt"] || ""
+      renderGenerationSummaryText(genSummaryEl, txt, artifacts)
+      // also remove any stray plain text node inside container (legacy)
+      const first = genSummaryEl.firstChild
+      if (first && first.nodeType === Node.TEXT_NODE) first.textContent = ""
+
+      // Show/hide theme.json preview depending on the checkbox
+      const generateJson = !!(
+        document.getElementById("generate-themejson-toggle") &&
+        document.getElementById("generate-themejson-toggle").checked
+      )
+      const panelThemeJson = document.getElementById("panel-preview-themejson")
+      if (generateJson && artifacts["theme.json"]) {
+        previewThemeJson.textContent = artifacts["theme.json"]
+        if (panelThemeJson) {
+          panelThemeJson.classList.add("is-visible")
+          panelThemeJson.setAttribute("aria-hidden", "false")
+        }
+        btnDownloadThemeJson.disabled = false
+      } else {
+        previewThemeJson.textContent = ""
+        if (panelThemeJson) {
+          panelThemeJson.classList.remove("is-visible")
+          panelThemeJson.setAttribute("aria-hidden", "true")
+        }
+        btnDownloadThemeJson.disabled = true
       }
-      btnDownloadThemeJson.disabled = false
-    } else {
-      previewThemeJson.textContent = ""
-      if (panelThemeJson) {
-        panelThemeJson.classList.remove("is-visible")
-        panelThemeJson.setAttribute("aria-hidden", "true")
-      }
-      btnDownloadThemeJson.disabled = true
     }
 
-    // list generated files
-    generatedList.innerHTML = ""
-    Object.keys(artifacts).forEach((k) => {
-      const li = document.createElement("li")
-      const a = document.createElement("a")
-      a.href = URL.createObjectURL(
-        new Blob([artifacts[k]], {
-          type: k.endsWith(".json") ? "application/json" : "text/css",
-        }),
-      )
-      a.download = k
-      a.textContent = k
-      li.appendChild(a)
-      generatedList.appendChild(li)
-    })
+    // The empty project reuses the generation summary to display linked files; no separate list element.
 
-    btnDownloadThemeCss.disabled = false
-    btnDownloadThemeJson.disabled = false
-    btnDownloadZip.disabled = false
-    btnApplyTheme.disabled = false
+    // copy buttons available for each preview
 
     lastArtifacts = artifacts
   })
 }
 
+// helper: render the generation summary string into title + list
+function renderGenerationSummaryText(container, txt, artifacts = {}) {
+  const ul = container.querySelector("#generation-summary-list")
+  if (!ul) {
+    container.textContent = txt
+    return
+  }
+  // revoke any previous summary blob URLs before rendering new links
+  if (summaryBlobUrls && summaryBlobUrls.length) {
+    summaryBlobUrls.forEach((u) => {
+      try {
+        URL.revokeObjectURL(u)
+      } catch (e) {
+        /* ignore revoke errors */
+      }
+    })
+    summaryBlobUrls = []
+  }
+  ul.innerHTML = ""
+  const lines = txt
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+  if (lines.length) {
+    let titleEl = container.querySelector(".generation-summary-title")
+    if (!titleEl) {
+      titleEl = document.createElement("div")
+      titleEl.className = "generation-summary-title"
+      container.insertBefore(titleEl, ul)
+    }
+    titleEl.textContent = lines[0]
+    lines.slice(1).forEach((line) => {
+      // If this line is the generated files line, render as linked items when possible
+      if (/^Fichiers générés\s*:/i.test(line)) {
+        const after = line.split(":")[1] || ""
+        const parts = after
+          .split("/")
+          .map((s) => s.trim())
+          .filter(Boolean)
+        const li = document.createElement("li")
+        // Keep the label and append files inline separated by ' / '
+        const label = line.split(":")[0].trim() + ": "
+        li.appendChild(document.createTextNode(label))
+        parts.forEach((name, idx) => {
+          if (artifacts && artifacts[name]) {
+            const blob = new Blob([artifacts[name]], {
+              type: name.endsWith(".json") ? "application/json" : "text/css",
+            })
+            const a = document.createElement("a")
+            const url = URL.createObjectURL(blob)
+            summaryBlobUrls.push(url)
+            a.href = url
+            a.download = name
+            a.textContent = name
+            li.appendChild(a)
+          } else {
+            li.appendChild(document.createTextNode(name))
+          }
+          if (idx !== parts.length - 1)
+            li.appendChild(document.createTextNode(" / "))
+        })
+        ul.appendChild(li)
+      } else {
+        const li = document.createElement("li")
+        li.textContent = line
+        ul.appendChild(li)
+      }
+    })
+  }
+}
+
 // init
 resetUi()
+
+// On load: if the generation summary container already contains raw text (e.g., page restored), convert it to the list
+const genSummaryOnLoad = document.getElementById("generation-summary")
+if (genSummaryOnLoad && genSummaryOnLoad.textContent.trim()) {
+  const txt = genSummaryOnLoad.textContent.trim()
+  // No artifacts available on load; render as plain text conversion
+  renderGenerationSummaryText(genSummaryOnLoad, txt)
+  // remove stray text node
+  const first = genSummaryOnLoad.firstChild
+  if (first && first.nodeType === Node.TEXT_NODE) first.textContent = ""
+}
+
+// COPY BUTTONS: accessible copy functionality for code previews
+function announceCopy(msg) {
+  const status = document.getElementById("copy-status")
+  if (!status) return
+  status.textContent = msg
+  setTimeout(() => {
+    // clear message after a short delay so screen readers can read it
+    if (status.textContent === msg) status.textContent = ""
+  }, 2000)
+}
+
+async function copyPreContent(preEl, btn) {
+  if (!preEl) return
+  const text = preEl.textContent || ""
+  if (!text.trim()) {
+    announceCopy("Aucun contenu à copier")
+    return
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      // fallback
+      const ta = document.createElement("textarea")
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand("copy")
+      ta.remove()
+    }
+    // visual feedback
+    if (btn) {
+      const prev = btn.textContent
+      btn.classList.add("is-copied")
+      btn.textContent = "Copié !"
+      setTimeout(() => {
+        btn.classList.remove("is-copied")
+        btn.textContent = prev
+      }, 1500)
+    }
+    announceCopy("Contenu copié dans le presse-papiers")
+  } catch (err) {
+    announceCopy("Impossible de copier le contenu")
+  }
+}
+
+// attach listeners to existing copy buttons
+function initCopyButtons() {
+  const buttons = document.querySelectorAll(".copy-btn")
+  buttons.forEach((b) => {
+    b.addEventListener("click", (e) => {
+      const targetId = b.getAttribute("data-target")
+      const pre = targetId ? document.getElementById(targetId) : null
+      copyPreContent(pre, b)
+    })
+  })
+}
+
+// Initialize copy buttons on load
+initCopyButtons()

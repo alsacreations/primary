@@ -2274,6 +2274,70 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     return { themeStrOut, warningsStr }
   }
 
+  // Human-friendly summary log (concise, for users)
+  let humanSummary = null
+  try {
+    const filesProcessed = entries.map((e) => e.fileName).filter(Boolean)
+    const filesProcessedLabel = filesProcessed.length
+      ? `${filesProcessed.length} (${filesProcessed.join(", ")})`
+      : "0"
+
+    const colorsPrimitivesCount = Object.keys(
+      colorResult.primitivesJson || {},
+    ).length
+    const colorsTokensCount = Object.keys(colorResult.tokensJson || {}).length
+    const colorsTotal = colorsPrimitivesCount + colorsTokensCount
+
+    const spacingPrimitivesCount = Object.keys(
+      spacingResult.primitives || {},
+    ).length
+    const spacingTokensCount = Object.keys(spacingResult.json || {}).length
+    const spacingTotal = spacingPrimitivesCount + spacingTokensCount
+
+    const typographyPrimitivesCount = Object.keys(
+      fontResult.primitives || {},
+    ).filter(
+      (k) => k && (k.startsWith("--text-") || k.startsWith("--line-height-")),
+    ).length
+    const typographyTokensCount =
+      Object.keys((fontResult.json && fontResult.json.fontSize) || {}).length +
+      Object.keys((fontResult.json && fontResult.json.lineHeight) || {}).length
+    const typographyTotal = typographyPrimitivesCount + typographyTokensCount
+
+    const generatedFiles = []
+    ;["theme.css", "theme.json", "primitives.json", "tokens.json"].forEach(
+      (f) => {
+        if (f === "theme.json") {
+          // artifact will be created below; include it
+          generatedFiles.push(f)
+        } else if (typeof themeCss === "string" && f === "theme.css") {
+          generatedFiles.push(f)
+        } else if (f === "primitives.json") {
+          generatedFiles.push(f)
+        } else if (f === "tokens.json") {
+          generatedFiles.push(f)
+        }
+      },
+    )
+
+    const humanLines = [
+      "Résumé de génération :",
+      `Fichiers traités : ${filesProcessedLabel}`,
+      `Couleurs extraites : ${colorsTotal} (Primitives : ${colorsPrimitivesCount} / Tokens : ${colorsTokensCount})`,
+      `Espacements extraits : ${spacingTotal} (Primitives : ${spacingPrimitivesCount} / Tokens : ${spacingTokensCount})`,
+      `Typographies extraites : ${typographyTotal} (Primitives : ${typographyPrimitivesCount} / Tokens : ${typographyTokensCount})`,
+      `Fichiers générés : ${generatedFiles.join(" / ")}`,
+    ]
+    humanSummary = humanLines.join("\n")
+    // emit for logs and also expose as an artifact below
+    emit(humanSummary, "info")
+  } catch (e) {
+    emit(
+      `Résumé génération: erreur lors du calcul du résumé: ${e.message}`,
+      "warn",
+    )
+  }
+
   const artifacts = {
     "primitives.json": primitivesJsonStr,
     "tokens.json": tokensJsonStr,
@@ -2281,6 +2345,10 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "theme.json": generateThemeJson(primitivesJsonStr, tokensJsonStr)
       .themeStrOut,
   }
+  // include generation summary as a downloadable artifact so UI can render it above results
+  if (typeof humanSummary === "string")
+    artifacts["generation-summary.txt"] = humanSummary
+
   // include warnings artifact if any
   const genResult = generateThemeJson(primitivesJsonStr, tokensJsonStr)
   if (genResult.warningsStr)

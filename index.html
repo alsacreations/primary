@@ -26,19 +26,7 @@
           aria-label="Actions"
           data-layout="cluster"
           data-gap="s">
-          <button
-            id="btn-download-zip"
-            type="button"
-            class="btn"
-            disabled>
-            Télécharger tout (zip)
-          </button>
-          <button
-            id="btn-clear"
-            type="button"
-            class="btn">
-            Réinitialiser
-          </button>
+          <!-- Téléchargement et réinitialisation supprimés : utilisation du bouton Copier dans chaque aperçu -->
         </nav>
       </div>
     </header>
@@ -115,6 +103,16 @@
         <h2 id="results-title">Résultats</h2>
 
         <div
+          id="generation-summary"
+          class="generation-summary"
+          aria-live="polite">
+          <ul
+            id="generation-summary-list"
+            class="generation-summary-list"
+            aria-hidden="false"></ul>
+        </div>
+
+        <div
           class="previews"
           data-layout="switcher"
           data-gap="m">
@@ -122,23 +120,15 @@
             class="preview"
             data-layout="stack">
             <h3>Preview — theme.css</h3>
-            <div
-              class="preview-actions"
-              data-layout="cluster"
-              data-gap="s">
-              <button
-                id="btn-download-themecss"
-                class="btn"
-                disabled>
-                Télécharger theme.css
-              </button>
-              <button
-                id="btn-apply-theme"
-                class="btn"
-                disabled>
-                Appliquer
-              </button>
-            </div>
+            <!-- Bouton Copier accessible en superposition -->
+            <button
+              class="copy-btn"
+              type="button"
+              data-target="preview-themecss"
+              aria-label="Copier le CSS"
+              title="Copier le contenu">
+              Copier
+            </button>
             <pre
               id="preview-themecss"
               class="code-preview"
@@ -150,17 +140,15 @@
             class="preview themejson-preview"
             data-layout="stack">
             <h3>Preview — theme.json</h3>
-            <div
-              class="preview-actions"
-              data-layout="cluster"
-              data-gap="s">
-              <button
-                id="btn-download-themejson"
-                class="btn"
-                disabled>
-                Télécharger theme.json
-              </button>
-            </div>
+            <!-- Bouton Copier accessible en superposition -->
+            <button
+              class="copy-btn"
+              type="button"
+              data-target="preview-themejson"
+              aria-label="Copier le JSON"
+              title="Copier le contenu">
+              Copier
+            </button>
             <pre
               id="preview-themejson"
               class="code-preview"
@@ -168,15 +156,7 @@
           </div>
         </div>
 
-        <div
-          class="files"
-          data-layout="stack">
-          <h3>Fichiers générés</h3>
-          <ul
-            id="generated-list"
-            class="generated-list"
-            aria-live="polite"></ul>
-        </div>
+        <!-- Removed duplicate generated files panel: entries are now presented inside the generation summary above -->
 
         <div
           class="results-controls"
@@ -189,6 +169,13 @@
             <span>Debug</span>
           </label>
         </div>
+
+        <!-- Region ARIA pour annoncer l'état de la copie au lecteur d'écran -->
+        <div
+          id="copy-status"
+          class="visually-hidden"
+          role="status"
+          aria-live="polite"></div>
 
         <div
           class="logs"
@@ -213,13 +200,6 @@
       role="contentinfo">
       <p>Primary — UI pour l'extracteur Figma — Déployé sur GH Pages</p>
     </footer>
-
-    <!-- External libs -->
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"
-      integrity="sha512-3c4Zg0p2xm6nX6t9g1Qzlz4eQeHd0o2rhQ9V9k5rNw6wJxITn9c6k5YQZVS1Kf3+uvyU9uGCeGRTg4hPFAxK/Q=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"></script>
 
     <!-- App scripts -->
     <script

@@ -28,6 +28,20 @@ Ce document décrit, étape par étape, les règles de mappage, les conventions 
 
 ## Règles de mappage détaillées
 
+### 0) Flags généraux (top-level `settings`)
+
+- Certains flags WordPress utiles doivent être explicitement exposés dans `settings` :
+  - `appearanceTools`: `true` par défaut (active les outils d'apparence dans l'éditeur FSE).
+  - `useRootPaddingAwareAlignments`: `true` par défaut (meilleure prise en charge des alignements et du padding racine).
+- Ajoutez ces flags au début de l'objet `settings` généré quand approprié.
+
+- **Flags de couleur** : pour l'éditeur FSE, exposez aussi dans `settings.color` les flags suivants (valeurs par défaut indiquées) :
+  - `defaultDuotone`: `false`
+  - `defaultGradients`: `false`
+  - `defaultPalette`: `false`
+
+Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleur sont prises en charge dans le thème.
+
 ### 1) Couleurs — `settings.color.palette`
 
 - Inclure _toutes_ les primitives couleur presentes (`--color-*`) en entrée comme éléments de la palette. Pour chaque primitive `--color-XXX` :
@@ -39,10 +53,21 @@ Ce document décrit, étape par étape, les règles de mappage, les conventions 
   - Si le token est **simple** ou référencé par `var(--...)`, mettre la chaîne telle quelle dans `color`.
 - Priorité : préférez la représentation à partir de `tokens.json` quand une entrée token existe, sinon tombez sur la primitive correspondante.
 
+- Flags couleur complémentaires : exposer aussi les flags suivants dans `settings.color` quand pertinent (valeurs par défaut indiquées) :
+  - `defaultDuotone`: `false`
+  - `defaultGradients`: `false`
+  - `defaultPalette`: `false`
+
+Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleur sont prises en charge dans le thème.
+
 Exemple d'élément :
 
 ```json
-{ "name": "raspberry-500", "color": "var(--color-raspberry-500)", "slug": "raspberry-500" }
+{
+  "name": "raspberry-500",
+  "color": "var(--color-raspberry-500)",
+  "slug": "raspberry-500"
+}
 ```
 
 ---
@@ -69,6 +94,8 @@ Exemple d'élément :
 - `fontFamilies`: détecter primitives `--font-*` et -> créer objet `{ name, slug, fontFamily, fontFace? }`.
   - Si `primitives.json` contient métadonnées de fontFace (src, poids, style), inclure `fontFace` comme dans l'exemple (utile pour l'embed).
 - Respecter les flags : `writingMode`, `defaultFontSizes`, `fluid`, `customFontSize`. Valeurs par défaut : `writingMode: true`, `defaultFontSizes: false`, `fluid: false`, `customFontSize: false`.
+
+**Remarque importante (line-height)** : N'ajoutez **pas** de clé top-level `settings.typography.lineHeights` (ce n'est pas pris en charge par le schéma WordPress). Les tokens de hauteur de ligne doivent rester dans `primitives.json` / `tokens.json` et être référencés depuis les mappings `styles.typography.lineHeight` (par exemple : `"lineHeight": "var(--line-height-24)"` ou une valeur numérique).
 
 ---
 
@@ -118,17 +145,53 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
   { "name": "gray-800", "color": "var(--color-gray-800)", "slug": "gray-800" },
   { "name": "gray-900", "color": "var(--color-gray-900)", "slug": "gray-900" },
 
-  { "name": "error-100", "color": "var(--color-error-100)", "slug": "error-100" },
-  { "name": "error-300", "color": "var(--color-error-300)", "slug": "error-300" },
-  { "name": "error-500", "color": "var(--color-error-500)", "slug": "error-500" },
+  {
+    "name": "error-100",
+    "color": "var(--color-error-100)",
+    "slug": "error-100"
+  },
+  {
+    "name": "error-300",
+    "color": "var(--color-error-300)",
+    "slug": "error-300"
+  },
+  {
+    "name": "error-500",
+    "color": "var(--color-error-500)",
+    "slug": "error-500"
+  },
 
-  { "name": "success-100", "color": "var(--color-success-100)", "slug": "success-100" },
-  { "name": "success-300", "color": "var(--color-success-300)", "slug": "success-300" },
-  { "name": "success-500", "color": "var(--color-success-500)", "slug": "success-500" },
+  {
+    "name": "success-100",
+    "color": "var(--color-success-100)",
+    "slug": "success-100"
+  },
+  {
+    "name": "success-300",
+    "color": "var(--color-success-300)",
+    "slug": "success-300"
+  },
+  {
+    "name": "success-500",
+    "color": "var(--color-success-500)",
+    "slug": "success-500"
+  },
 
-  { "name": "warning-100", "color": "var(--color-warning-100)", "slug": "warning-100" },
-  { "name": "warning-300", "color": "var(--color-warning-300)", "slug": "warning-300" },
-  { "name": "warning-500", "color": "var(--color-warning-500)", "slug": "warning-500" },
+  {
+    "name": "warning-100",
+    "color": "var(--color-warning-100)",
+    "slug": "warning-100"
+  },
+  {
+    "name": "warning-300",
+    "color": "var(--color-warning-300)",
+    "slug": "warning-300"
+  },
+  {
+    "name": "warning-500",
+    "color": "var(--color-warning-500)",
+    "slug": "warning-500"
+  },
 
   { "name": "info-100", "color": "var(--color-info-100)", "slug": "info-100" },
   { "name": "info-300", "color": "var(--color-info-300)", "slug": "info-300" },
@@ -139,16 +202,36 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
     "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
     "slug": "primary"
   },
-  { "name": "on-primary", "color": "light-dark(var(--color-white), var(--color-black))", "slug": "on-primary" },
-  { "name": "accent", "color": "light-dark(var(--color-raspberry-300), var(--color-raspberry-500))", "slug": "accent" },
+  {
+    "name": "on-primary",
+    "color": "light-dark(var(--color-white), var(--color-black))",
+    "slug": "on-primary"
+  },
+  {
+    "name": "accent",
+    "color": "light-dark(var(--color-raspberry-300), var(--color-raspberry-500))",
+    "slug": "accent"
+  },
   {
     "name": "accent-invert",
     "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
     "slug": "accent-invert"
   },
-  { "name": "surface", "color": "light-dark(var(--color-white), var(--color-gray-900))", "slug": "surface" },
-  { "name": "on-surface", "color": "light-dark(var(--color-gray-900), var(--color-gray-100))", "slug": "on-surface" },
-  { "name": "link", "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))", "slug": "link" },
+  {
+    "name": "surface",
+    "color": "light-dark(var(--color-white), var(--color-gray-900))",
+    "slug": "surface"
+  },
+  {
+    "name": "on-surface",
+    "color": "light-dark(var(--color-gray-900), var(--color-gray-100))",
+    "slug": "on-surface"
+  },
+  {
+    "name": "link",
+    "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
+    "slug": "link"
+  },
   {
     "name": "link-hover",
     "color": "light-dark(var(--color-raspberry-700), var(--color-raspberry-500))",

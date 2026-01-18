@@ -1980,9 +1980,13 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
 
   const themeCss = parts.join("")
   const primitivesJsonStr = JSON.stringify(structured, null, 2)
-  const tokensJsonStr = JSON.stringify(Object.assign({ colors: colorResult.tokensJson || {} }, normalized), null, 2)
+  const tokensJsonStr = JSON.stringify(
+    Object.assign({ colors: colorResult.tokensJson || {} }, normalized),
+    null,
+    2,
+  )
 
-  // generate a minimal theme.json compatible structure (client-side)
+  // generate a theme.json compliant with instructions-wp.md
   function generateThemeJson(primitivesJsonStrLocal, tokensJsonStrLocal) {
     let primitives = {}
     let tokens = {}
@@ -2000,76 +2004,287 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       styles: {},
     }
 
-    // Build palette: prefer tokens.colors then primitives.color, fallback to defaults
+    // Expose useful top-level settings expected by WP FSE
+    theme.settings.appearanceTools = true
+    theme.settings.useRootPaddingAwareAlignments = true
+
+    const warnings = []
+
+    // 1) Palette: include token colors (preferred) then primitives
     const palette = []
     const seen = new Set()
-    if (primitives && primitives.color) {
-      Object.keys(primitives.color).forEach((k) => {
-        palette.push({ name: k, color: `var(--color-${k})`, slug: k })
-        seen.add(k)
-      })
-    }
     if (tokens && tokens.colors) {
       Object.keys(tokens.colors).forEach((tk) => {
-        if (!seen.has(tk)) {
-          const val = tokens.colors[tk].value || `var(--${tk})`
-          palette.push({ name: tk, color: val, slug: tk })
-          seen.add(tk)
+        const entry = tokens.colors[tk]
+        const color = entry.value || `var(--${tk})`
+        palette.push({ name: tk, color, slug: tk })
+        seen.add(tk)
+      })
+    }
+    if (primitives && primitives.color) {
+      Object.keys(primitives.color).forEach((k) => {
+        if (!seen.has(k)) {
+          palette.push({ name: k, color: `var(--color-${k})`, slug: k })
+          seen.add(k)
         }
       })
     }
-    // simple defaults for missing common colors
-    ;["white", "black", "gray-500"].forEach((slug) => {
+    // minimal defaults
+    const minDefaults = [
+      ["white", "var(--color-white)"],
+      ["black", "var(--color-black)"],
+      ["gray-50", "var(--color-gray-50)"],
+      ["gray-100", "var(--color-gray-100)"],
+      ["gray-200", "var(--color-gray-200)"],
+      ["gray-300", "var(--color-gray-300)"],
+      ["gray-400", "var(--color-gray-400)"],
+      ["gray-500", "var(--color-gray-500)"],
+      ["gray-600", "var(--color-gray-600)"],
+      ["gray-700", "var(--color-gray-700)"],
+      ["gray-800", "var(--color-gray-800)"],
+      ["gray-900", "var(--color-gray-900)"],
+    ]
+    minDefaults.forEach(([slug, color]) => {
       if (!seen.has(slug)) {
-        const name = slug
-        const color = slug === "white" ? "var(--color-white)" : slug === "black" ? "var(--color-black)" : "var(--color-gray-500)"
-        palette.push({ name, color, slug })
+        palette.push({ name: slug, color, slug })
         seen.add(slug)
       }
     })
+    theme.settings.color = {
+      defaultDuotone: false,
+      defaultGradients: false,
+      defaultPalette: false,
+      palette,
+    }
 
-    theme.settings.color = { palette }
-
-    // spacing
+    // 2) Spacing
     const spacingSizes = []
+    const seenSp = new Set()
     if (tokens && tokens.spacing) {
       Object.keys(tokens.spacing).forEach((k) => {
-        spacingSizes.push({ name: k, size: tokens.spacing[k].value || `var(--${k})`, slug: k })
+        const t = tokens.spacing[k]
+        spacingSizes.push({ name: k, size: t.value || `var(--${k})`, slug: k })
+        seenSp.add(k)
       })
     }
-    // fallback common spacings from primitives
-    ;["spacing-16", "spacing-24", "spacing-32"].forEach((s) => {
-      if (!spacingSizes.find((x) => x.slug === s)) spacingSizes.push({ name: s, size: `var(--${s})`, slug: s })
+    if (primitives && primitives.spacing) {
+      Object.keys(primitives.spacing).forEach((p) => {
+        if (!seenSp.has(p)) {
+          spacingSizes.push({
+            name: p,
+            size: primitives.spacing[p].value || `var(--${p})`,
+            slug: p,
+          })
+          seenSp.add(p)
+        }
+      })
+    }
+    ;["spacing-16", "spacing-24", "spacing-32", "spacing-48"].forEach((s) => {
+      if (!seenSp.has(s))
+        spacingSizes.push({ name: s, size: `var(--${s})`, slug: s })
     })
-    theme.settings.spacing = { spacingSizes }
+    theme.settings.spacing = {
+      defaultSpacingSizes: false,
+      units: ["px", "rem", "%", "vh", "vw"],
+      spacingSizes,
+    }
 
-    // typography sizes
+    // 3) Typography: fontSizes and fontFamilies
     const fontSizes = []
+    const seenFs = new Set()
     if (tokens && tokens.fonts && tokens.fonts.fontSize) {
       Object.keys(tokens.fonts.fontSize).forEach((k) => {
-        fontSizes.push({ name: k, size: tokens.fonts.fontSize[k].value || `var(--${k})`, slug: k })
+        const v = tokens.fonts.fontSize[k]
+        fontSizes.push({ name: k, size: v.value || `var(--${k})`, slug: k })
+        seenFs.add(k)
       })
     }
-    ;["text-16", "text-24", "text-30"].forEach((s) => {
-      if (!fontSizes.find((x) => x.slug === s)) fontSizes.push({ name: s, size: `var(--${s})`, slug: s })
+    if (primitives && primitives.fontSize) {
+      Object.keys(primitives.fontSize).forEach((k) => {
+        if (!seenFs.has(k)) {
+          fontSizes.push({
+            name: k,
+            size: primitives.fontSize[k].value || `var(--${k})`,
+            slug: k,
+          })
+          seenFs.add(k)
+        }
+      })
+    }
+    ;[
+      "text-14",
+      "text-16",
+      "text-18",
+      "text-20",
+      "text-24",
+      "text-30",
+      "text-48",
+    ].forEach((s) => {
+      if (!seenFs.has(s)) {
+        fontSizes.push({ name: s, size: `var(--${s})`, slug: s })
+        seenFs.add(s)
+      }
     })
-    theme.settings.typography = { fontSizes }
 
-    // inject some sensible defaults for styles
-    theme.settings = theme.settings || {}
+    // Note: do not inject a top-level `lineHeights` array in `settings.typography` (not allowed by WordPress theme.json schema).
+    // Keep line-height tokens in `primitives`/`tokens` and reference them via `styles.typography.lineHeight` (e.g., "var(--line-height-24)") when needed.
+    theme.settings.typography = {
+      writingMode: true,
+      defaultFontSizes: false,
+      fluid: false,
+      customFontSize: false,
+      fontSizes,
+    }
+
+    const fontFamilies = []
+    if (primitives && primitives.font) {
+      Object.keys(primitives.font).forEach((k) => {
+        const meta = primitives.font[k]
+        const entry = { name: k, slug: k, fontFamily: meta.value || k }
+        if (meta.fontFace) entry.fontFace = meta.fontFace
+        fontFamilies.push(entry)
+      })
+    }
+    if (!fontFamilies.length)
+      fontFamilies.push({
+        name: "System",
+        slug: "system",
+        fontFamily: "system-ui, sans-serif",
+      })
+    theme.settings.typography.fontFamilies = fontFamilies
+
+    // 4) defaults for styles/elements/blocks
     theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" }
-    theme.styles = theme.styles || {}
-    theme.styles.typography = { fontFamily: "var(--font-base)", fontWeight: "var(--font-weight-regular)" }
+    theme.styles = {
+      color: {
+        background: "var:preset|color|surface",
+        text: "var:preset|color|on-surface",
+      },
+      spacing: {
+        blockGap: "var:preset|spacing|spacing-16",
+        padding: {
+          left: "var:preset|spacing|spacing-16",
+          right: "var:preset|spacing|spacing-16",
+        },
+      },
+      typography: {
+        fontFamily: "var:preset|font-family|poppins",
+        fontSize: "var:preset|font-size|text-m",
+        fontWeight: "400",
+        lineHeight: "var(--line-height-24)",
+        fontStyle: "normal",
+      },
+      elements: {
+        heading: {
+          color: { text: "var:preset|color|primary" },
+          typography: {
+            fontFamily: "var:preset|font-family|poppins",
+            fontWeight: "600",
+          },
+        },
+        h1: {
+          typography: {
+            fontFamily: "var:preset|font-family|poppins",
+            fontSize: "var:preset|font-size|text-4xl",
+            lineHeight: "1.05",
+            fontWeight: "600",
+          },
+        },
+        h2: {
+          typography: {
+            fontFamily: "var:preset|font-family|poppins",
+            fontSize: "var:preset|font-size|text-4xl",
+            lineHeight: "1.2",
+            fontWeight: "600",
+          },
+        },
+        link: {
+          color: { text: "var:preset|color|link" },
+          typography: { textDecoration: "underline" },
+          ":hover": {
+            color: { text: "var:preset|color|link-hover" },
+            typography: { fontWeight: "700" },
+          },
+        },
+      },
+      blocks: {
+        "core/button": {
+          border: { radius: "0.5rem" },
+          color: {
+            background: "var:preset|color|primary",
+            text: "var:preset|color|on-primary",
+          },
+          typography: {
+            fontFamily: "var:preset|font-family|poppins",
+            fontWeight: "600",
+          },
+          spacing: {
+            padding: {
+              top: "var:preset|spacing|spacing-12",
+              right: "var:preset|spacing|spacing-12",
+              bottom: "var:preset|spacing|spacing-12",
+              left: "var:preset|spacing|spacing-12",
+            },
+          },
+        },
+      },
+    }
 
-    return JSON.stringify(theme, null, 2)
+    // 6) Validation: check var(...) references exist in primitives or tokens
+    const allVars = new Set()
+    const varRe = /var\(--([a-z0-9-]+)\)/gi
+    const themeStr = JSON.stringify(theme)
+    let m
+    while ((m = varRe.exec(themeStr)) !== null) {
+      allVars.add(m[1])
+    }
+    const missingRefs = []
+    allVars.forEach((v) => {
+      const checkName = v
+      const inPrimitives =
+        primitives &&
+        ((primitives.color && primitives.color[checkName]) ||
+          (primitives.spacing && primitives.spacing[checkName]) ||
+          (primitives.fontSize && primitives.fontSize[checkName]) ||
+          (primitives.lineHeight && primitives.lineHeight[checkName]) ||
+          (primitives.rounded && primitives.rounded[checkName]) ||
+          primitives[checkName])
+      const inTokens =
+        tokens &&
+        ((tokens.colors && tokens.colors[checkName]) ||
+          (tokens.spacing && tokens.spacing[checkName]) ||
+          (tokens.fonts &&
+            tokens.fonts.fontSize &&
+            tokens.fonts.fontSize[checkName]) ||
+          (tokens.fonts &&
+            tokens.fonts.lineHeight &&
+            tokens.fonts.lineHeight[checkName]))
+      if (!inPrimitives && !inTokens) missingRefs.push(v)
+    })
+    if (missingRefs.length) {
+      warnings.push(
+        `Missing primitive/token references: ${missingRefs.join(",")}`,
+      )
+    }
+
+    const themeStrOut = JSON.stringify(theme, null, 2)
+    const warningsStr = warnings.length
+      ? JSON.stringify({ warnings }, null, 2)
+      : null
+    return { themeStrOut, warningsStr }
   }
 
   const artifacts = {
     "primitives.json": primitivesJsonStr,
     "tokens.json": tokensJsonStr,
     "theme.css": themeCss,
-    "theme.json": generateThemeJson(primitivesJsonStr, tokensJsonStr),
+    "theme.json": generateThemeJson(primitivesJsonStr, tokensJsonStr)
+      .themeStrOut,
   }
+  // include warnings artifact if any
+  const genResult = generateThemeJson(primitivesJsonStr, tokensJsonStr)
+  if (genResult.warningsStr)
+    artifacts["theme-warnings.json"] = genResult.warningsStr
   return { artifacts, logs }
 }
 

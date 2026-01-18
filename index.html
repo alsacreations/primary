@@ -39,7 +39,11 @@
         aria-labelledby="uploader-title"
         data-layout="stack"
         data-gap="m">
-        <h2 id="uploader-title">Importer vos fichiers Mode JSON</h2>
+        <h2
+          id="uploader-title"
+          class="visually-hidden">
+          Importer vos fichiers Mode JSON
+        </h2>
 
         <div
           id="dropzone"
@@ -73,7 +77,7 @@
         </div>
 
         <div
-          class="uploader-actions"
+          class="uploader-actions-top"
           data-layout="cluster"
           data-gap="s">
           <button
@@ -83,7 +87,12 @@
             aria-label="Générer un projet vide">
             Projet vide (sans JSON)
           </button>
+        </div>
 
+        <div
+          class="uploader-actions"
+          data-layout="cluster"
+          data-gap="s">
           <label class="log-debug generate-themejson-uploader">
             <input
               id="generate-themejson-toggle"
@@ -96,12 +105,15 @@
       </section>
 
       <section
-        class="results"
-        aria-labelledby="results-title"
+        class="generation"
+        aria-labelledby="generation-title"
         data-layout="stack"
         data-gap="m">
-        <h2 id="results-title">Résultats</h2>
-
+        <h2
+          id="generation-title"
+          class="visually-hidden">
+          Synthèse
+        </h2>
         <div
           id="generation-summary"
           class="generation-summary"
@@ -111,6 +123,14 @@
             class="generation-summary-list"
             aria-hidden="false"></ul>
         </div>
+      </section>
+
+      <section
+        class="results"
+        aria-labelledby="results-title"
+        data-layout="stack"
+        data-gap="m">
+        <h2 id="results-title">Résultats</h2>
 
         <div
           class="previews"

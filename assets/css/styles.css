@@ -29,8 +29,6 @@ body {
 }
 
 .app-title {
-  margin: 0;
-  font-size: 1.25rem;
 }
 
 .dropzone {
@@ -219,24 +217,6 @@ body {
   max-height: 35vh;
   overflow: auto;
   margin: 0;
-}
-
-/* Accessibility helpers */
-.visually-hidden {
-  position: absolute !important;
-  height: 1px;
-  width: 1px;
-  overflow: hidden;
-  clip: rect(1px, 1px, 1px, 1px);
-  white-space: nowrap;
-}
-
-@media (width >= 48rem) {
-  .previews {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
 }
 
 /* Theme.json preview panel hidden by default; shown only when option enabled */

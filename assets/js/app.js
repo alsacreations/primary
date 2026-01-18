@@ -12,6 +12,18 @@ let lastArtifacts = null
 let lastLogs = []
 let lastFiles = null
 let summaryBlobUrls = []
+const resultsSection = document.querySelector(".results")
+
+function setResultsVisible(visible) {
+  if (!resultsSection) return
+  if (visible) {
+    resultsSection.classList.remove("is-empty")
+    resultsSection.setAttribute("aria-hidden", "false")
+  } else {
+    resultsSection.classList.add("is-empty")
+    resultsSection.setAttribute("aria-hidden", "true")
+  }
+}
 
 function log(...args) {
   const str = args.join(" ")
@@ -54,6 +66,9 @@ function resetUi() {
     panelThemeJson.classList.remove("is-visible")
     panelThemeJson.setAttribute("aria-hidden", "true")
   }
+
+  // hide results area until artifacts are generated
+  setResultsVisible(false)
 
   // no download/apply buttons — clear artifacts cache
   lastArtifacts = null
@@ -119,6 +134,10 @@ async function handleFiles(files) {
     const first = genSummaryEl.firstChild
     if (first && first.nodeType === Node.TEXT_NODE) first.textContent = ""
   }
+
+  // show or hide the results section depending on whether we have artifacts
+  const hasArtifacts = artifacts && Object.keys(artifacts).length > 0
+  setResultsVisible(!!hasArtifacts)
 
   // Show/hide theme.json preview depending on the checkbox
   const generateJson = !!(
@@ -217,6 +236,10 @@ if (genThemeJsonToggle) {
             { debug: debugFlag },
           )
           lastArtifacts = newArtifacts
+          // ensure results area is visible if artifacts were produced
+          setResultsVisible(
+            !!(lastArtifacts && Object.keys(lastArtifacts).length > 0),
+          )
         } catch (err) {
           console.error("Erreur lors de la génération de theme.json:", err)
         }
@@ -227,7 +250,6 @@ if (genThemeJsonToggle) {
           panelThemeJson.classList.add("is-visible")
           panelThemeJson.setAttribute("aria-hidden", "false")
         }
-        btnDownloadThemeJson.disabled = false
         console.log("theme.json généré et affiché")
       } else {
         // nothing to show
@@ -236,7 +258,6 @@ if (genThemeJsonToggle) {
           panelThemeJson.classList.remove("is-visible")
           panelThemeJson.setAttribute("aria-hidden", "true")
         }
-        btnDownloadThemeJson.disabled = true
         console.warn("theme.json non disponible après génération")
       }
     } else {
@@ -245,7 +266,6 @@ if (genThemeJsonToggle) {
         panelThemeJson.classList.remove("is-visible")
         panelThemeJson.setAttribute("aria-hidden", "true")
       }
-      btnDownloadThemeJson.disabled = true
     }
   })
 }
@@ -308,20 +328,21 @@ if (btnEmptyProject) {
           panelThemeJson.classList.add("is-visible")
           panelThemeJson.setAttribute("aria-hidden", "false")
         }
-        btnDownloadThemeJson.disabled = false
       } else {
         previewThemeJson.textContent = ""
         if (panelThemeJson) {
           panelThemeJson.classList.remove("is-visible")
           panelThemeJson.setAttribute("aria-hidden", "true")
         }
-        btnDownloadThemeJson.disabled = true
       }
     }
 
-    // The empty project reuses the generation summary to display linked files; no separate list element.
+    // The empty project reuses the generation summary to display linked files; no separate list element;
 
     // copy buttons available for each preview
+
+    // show results area since artifacts were generated
+    setResultsVisible(!!(artifacts && Object.keys(artifacts).length > 0))
 
     lastArtifacts = artifacts
   })

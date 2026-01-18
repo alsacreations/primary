@@ -5,7 +5,7 @@
     <meta
       name="viewport"
       content="width=device-width,initial-scale=1" />
-    <title>Primary — Générateur de thème (UI)</title>
+    <title>Primary — Générateur de thème CSS</title>
     <link
       rel="stylesheet"
       href="assets/css/app.css" />
@@ -15,24 +15,18 @@
   </head>
   <body>
     <header
-      class="app-header"
+      class="header"
       role="banner">
       <div
         class="container"
         data-layout="duo"
         data-gap="m">
-        <h1 class="app-title">Primary — Générateur de thème</h1>
-        <nav
-          aria-label="Actions"
-          data-layout="cluster"
-          data-gap="s">
-          <!-- Téléchargement et réinitialisation supprimés : utilisation du bouton Copier dans chaque aperçu -->
-        </nav>
+        <h1 class="main-title">Primary</h1>
       </div>
     </header>
 
     <main
-      class="app-main"
+      class="main"
       role="main">
       <section
         class="uploader"
@@ -85,7 +79,7 @@
             class="btn btn-secondary"
             type="button"
             aria-label="Générer un projet vide">
-            Projet vide (sans JSON)
+            Commencer un projet vide
           </button>
         </div>
 
@@ -106,9 +100,7 @@
 
       <section
         class="generation"
-        aria-labelledby="generation-title"
-        data-layout="stack"
-        data-gap="m">
+        aria-labelledby="generation-title">
         <h2
           id="generation-title"
           class="visually-hidden">
@@ -126,11 +118,16 @@
       </section>
 
       <section
-        class="results"
+        class="results is-empty"
         aria-labelledby="results-title"
         data-layout="stack"
-        data-gap="m">
-        <h2 id="results-title">Résultats</h2>
+        data-gap="m"
+        aria-hidden="true">
+        <h2
+          id="results-title"
+          class="visually-hidden">
+          Résultats
+        </h2>
 
         <div
           class="previews"
@@ -216,10 +213,8 @@
     </main>
 
     <footer
-      class="app-footer"
-      role="contentinfo">
-      <p>Primary — UI pour l'extracteur Figma — Déployé sur GH Pages</p>
-    </footer>
+      class="footer"
+      role="contentinfo"></footer>
 
     <!-- App scripts -->
     <script

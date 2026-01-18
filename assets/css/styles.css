@@ -22,13 +22,10 @@ body {
   padding: 1rem;
 }
 
-.app-header,
-.app-footer {
+.header,
+.footer {
   background: transparent;
   padding: 1rem 0;
-}
-
-.app-title {
 }
 
 .dropzone {
@@ -135,49 +132,10 @@ body {
   position: relative;
 }
 
-/* Copy button overlay (top-right) */
-.copy-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--muted);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-}
-.copy-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-.copy-btn:focus {
-  outline: 3px solid rgba(124, 31, 90, 0.18);
-  outline-offset: 2px;
-}
 .copy-btn.is-copied {
   background: rgba(39, 174, 96, 0.9);
   color: white;
   border-color: rgba(39, 174, 96, 0.9);
-}
-
-.btn {
-  background: var(--accent);
-  color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  border: none;
-}
-.btn[disabled] {
-  opacity: 0.5;
-}
-
-/* Small secondary button for uploader actions */
-.btn-secondary {
-  background: transparent;
-  color: var(--accent);
-  border: 1px solid rgba(124, 31, 90, 0.12);
 }
 
 .uploader-actions {
@@ -242,4 +200,9 @@ body {
 .generation-summary-title {
   font-weight: 600;
   margin-bottom: 0.25rem;
+}
+
+/* Hide the results section until artifacts are generated */
+.results[aria-hidden="true"] {
+  display: none;
 }

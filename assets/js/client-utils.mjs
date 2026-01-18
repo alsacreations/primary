@@ -1979,14 +1979,96 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   parts.push("}\n")
 
   const themeCss = parts.join("")
+  const primitivesJsonStr = JSON.stringify(structured, null, 2)
+  const tokensJsonStr = JSON.stringify(Object.assign({ colors: colorResult.tokensJson || {} }, normalized), null, 2)
+
+  // generate a minimal theme.json compatible structure (client-side)
+  function generateThemeJson(primitivesJsonStrLocal, tokensJsonStrLocal) {
+    let primitives = {}
+    let tokens = {}
+    try {
+      primitives = JSON.parse(primitivesJsonStrLocal)
+    } catch (e) {}
+    try {
+      tokens = JSON.parse(tokensJsonStrLocal)
+    } catch (e) {}
+
+    const theme = {
+      $schema: "https://schemas.wp.org/wp/6.7/theme.json",
+      version: 3,
+      settings: {},
+      styles: {},
+    }
+
+    // Build palette: prefer tokens.colors then primitives.color, fallback to defaults
+    const palette = []
+    const seen = new Set()
+    if (primitives && primitives.color) {
+      Object.keys(primitives.color).forEach((k) => {
+        palette.push({ name: k, color: `var(--color-${k})`, slug: k })
+        seen.add(k)
+      })
+    }
+    if (tokens && tokens.colors) {
+      Object.keys(tokens.colors).forEach((tk) => {
+        if (!seen.has(tk)) {
+          const val = tokens.colors[tk].value || `var(--${tk})`
+          palette.push({ name: tk, color: val, slug: tk })
+          seen.add(tk)
+        }
+      })
+    }
+    // simple defaults for missing common colors
+    ;["white", "black", "gray-500"].forEach((slug) => {
+      if (!seen.has(slug)) {
+        const name = slug
+        const color = slug === "white" ? "var(--color-white)" : slug === "black" ? "var(--color-black)" : "var(--color-gray-500)"
+        palette.push({ name, color, slug })
+        seen.add(slug)
+      }
+    })
+
+    theme.settings.color = { palette }
+
+    // spacing
+    const spacingSizes = []
+    if (tokens && tokens.spacing) {
+      Object.keys(tokens.spacing).forEach((k) => {
+        spacingSizes.push({ name: k, size: tokens.spacing[k].value || `var(--${k})`, slug: k })
+      })
+    }
+    // fallback common spacings from primitives
+    ;["spacing-16", "spacing-24", "spacing-32"].forEach((s) => {
+      if (!spacingSizes.find((x) => x.slug === s)) spacingSizes.push({ name: s, size: `var(--${s})`, slug: s })
+    })
+    theme.settings.spacing = { spacingSizes }
+
+    // typography sizes
+    const fontSizes = []
+    if (tokens && tokens.fonts && tokens.fonts.fontSize) {
+      Object.keys(tokens.fonts.fontSize).forEach((k) => {
+        fontSizes.push({ name: k, size: tokens.fonts.fontSize[k].value || `var(--${k})`, slug: k })
+      })
+    }
+    ;["text-16", "text-24", "text-30"].forEach((s) => {
+      if (!fontSizes.find((x) => x.slug === s)) fontSizes.push({ name: s, size: `var(--${s})`, slug: s })
+    })
+    theme.settings.typography = { fontSizes }
+
+    // inject some sensible defaults for styles
+    theme.settings = theme.settings || {}
+    theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" }
+    theme.styles = theme.styles || {}
+    theme.styles.typography = { fontFamily: "var(--font-base)", fontWeight: "var(--font-weight-regular)" }
+
+    return JSON.stringify(theme, null, 2)
+  }
+
   const artifacts = {
-    "primitives.json": JSON.stringify(structured, null, 2),
-    "tokens.json": JSON.stringify(
-      Object.assign({ colors: colorResult.tokensJson || {} }, normalized),
-      null,
-      2,
-    ),
+    "primitives.json": primitivesJsonStr,
+    "tokens.json": tokensJsonStr,
     "theme.css": themeCss,
+    "theme.json": generateThemeJson(primitivesJsonStr, tokensJsonStr),
   }
   return { artifacts, logs }
 }

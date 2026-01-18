@@ -27,6 +27,19 @@ async function run() {
     console.error(css)
     process.exit(1)
   }
+
+  // Ensure theme.json is produced and contains expected sections
+  if (!artifacts["theme.json"]) {
+    console.error("FAIL: expected theme.json to be generated")
+    process.exit(1)
+  }
+  const themeJson = JSON.parse(artifacts["theme.json"])
+  if (!themeJson || !themeJson.settings || !themeJson.settings.color) {
+    console.error("FAIL: theme.json missing expected structure")
+    console.error(artifacts["theme.json"])
+    process.exit(1)
+  }
+
   console.log("Empty project generation — OK")
 }
 

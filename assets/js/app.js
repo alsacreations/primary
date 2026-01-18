@@ -14,6 +14,7 @@ const btnApplyTheme = document.getElementById("btn-apply-theme")
 
 let lastArtifacts = null
 let lastLogs = []
+let lastFiles = null
 
 function log(...args) {
   const str = args.join(" ")
@@ -28,6 +29,14 @@ function resetUi() {
   document.querySelector(".logs")?.classList.remove("is-visible")
   previewThemed.textContent = ""
   previewThemeJson.textContent = ""
+
+  // hide theme.json preview panel by default
+  const panelThemeJson = document.getElementById("panel-preview-themejson")
+  if (panelThemeJson) {
+    panelThemeJson.classList.remove("is-visible")
+    panelThemeJson.setAttribute("aria-hidden", "true")
+  }
+
   generatedList.innerHTML = ""
   btnDownloadThemeCss.disabled = true
   btnDownloadThemeJson.disabled = true
@@ -38,6 +47,8 @@ function resetUi() {
 
 async function handleFiles(files) {
   resetUi()
+  lastFiles = Array.from(files) // remember files for later regeneration
+
   // Do not print parsing/technical logs unless debug enabled
   const debugFlag = !!(
     document.getElementById("debug-toggle") &&
@@ -71,7 +82,28 @@ async function handleFiles(files) {
 
   // show artifacts
   previewThemed.textContent = artifacts["theme.css"]
-  previewThemeJson.textContent = artifacts["theme.json"]
+
+  // Show/hide theme.json preview depending on the checkbox
+  const generateJson = !!(
+    document.getElementById("generate-themejson-toggle") &&
+    document.getElementById("generate-themejson-toggle").checked
+  )
+  const panelThemeJson = document.getElementById("panel-preview-themejson")
+  if (generateJson && artifacts["theme.json"]) {
+    previewThemeJson.textContent = artifacts["theme.json"]
+    if (panelThemeJson) {
+      panelThemeJson.classList.add("is-visible")
+      panelThemeJson.setAttribute("aria-hidden", "false")
+    }
+    btnDownloadThemeJson.disabled = false
+  } else {
+    previewThemeJson.textContent = ""
+    if (panelThemeJson) {
+      panelThemeJson.classList.remove("is-visible")
+      panelThemeJson.setAttribute("aria-hidden", "true")
+    }
+    btnDownloadThemeJson.disabled = true
+  }
 
   // list generated files
   generatedList.innerHTML = ""
@@ -205,6 +237,53 @@ if (debugToggleEl) {
   })
 }
 
+// Toggle to generate and preview theme.json (WordPress project)
+const genThemeJsonToggle = document.getElementById("generate-themejson-toggle")
+const panelThemeJson = document.getElementById("panel-preview-themejson")
+if (genThemeJsonToggle) {
+  genThemeJsonToggle.addEventListener('change', async (e) => {
+    const checked = e.target.checked
+    if (checked) {
+      // If we don't have theme.json yet, regenerate from lastFiles (or empty project)
+      if (!lastArtifacts || !lastArtifacts['theme.json']) {
+        try {
+          const debugFlag = !!(document.getElementById('debug-toggle') && document.getElementById('debug-toggle').checked)
+          const filesToUse = lastFiles || []
+          const { artifacts: newArtifacts, logs } = await processFiles(filesToUse, (m) => {}, { debug: debugFlag })
+          lastArtifacts = newArtifacts
+        } catch (err) {
+          console.error('Erreur lors de la génération de theme.json:', err)
+        }
+      }
+      if (lastArtifacts && lastArtifacts['theme.json']) {
+        previewThemeJson.textContent = lastArtifacts['theme.json']
+        if (panelThemeJson) {
+          panelThemeJson.classList.add('is-visible')
+          panelThemeJson.setAttribute('aria-hidden', 'false')
+        }
+        btnDownloadThemeJson.disabled = false
+        console.log('theme.json généré et affiché')
+      } else {
+        // nothing to show
+        previewThemeJson.textContent = ''
+        if (panelThemeJson) {
+          panelThemeJson.classList.remove('is-visible')
+          panelThemeJson.setAttribute('aria-hidden', 'true')
+        }
+        btnDownloadThemeJson.disabled = true
+        console.warn('theme.json non disponible après génération')
+      }
+    } else {
+      previewThemeJson.textContent = ""
+      if (panelThemeJson) {
+        panelThemeJson.classList.remove("is-visible")
+        panelThemeJson.setAttribute("aria-hidden", "true")
+      }
+      btnDownloadThemeJson.disabled = true
+    }
+  })
+}
+
 // Empty project button handler
 const btnEmptyProject = document.getElementById("btn-empty-project")
 if (btnEmptyProject) {
@@ -217,9 +296,11 @@ if (btnEmptyProject) {
       document.getElementById("debug-toggle").checked
     )
 
-    const { artifacts, logs } = await processFiles([], () => {}, {
+      const { artifacts, logs } = await processFiles([], () => {}, {
       debug: debugFlag,
     })
+    // remember lastFiles as empty project
+    lastFiles = []
 
     // reuse same log logic as handleFiles
     const logsContainer = document.querySelector(".logs")
@@ -239,7 +320,28 @@ if (btnEmptyProject) {
 
     // show artifacts
     previewThemed.textContent = artifacts["theme.css"]
-    previewThemeJson.textContent = artifacts["theme.json"]
+
+    // Show/hide theme.json preview depending on the checkbox
+    const generateJson = !!(
+      document.getElementById("generate-themejson-toggle") &&
+      document.getElementById("generate-themejson-toggle").checked
+    )
+    const panelThemeJson = document.getElementById("panel-preview-themejson")
+    if (generateJson && artifacts["theme.json"]) {
+      previewThemeJson.textContent = artifacts["theme.json"]
+      if (panelThemeJson) {
+        panelThemeJson.classList.add("is-visible")
+        panelThemeJson.setAttribute("aria-hidden", "false")
+      }
+      btnDownloadThemeJson.disabled = false
+    } else {
+      previewThemeJson.textContent = ""
+      if (panelThemeJson) {
+        panelThemeJson.classList.remove("is-visible")
+        panelThemeJson.setAttribute("aria-hidden", "true")
+      }
+      btnDownloadThemeJson.disabled = true
+    }
 
     // list generated files
     generatedList.innerHTML = ""

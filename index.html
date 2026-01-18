@@ -95,6 +95,15 @@
             aria-label="Générer un projet vide">
             Projet vide (sans JSON)
           </button>
+
+          <label class="log-debug generate-themejson-uploader">
+            <input
+              id="generate-themejson-toggle"
+              type="checkbox"
+              aria-label="Générer theme.json (projet WordPress)"
+              title="Génère et affiche un fichier theme.json compatible WordPress (si coché)" />
+            <span>Générer theme.json (projet WordPress)</span>
+          </label>
         </div>
       </section>
 
@@ -137,7 +146,8 @@
           </div>
 
           <div
-            class="preview"
+            id="panel-preview-themejson"
+            class="preview themejson-preview"
             data-layout="stack">
             <h3>Preview — theme.json</h3>
             <div

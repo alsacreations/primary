@@ -111,6 +111,15 @@ body {
   height: 1rem;
 }
 
+/* uploader placement for theme.json toggle */
+.generate-themejson-uploader {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  margin-left: 0.5rem;
+}
+
 .code-preview {
   background: #0b1220;
   color: #dff3ff;
@@ -196,4 +205,12 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
   }
+}
+
+/* Theme.json preview panel hidden by default; shown only when option enabled */
+.preview.themejson-preview {
+  display: none;
+}
+.preview.themejson-preview.is-visible {
+  display: block;
 }

@@ -489,3 +489,141 @@ function initCopyButtons() {
 
 // Initialize copy buttons on load
 initCopyButtons()
+
+// INFO BUTTONS: transforme les boutons (class .btn-info) en ancres accessibles
+// Le bouton doit avoir `data-target="<id>"` correspondant à un <details id>
+// - met à jour `aria-controls` et `aria-expanded`
+// - ouvre le <details> ciblé et focuse le <summary>
+// - met à jour le hash (pushState) pour créer une vraie ancre
+function updateInfoButtonsForDetails(id, isOpen) {
+  document.querySelectorAll(`.btn-info[data-target="${id}"]`).forEach((btn) => {
+    btn.setAttribute("aria-expanded", !!isOpen)
+  })
+}
+
+// Ferme tous les <details> sauf celui passé en exception (id ou élément)
+function closeOtherDetails(exception) {
+  const exceptId =
+    typeof exception === "string" ? exception : exception && exception.id
+  document.querySelectorAll("details[id]").forEach((d) => {
+    if (!d.id) return
+    if (d.id !== exceptId && d.open) {
+      d.open = false
+      updateInfoButtonsForDetails(d.id, false)
+      // cleanup hash if it pointed to the closed detail
+      if (location.hash === `#${d.id}`) {
+        history.replaceState(null, "", location.pathname + location.search)
+      }
+    }
+  })
+}
+
+function openDetailsAndFocus(id, { pushHistory = false } = {}) {
+  if (!id) return
+  const details = document.getElementById(id)
+  if (!(details instanceof HTMLDetailsElement)) return
+  if (!details.open) details.open = true
+  // fermer les autres détails pour comportement d'accordéon
+  closeOtherDetails(details)
+  const summary = details.querySelector("summary")
+  if (summary && typeof summary.focus === "function") {
+    // focus then ensure visible for sighted keyboard users
+    summary.focus()
+    if (typeof summary.scrollIntoView === "function") {
+      try {
+        summary.scrollIntoView({ block: "center", behavior: "smooth" })
+      } catch (e) {
+        summary.scrollIntoView()
+      }
+    }
+  }
+  updateInfoButtonsForDetails(id, true)
+  if (pushHistory) {
+    history.pushState(null, "", `#${id}`)
+  } else {
+    history.replaceState(null, "", `#${id}`)
+  }
+}
+
+function initInfoButtons() {
+  const buttons = document.querySelectorAll(".btn-info[data-target]")
+  buttons.forEach((btn) => {
+    const targetId = btn.getAttribute("data-target")
+    if (!targetId) return
+    btn.setAttribute("aria-controls", targetId)
+    btn.setAttribute("aria-expanded", "false")
+    btn.addEventListener("click", (e) => {
+      e.preventDefault()
+      openDetailsAndFocus(targetId, { pushHistory: true })
+    })
+  })
+
+  // Sync when details toggled (via summary click)
+  document.querySelectorAll("details[id]").forEach((details) => {
+    details.addEventListener("toggle", () => {
+      const id = details.id
+      const isOpen = details.open
+      updateInfoButtonsForDetails(id, isOpen)
+      if (isOpen) {
+        // fermer les autres détails (accordéon)
+        closeOtherDetails(details)
+        history.replaceState(null, "", `#${id}`)
+      } else {
+        if (location.hash === `#${id}`) {
+          history.replaceState(null, "", location.pathname + location.search)
+        }
+      }
+    })
+  })
+
+  // React to hashchange (back/forward or direct link)
+  window.addEventListener("hashchange", () => {
+    const id = location.hash && location.hash.slice(1)
+    if (!id) return
+    const details = document.getElementById(id)
+    if (details && details instanceof HTMLDetailsElement) {
+      details.open = true
+      const summary = details.querySelector("summary")
+      if (summary) {
+        summary.focus()
+        if (typeof summary.scrollIntoView === "function") {
+          try {
+            summary.scrollIntoView({ block: "center", behavior: "smooth" })
+          } catch (e) {
+            summary.scrollIntoView()
+          }
+        }
+      }
+      updateInfoButtonsForDetails(id, true)
+    }
+  })
+
+  // Ensure buttons reflect current open state of details
+  document.querySelectorAll("details[id]").forEach((d) => {
+    updateInfoButtonsForDetails(d.id, !!d.open)
+  })
+
+  // Open on initial load if hash present
+  const initial = location.hash && location.hash.slice(1)
+  if (initial) {
+    const details = document.getElementById(initial)
+    if (details && details instanceof HTMLDetailsElement) {
+      details.open = true
+      const summary = details.querySelector("summary")
+      if (summary) {
+        summary.focus()
+        if (typeof summary.scrollIntoView === "function") {
+          try {
+            summary.scrollIntoView({ block: "center", behavior: "smooth" })
+          } catch (e) {
+            summary.scrollIntoView()
+          }
+        }
+      }
+      updateInfoButtonsForDetails(initial, true)
+    }
+  }
+}
+
+// Initialize info buttons
+initInfoButtons()

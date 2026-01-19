@@ -18,19 +18,19 @@
       class="header"
       role="banner">
       <div
-        class="container"
-        data-layout="duo"
+        data-layout="repel"
         data-gap="m">
-        <h1 class="main-title">Primary</h1>
+        <h1 class="title-l">Primary</h1>
       </div>
     </header>
 
+    <!-- Main -->
     <main
       class="main"
       role="main">
       <!-- Uploader -->
       <section
-        class="uploader"
+        class="section section-uploader"
         aria-labelledby="uploader-title"
         data-layout="stack"
         data-gap="m">
@@ -80,7 +80,7 @@
             class="btn btn-secondary"
             type="button"
             aria-label="Générer un projet vide">
-            Commencer un projet vide
+            Débuter un projet vide
           </button>
         </div>
 
@@ -91,24 +91,55 @@
           data-gap="s">
           <ul
             class="options-list"
-            role="list">
+            role="list"
+            data-layout="stack">
             <li class="options-list-item">
               <input
                 id="generate-themejson"
-                type="checkbox"
-                aria-label="Générer theme.json (projet WordPress)"
-                title="Génère et affiche un fichier theme.json compatible WordPress (si coché)" />
+                type="checkbox" />
               <label
                 class="option-label"
                 for="generate-themejson"
-                >Générer theme.json (projet WordPress)</label
+                >Générer <code>theme.json</code> (projet WordPress)</label
               >
+              <button
+                class="btn-info"
+                type="button"
+                data-target="details-2">
+                <span class="visually-hidden">En savoir plus</span>
+                <span data-icon="icon-info"></span>
+              </button>
             </li>
             <li class="options-list-item">
-              ici autre option (ajouter les autres fichiers CSS) (détails)
+              <input
+                id="add-extra-css-files"
+                type="checkbox" />
+              <label for="add-extra-css-files">
+                Ajouter <code>reset.css</code>, <code>layouts.css</code>,
+                <code>natives.css</code>
+              </label>
+              <button
+                class="btn-info"
+                type="button"
+                data-target="details-3">
+                <span class="visually-hidden">En savoir plus</span>
+                <span data-icon="icon-info"></span>
+              </button>
             </li>
             <li class="options-list-item">
-              ici autre option (ajouter les fichiers de config) (détails)
+              <input
+                id="add-config-files"
+                type="checkbox" />
+              <label for="add-config-files"
+                >Ajouter les fichiers de config. de projet</label
+              >
+              <button
+                class="btn-info"
+                type="button"
+                data-target="details-4">
+                <span class="visually-hidden">En savoir plus</span>
+                <span data-icon="icon-info"></span>
+              </button>
             </li>
           </ul>
         </div>
@@ -116,7 +147,7 @@
 
       <!-- Summary Logs -->
       <section
-        class="summary-logs"
+        class="section summary-logs"
         aria-labelledby="summary-logs-title">
         <h2
           id="summary-logs-title"
@@ -136,7 +167,7 @@
 
       <!-- Fichiers générés -->
       <section
-        class="results is-empty"
+        class="section results is-empty"
         aria-labelledby="results-title"
         data-layout="stack"
         data-gap="m"
@@ -230,7 +261,142 @@
       </section>
     </main>
 
-    <section class="faq">FAQ</section>
+    <section class="section section-faq">
+      <h2 class="title-m">FAQ</h2>
+
+      <div
+        class="faq-group"
+        data-layout="duo"
+        data-align="start"
+        data-gap="m">
+        <details
+          id="details-1"
+          class="faq-item">
+          <summary>Comment ça marche&#8239;?</summary>
+          <div>
+            <p>
+              Ce composant details contient une grande quantité de contenu pour
+              tester les performances des transitions avec
+              <code>interpolate-size</code>
+              .
+            </p>
+            <p>
+              Lorem Salu bissame ! Wie geht's les samis ? Hans apporte moi une
+              Wurschtsalad avec un picon bitte, s'il te plaît. Voss ? Une Carola
+              et du Melfor ? Yo dû, espèce de Knäckes, ch'ai dit un picon!
+            </p>
+            <p>
+              Yoo ch ch'ai ramené du schpeck, du chambon, un kuglopf et du
+              schnaps dans mon rucksack. Allez, s'guelt !
+            </p>
+            <p>
+              Wotch a kofee avec ton bibalaekaess et ta wurscht ? Yeuh non che
+              suis au réchime, je ne mange plus que des Grumbeere light et che
+              fais de la chym avec Chulien. Tiens, un rottznoz sur le comptoir.
+            </p>
+            <p>Bande de knäckes!</p>
+          </div>
+        </details>
+
+        <details
+          id="details-2"
+          class="faq-item">
+          <summary>
+            <span>À quoi sert <code>theme.json</code>&#8239;?</span>
+          </summary>
+          <div>
+            <p>
+              Ce composant details contient une grande quantité de contenu pour
+              tester les performances des transitions avec
+              <code>interpolate-size</code>
+              .
+            </p>
+            <p>
+              Lorem Salu bissame ! Wie geht's les samis ? Hans apporte moi une
+              Wurschtsalad avec un picon bitte, s'il te plaît. Voss ? Une Carola
+              et du Melfor ? Yo dû, espèce de Knäckes, ch'ai dit un picon!
+            </p>
+            <p>
+              Yoo ch ch'ai ramené du schpeck, du chambon, un kuglopf et du
+              schnaps dans mon rucksack. Allez, s'guelt !
+            </p>
+            <p>
+              Wotch a kofee avec ton bibalaekaess et ta wurscht ? Yeuh non che
+              suis au réchime, je ne mange plus que des Grumbeere light et che
+              fais de la chym avec Chulien. Tiens, un rottznoz sur le comptoir.
+            </p>
+            <p>Bande de knäckes!</p>
+          </div>
+        </details>
+
+        <details
+          id="details-3"
+          class="faq-item">
+          <summary>
+            <span
+              >Que sont les fichiers <code>reset.css</code>,
+              <code>layouts.css</code> et <code>natives.css</code>&#8239;?</span
+            >
+          </summary>
+          <div>
+            <p>
+              Ce composant details contient une grande quantité de contenu pour
+              tester les performances des transitions avec
+              <code>interpolate-size</code>
+              .
+            </p>
+            <p>
+              Lorem Salu bissame ! Wie geht's les samis ? Hans apporte moi une
+              Wurschtsalad avec un picon bitte, s'il te plaît. Voss ? Une Carola
+              et du Melfor ? Yo dû, espèce de Knäckes, ch'ai dit un picon!
+            </p>
+            <p>
+              Yoo ch ch'ai ramené du schpeck, du chambon, un kuglopf et du
+              schnaps dans mon rucksack. Allez, s'guelt !
+            </p>
+            <p>
+              Wotch a kofee avec ton bibalaekaess et ta wurscht ? Yeuh non che
+              suis au réchime, je ne mange plus que des Grumbeere light et che
+              fais de la chym avec Chulien. Tiens, un rottznoz sur le comptoir.
+            </p>
+            <p>Bande de knäckes!</p>
+          </div>
+        </details>
+
+        <details
+          id="details-4"
+          class="faq-item">
+          <summary>
+            <span
+              >Que sont les fichiers de configuration de projet&#8239;?</span
+            >
+          </summary>
+          <div>
+            <p>
+              Ce composant details contient une grande quantité de contenu pour
+              tester les performances des transitions avec
+              <code>interpolate-size</code>
+              .
+            </p>
+            <p>
+              Lorem Salu bissame ! Wie geht's les samis ? Hans apporte moi une
+              Wurschtsalad avec un picon bitte, s'il te plaît. Voss ? Une Carola
+              et du Melfor ? Yo dû, espèce de Knäckes, ch'ai dit un picon!
+            </p>
+            <p>
+              Yoo ch ch'ai ramené du schpeck, du chambon, un kuglopf et du
+              schnaps dans mon rucksack. Allez, s'guelt !
+            </p>
+            <p>
+              Wotch a kofee avec ton bibalaekaess et ta wurscht ? Yeuh non che
+              suis au réchime, je ne mange plus que des Grumbeere light et che
+              fais de la chym avec Chulien. Tiens, un rottznoz sur le comptoir.
+            </p>
+            <p>Bande de knäckes!</p>
+          </div>
+        </details>
+      </div>
+    </section>
 
     <footer
       class="footer"

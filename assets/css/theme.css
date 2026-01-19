@@ -80,9 +80,9 @@
   --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
 
   /* Interactions */
-  --link: light-dark(var(--primary), var(--primary-lighten));
-  --link-hover: light-dark(var(--primary-darken), var(--primary));
-  --link-active: light-dark(var(--primary-darken), var(--primary));
+  --link: light-dark(var(--color-info-500), var(--color-info-300));
+  --link-hover: light-dark(var(--color-info-700), var(--color-info-500));
+  --link-active: light-dark(var(--color-info-700), var(--color-info-500));
 
   /* Couleur de sélection */
   --selection: light-dark(var(--primary-lighten), var(--primary-darken));

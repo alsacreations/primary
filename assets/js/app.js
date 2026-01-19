@@ -141,8 +141,8 @@ async function handleFiles(files) {
 
   // Show/hide theme.json preview depending on the checkbox
   const generateJson = !!(
-    document.getElementById("generate-themejson-toggle") &&
-    document.getElementById("generate-themejson-toggle").checked
+    document.getElementById("generate-themejson") &&
+    document.getElementById("generate-themejson").checked
   )
   const panelThemeJson = document.getElementById("panel-preview-themejson")
   if (generateJson && artifacts["theme.json"]) {
@@ -216,7 +216,7 @@ if (debugToggleEl) {
 }
 
 // Toggle to generate and preview theme.json (WordPress project)
-const genThemeJsonToggle = document.getElementById("generate-themejson-toggle")
+const genThemeJsonToggle = document.getElementById("generate-themejson")
 const panelThemeJson = document.getElementById("panel-preview-themejson")
 if (genThemeJsonToggle) {
   genThemeJsonToggle.addEventListener("change", async (e) => {
@@ -236,10 +236,6 @@ if (genThemeJsonToggle) {
             { debug: debugFlag },
           )
           lastArtifacts = newArtifacts
-          // ensure results area is visible if artifacts were produced
-          setResultsVisible(
-            !!(lastArtifacts && Object.keys(lastArtifacts).length > 0),
-          )
         } catch (err) {
           console.error("Erreur lors de la génération de theme.json:", err)
         }
@@ -318,8 +314,8 @@ if (btnEmptyProject) {
 
       // Show/hide theme.json preview depending on the checkbox
       const generateJson = !!(
-        document.getElementById("generate-themejson-toggle") &&
-        document.getElementById("generate-themejson-toggle").checked
+        document.getElementById("generate-themejson") &&
+        document.getElementById("generate-themejson").checked
       )
       const panelThemeJson = document.getElementById("panel-preview-themejson")
       if (generateJson && artifacts["theme.json"]) {

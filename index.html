@@ -71,7 +71,7 @@
         </div>
 
         <div
-          class="uploader-actions-top"
+          class="cta-empty"
           data-layout="cluster"
           data-gap="s">
           <button
@@ -84,17 +84,27 @@
         </div>
 
         <div
-          class="uploader-actions"
+          class="options"
           data-layout="cluster"
           data-gap="s">
-          <label class="log-debug generate-themejson-uploader">
-            <input
-              id="generate-themejson-toggle"
-              type="checkbox"
-              aria-label="Générer theme.json (projet WordPress)"
-              title="Génère et affiche un fichier theme.json compatible WordPress (si coché)" />
-            <span>Générer theme.json (projet WordPress)</span>
-          </label>
+          <ul
+            class="options-list"
+            role="list">
+            <li class="options-list-item">
+              <input
+                id="generate-themejson"
+                type="checkbox"
+                aria-label="Générer theme.json (projet WordPress)"
+                title="Génère et affiche un fichier theme.json compatible WordPress (si coché)" />
+              <label
+                class="option-label"
+                for="generate-themejson"
+                >Générer theme.json (projet WordPress)</label
+              >
+            </li>
+            <li class="options-list-item">ici autre option</li>
+            <li class="options-list-item">ici autre option</li>
+          </ul>
         </div>
       </section>
 

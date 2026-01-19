@@ -320,6 +320,20 @@ details[open] {
 .summary-logs.is-visible {
   display: block;
 }
+/* Controls under the summary (download kit) */
+.summary-logs .summary-controls {
+  display: none;
+  margin-top: var(--spacing-m);
+}
+.summary-logs .summary-controls.is-visible {
+  display: flex;
+  gap: var(--spacing-8);
+  align-items: center;
+}
+.summary-logs .summary-controls .btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .summary-logs-list {
   margin: 0.25rem 0 0 0;
   padding-left: 1.25rem;

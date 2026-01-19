@@ -25,6 +25,30 @@ function setResultsVisible(visible) {
   }
 }
 
+// helper: show/enable or hide/disable the download kit controls
+function updateDownloadControls(enabled) {
+  const downloadBtn = document.getElementById("download-kit-btn")
+  if (!downloadBtn) return
+  const controls = downloadBtn.closest(".summary-controls")
+  if (controls) {
+    controls.classList.toggle("is-visible", !!enabled)
+    controls.setAttribute("aria-hidden", !!enabled ? "false" : "true")
+  }
+  // If enabling, also ensure the summary section is visible so the button is seen
+  if (enabled) {
+    const summarySection = document.querySelector(".summary-logs")
+    if (summarySection) {
+      summarySection.classList.add("is-visible")
+      summarySection.setAttribute("aria-hidden", "false")
+    }
+  }
+  // enable button if enabled truthy OR there is content in the preview element
+  const previewEl = document.getElementById("preview-themecss")
+  const hasPreviewContent =
+    previewEl && previewEl.textContent && previewEl.textContent.trim()
+  downloadBtn.disabled = !(enabled || hasPreviewContent)
+}
+
 function log(...args) {
   const str = args.join(" ")
   logOutput.textContent += `\n${str}`
@@ -69,6 +93,18 @@ function resetUi() {
     if (genSummarySection) {
       genSummarySection.classList.remove("is-visible")
       genSummarySection.setAttribute("aria-hidden", "true")
+    }
+
+    // hide download controls by default
+    const downloadBtn = document.getElementById("download-kit-btn")
+    if (downloadBtn) {
+      downloadBtn.disabled = true
+      downloadBtn.textContent = "Télécharger Kit complet"
+      const controls = downloadBtn.closest(".summary-controls")
+      if (controls) {
+        controls.classList.remove("is-visible")
+        controls.setAttribute("aria-hidden", "true")
+      }
     }
   }
 
@@ -136,7 +172,8 @@ async function handleFiles(files) {
 
   // show artifacts
   previewThemed.textContent = artifacts["theme.css"]
-
+  // ensure download controls reflect presence of theme.css (Option A: activate if theme exists)
+  updateDownloadControls(!!(artifacts && artifacts["theme.css"]))
   // show generation summary just above results (if provided)
   const genSummaryEl = document.getElementById("summary-logs-id")
   if (genSummaryEl) {
@@ -157,6 +194,18 @@ async function handleFiles(files) {
         genSummarySection.classList.add("is-visible")
         genSummarySection.setAttribute("aria-hidden", "false")
       }
+
+      // show download controls when there is at least one artifact
+      const downloadBtn = document.getElementById("download-kit-btn")
+      if (downloadBtn) {
+        const controls = downloadBtn.closest(".summary-controls")
+        if (controls) {
+          controls.classList.add("is-visible")
+          controls.setAttribute("aria-hidden", "false")
+        }
+        // enable only if we have theme.css (minimum requirement)
+        downloadBtn.disabled = !(artifacts && artifacts["theme.css"])
+      }
     } else {
       genSummaryEl.classList.remove("is-visible")
       genSummaryEl.setAttribute("aria-hidden", "true")
@@ -164,6 +213,17 @@ async function handleFiles(files) {
       if (genSummarySection) {
         genSummarySection.classList.remove("is-visible")
         genSummarySection.setAttribute("aria-hidden", "true")
+      }
+
+      // hide download controls when no summary
+      const downloadBtn = document.getElementById("download-kit-btn")
+      if (downloadBtn) {
+        const controls = downloadBtn.closest(".summary-controls")
+        if (controls) {
+          controls.classList.remove("is-visible")
+          controls.setAttribute("aria-hidden", "true")
+        }
+        downloadBtn.disabled = true
       }
     }
   }
@@ -336,8 +396,14 @@ if (btnEmptyProject) {
     // show artifacts
     previewThemed.textContent = artifacts["theme.css"]
 
+    // ensure download controls reflect presence of theme.css (Option A)
+    updateDownloadControls(!!(artifacts && artifacts["theme.css"]))
+
+    // ensure download controls reflect presence of theme.css (Option A: activate if theme exists)
+    updateDownloadControls(!!(artifacts && artifacts["theme.css"]))
+
     // show generation summary just above results (if provided)
-    const genSummaryEl = document.getElementById("generation-summary")
+    const genSummaryEl = document.getElementById("summary-logs-id")
     if (genSummaryEl) {
       const txt = artifacts["generation-summary.txt"] || ""
       renderGenerationSummaryText(genSummaryEl, txt, artifacts)
@@ -362,6 +428,50 @@ if (btnEmptyProject) {
         if (panelThemeJson) {
           panelThemeJson.classList.remove("is-visible")
           panelThemeJson.setAttribute("aria-hidden", "true")
+        }
+      }
+
+      // toggle visibility of summary container and download controls (same logic as handleFiles)
+      const genSummarySection = genSummaryEl.closest(".summary-logs")
+      const ulEl = genSummaryEl.querySelector("#summary-logs-list")
+      if (txt && txt.trim()) {
+        genSummaryEl.classList.add("is-visible")
+        genSummaryEl.setAttribute("aria-hidden", "false")
+        if (ulEl) ulEl.setAttribute("aria-hidden", "false")
+        if (genSummarySection) {
+          genSummarySection.classList.add("is-visible")
+          genSummarySection.setAttribute("aria-hidden", "false")
+        }
+
+        // show download controls when there is at least one artifact
+        const downloadBtn = document.getElementById("download-kit-btn")
+        if (downloadBtn) {
+          const controls = downloadBtn.closest(".summary-controls")
+          if (controls) {
+            controls.classList.add("is-visible")
+            controls.setAttribute("aria-hidden", "false")
+          }
+          // enable only if we have theme.css (minimum requirement)
+          downloadBtn.disabled = !(artifacts && artifacts["theme.css"])
+        }
+      } else {
+        genSummaryEl.classList.remove("is-visible")
+        genSummaryEl.setAttribute("aria-hidden", "true")
+        if (ulEl) ulEl.setAttribute("aria-hidden", "true")
+        if (genSummarySection) {
+          genSummarySection.classList.remove("is-visible")
+          genSummarySection.setAttribute("aria-hidden", "true")
+        }
+
+        // hide download controls when no summary
+        const downloadBtn = document.getElementById("download-kit-btn")
+        if (downloadBtn) {
+          const controls = downloadBtn.closest(".summary-controls")
+          if (controls) {
+            controls.classList.remove("is-visible")
+            controls.setAttribute("aria-hidden", "true")
+          }
+          downloadBtn.disabled = true
         }
       }
     }
@@ -673,3 +783,241 @@ function initInfoButtons() {
 
 // Initialize info buttons
 initInfoButtons()
+
+// download kit (zip) functionality
+async function fetchTextIfAvailable(path) {
+  try {
+    const res = await fetch(path)
+    if (!res.ok) return null
+    return await res.text()
+  } catch (e) {
+    return null
+  }
+}
+
+// Fetch a remote resource with a simple cache-bust query param to force latest version
+// Uses cache: 'no-store' to ensure the network is hit (simple and reliable)
+async function fetchTextWithCacheBust(url) {
+  try {
+    const sep = url.includes("?") ? "&" : "?"
+    const fetchUrl = `${url}${sep}t=${Date.now()}`
+    const res = await fetch(fetchUrl, { cache: "no-store" })
+    if (!res.ok) return null
+    return await res.text()
+  } catch (e) {
+    return null
+  }
+}
+
+async function createAndDownloadKit() {
+  const btn = document.getElementById("download-kit-btn")
+  if (!btn || btn.disabled) return
+  btn.disabled = true
+  const prev = btn.textContent
+  btn.textContent = "Préparation..."
+  announceCopy("Préparation de l'archive...")
+  try {
+    if (typeof JSZip === "undefined") {
+      throw new Error("JSZip introuvable")
+    }
+    const zip = new JSZip()
+    const cssFolder = zip.folder("css")
+
+    // theme.css (obligatoire)
+    const themeCss =
+      (lastArtifacts && lastArtifacts["theme.css"]) ||
+      previewThemed.textContent ||
+      ""
+    // placer theme.css dans le dossier css/
+    if (cssFolder) cssFolder.file("theme.css", themeCss)
+
+    // theme.json optionnel
+    if (
+      document.getElementById("generate-themejson") &&
+      document.getElementById("generate-themejson").checked
+    ) {
+      const themeJson = (lastArtifacts && lastArtifacts["theme.json"]) || ""
+      if (themeJson) cssFolder.file("theme.json", themeJson)
+    }
+
+    // option: extra css files (fetch from remote canonical URLs with cache-bust ?t=...)
+    if (
+      document.getElementById("add-extra-css-files") &&
+      document.getElementById("add-extra-css-files").checked
+    ) {
+      const files = [
+        {
+          src: "https://reset.alsacreations.com/public/reset.css",
+          dest: "reset.css",
+        },
+        {
+          src: "https://raw.githubusercontent.com/alsacreations/bretzel/refs/heads/main/public/layouts.css",
+          dest: "layouts.css",
+        },
+        { src: "https://knacss.com/css/natives.css", dest: "natives.css" },
+      ]
+      for (const f of files) {
+        // use cache-busted fetch to ensure latest version
+        const text = await fetchTextWithCacheBust(f.src)
+        if (text !== null) cssFolder.file(f.dest, text)
+      }
+
+      // add a generated app.css that imports the expected layers and files
+      const appCssContent = `/* L'ordre des layers définit la priorité des styles */
+
+/* Chaque layer écrase le précédent si conflit */
+@layer config, base, components, utilities;
+
+/* Config */
+@import "reset.css" layer(config);
+@import "theme.css" layer(config);
+@import "layouts.css" layer(config);
+@import "natives.css" layer(config);
+
+/* Base */
+@import "styles.css" layer(base);
+`
+      if (cssFolder) cssFolder.file("app.css", appCssContent)
+    }
+
+    // option: config files (support 'config_files:*' artifacts + robust fallback fetch)
+    if (
+      document.getElementById("add-config-files") &&
+      document.getElementById("add-config-files").checked
+    ) {
+      // Prefer files provided by the generation step under keys like 'config_files:PATH' or 'config_files/PATH'
+      let addedAny = false
+      if (lastArtifacts) {
+        for (const key of Object.keys(lastArtifacts)) {
+          if (key.startsWith("config_files:")) {
+            const dest = key.slice("config_files:".length)
+            const content = lastArtifacts[key]
+            if (typeof content === "string") {
+              zip.file(dest, content)
+              addedAny = true
+              // also try adding dotted variant if missing (e.g., 'editorconfig' -> '.editorconfig')
+              if (
+                !dest.startsWith(".") &&
+                !dest.startsWith(".vscode") &&
+                dest.indexOf("/") === -1
+              ) {
+                // add dotted alias as well
+                zip.file(`.${dest}`, content)
+              } else if (!dest.startsWith(".") && dest.startsWith("vscode/")) {
+                zip.file(`.vscode/${dest.slice(6)}`, content)
+              }
+            }
+          } else if (key.startsWith("config_files/")) {
+            const dest = key.slice("config_files/".length)
+            const content = lastArtifacts[key]
+            if (typeof content === "string") {
+              zip.file(dest, content)
+              addedAny = true
+            }
+          }
+        }
+      }
+
+      // helper: try multiple fetch paths (with/without leading dot, absolute or relative)
+      async function tryFetchVariants(p) {
+        const candidates = new Set()
+        // common locations
+        candidates.add("/" + p)
+        candidates.add(p)
+        candidates.add("/config_files/" + p)
+        candidates.add("config_files/" + p)
+
+        // if starts with '.', try without dot and with config_files variants
+        if (p.startsWith(".")) {
+          candidates.add("/" + p.slice(1))
+          candidates.add(p.slice(1))
+          candidates.add("/config_files/" + p.slice(1))
+          candidates.add("config_files/" + p.slice(1))
+        } else {
+          // try with dot prefix for common dotfiles, and config_files variants
+          candidates.add("/." + p)
+          candidates.add("." + p)
+          candidates.add("/config_files/." + p)
+          candidates.add("config_files/." + p)
+        }
+
+        for (const c of candidates) {
+          const t = await fetchTextIfAvailable(c)
+          if (t !== null) return { text: t, path: c }
+        }
+        return null
+      }
+
+      // If none were provided via artifacts, fallback to fetching canonical config files from project root
+      const missing = []
+      if (!addedAny) {
+        const cfg = [
+          ".editorconfig",
+          ".gitignore",
+          ".vscode/extensions.json",
+          ".vscode/settings.json",
+          "postcss.config.mjs",
+          "prettier.config.mjs",
+          "stylelint.config.mjs",
+          "vite.config.js",
+        ]
+        for (const p of cfg) {
+          const result = await tryFetchVariants(p)
+          if (result && result.text !== null) {
+            // ensure we store at the intended destination (preserve dot/dir form)
+            const dest = p
+            zip.file(dest, result.text)
+            addedAny = true
+            // If destination is a dotted file like '.editorconfig' but the fetched path was non-dotted,
+            // also create a copy with dotted name to be safe
+            if (
+              (p === ".editorconfig" || p === ".gitignore") &&
+              !result.path.includes("." + p.slice(1))
+            ) {
+              zip.file(p, result.text)
+            }
+          } else {
+            missing.push(p)
+          }
+        }
+      }
+
+      // notify user if some files couldn't be fetched
+      if (missing.length) {
+        announceCopy(
+          `Fichiers de configuration manquants : ${missing.join(", ")}`,
+        )
+        console.warn("Fichiers de configuration manquants:", missing)
+      }
+    }
+
+    const blob = await zip.generateAsync({ type: "blob" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "primary-kit.zip"
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+    announceCopy("Archive prête, téléchargement lancé")
+  } catch (err) {
+    console.error(err)
+    announceCopy("Impossible de générer l'archive")
+  } finally {
+    btn.disabled = false
+    btn.textContent = prev
+  }
+}
+
+function initDownloadKitButton() {
+  const btn = document.getElementById("download-kit-btn")
+  if (!btn) return
+  btn.addEventListener("click", () => {
+    createAndDownloadKit()
+  })
+  btn.disabled = true
+}
+
+// Initialize download button handling
+initDownloadKitButton()

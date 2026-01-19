@@ -164,6 +164,19 @@
             class="summary-logs-list"
             aria-hidden="false"></ul>
         </div>
+
+        <div
+          class="summary-controls"
+          aria-hidden="true">
+          <button
+            id="download-kit-btn"
+            class="btn btn-primary"
+            type="button"
+            aria-label="Télécharger Kit complet"
+            disabled>
+            Télécharger Kit complet
+          </button>
+        </div>
       </section>
 
       <!-- Fichiers générés -->
@@ -495,6 +508,8 @@
     <script
       type="module"
       src="assets/js/client-utils.mjs"></script>
+    <!-- JSZip (cdn) pour génération d'archives côté client -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script
       type="module"
       src="assets/js/app.js"></script>

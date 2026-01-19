@@ -5,7 +5,7 @@ const fileInput = document.getElementById("file-input")
 const logOutput = document.getElementById("log-output")
 const previewThemed = document.getElementById("preview-themecss")
 const previewThemeJson = document.getElementById("preview-themejson")
-// Note: generated files are shown inside the generation summary; the dedicated `generated-list` element was removed from the DOM
+// Note: generated files are shown inside the logs summary; the dedicated `generated-list` element was removed from the DOM
 // Download/reset/apply buttons removed; copy buttons are provided on code previews.
 
 let lastArtifacts = null
@@ -39,8 +39,8 @@ function resetUi() {
   previewThemed.textContent = ""
   previewThemeJson.textContent = ""
 
-  // clear generation summary (remove title, list items or any pre-existing text)
-  // revoke any blob URLs created for the generation summary links to avoid memory leaks
+  // clear logs summary (remove title, list items or any pre-existing text)
+  // revoke any blob URLs created for the logs summary links to avoid memory leaks
   if (summaryBlobUrls && summaryBlobUrls.length) {
     summaryBlobUrls.forEach((u) => {
       try {
@@ -51,10 +51,10 @@ function resetUi() {
     })
     summaryBlobUrls = []
   }
-  const genSummaryEl = document.getElementById("generation-summary")
+  const genSummaryEl = document.getElementById("summary-logs-id")
   if (genSummaryEl) {
-    const ul = genSummaryEl.querySelector("#generation-summary-list")
-    const title = genSummaryEl.querySelector(".generation-summary-title")
+    const ul = genSummaryEl.querySelector("#summary-logs-list")
+    const title = genSummaryEl.querySelector(".summary-logs-title")
     if (title) title.remove()
     if (ul) ul.innerHTML = ""
     else genSummaryEl.textContent = ""
@@ -79,7 +79,7 @@ async function handleFiles(files) {
   lastFiles = Array.from(files) // remember files for later regeneration
 
   // If a previous run left a raw summary string inside the container, convert it to list for consistency
-  const genSummaryContainer = document.getElementById("generation-summary")
+  const genSummaryContainer = document.getElementById("summary-logs-id")
   if (genSummaryContainer && genSummaryContainer.textContent.trim()) {
     const txt = genSummaryContainer.textContent.trim()
     renderGenerationSummaryText(genSummaryContainer, txt)
@@ -126,7 +126,7 @@ async function handleFiles(files) {
   previewThemed.textContent = artifacts["theme.css"]
 
   // show generation summary just above results (if provided)
-  const genSummaryEl = document.getElementById("generation-summary")
+  const genSummaryEl = document.getElementById("summary-logs-id")
   if (genSummaryEl) {
     const txt = artifacts["generation-summary.txt"] || ""
     renderGenerationSummaryText(genSummaryEl, txt, artifacts)
@@ -346,7 +346,7 @@ if (btnEmptyProject) {
 
 // helper: render the generation summary string into title + list
 function renderGenerationSummaryText(container, txt, artifacts = {}) {
-  const ul = container.querySelector("#generation-summary-list")
+  const ul = container.querySelector("#summary-logs-list")
   if (!ul) {
     container.textContent = txt
     return
@@ -368,10 +368,10 @@ function renderGenerationSummaryText(container, txt, artifacts = {}) {
     .map((l) => l.trim())
     .filter(Boolean)
   if (lines.length) {
-    let titleEl = container.querySelector(".generation-summary-title")
+    let titleEl = container.querySelector(".summary-logs-title")
     if (!titleEl) {
       titleEl = document.createElement("div")
-      titleEl.className = "generation-summary-title"
+      titleEl.className = "summary-logs-title"
       container.insertBefore(titleEl, ul)
     }
     titleEl.textContent = lines[0]
@@ -419,7 +419,7 @@ function renderGenerationSummaryText(container, txt, artifacts = {}) {
 resetUi()
 
 // On load: if the generation summary container already contains raw text (e.g., page restored), convert it to the list
-const genSummaryOnLoad = document.getElementById("generation-summary")
+const genSummaryOnLoad = document.getElementById("summary-logs-id")
 if (genSummaryOnLoad && genSummaryOnLoad.textContent.trim()) {
   const txt = genSummaryOnLoad.textContent.trim()
   // No artifacts available on load; render as plain text conversion

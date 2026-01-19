@@ -28,6 +28,7 @@
     <main
       class="main"
       role="main">
+      <!-- Uploader -->
       <section
         class="uploader"
         aria-labelledby="uploader-title"
@@ -83,6 +84,7 @@
           </button>
         </div>
 
+        <!-- Options -->
         <div
           class="options"
           data-layout="cluster"
@@ -112,25 +114,27 @@
         </div>
       </section>
 
+      <!-- Summary Logs -->
       <section
-        class="generation"
-        aria-labelledby="generation-title">
+        class="summary-logs"
+        aria-labelledby="summary-logs-title">
         <h2
-          id="generation-title"
+          id="summary-logs-title"
           class="visually-hidden">
           Synthèse
         </h2>
         <div
-          id="generation-summary"
-          class="generation-summary"
+          id="summary-logs-id"
+          class="logs-summary"
           aria-live="polite">
           <ul
-            id="generation-summary-list"
-            class="generation-summary-list"
+            id="summary-logs-list"
+            class="summary-logs-list"
             aria-hidden="false"></ul>
         </div>
       </section>
 
+      <!-- Fichiers générés -->
       <section
         class="results is-empty"
         aria-labelledby="results-title"
@@ -140,7 +144,7 @@
         <h2
           id="results-title"
           class="visually-hidden">
-          Résultats
+          Résumé de l'extraction
         </h2>
 
         <div
@@ -225,6 +229,8 @@
         </div>
       </section>
     </main>
+
+    <section class="faq">FAQ</section>
 
     <footer
       class="footer"

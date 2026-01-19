@@ -56,8 +56,20 @@ function resetUi() {
     const ul = genSummaryEl.querySelector("#summary-logs-list")
     const title = genSummaryEl.querySelector(".summary-logs-title")
     if (title) title.remove()
-    if (ul) ul.innerHTML = ""
-    else genSummaryEl.textContent = ""
+    if (ul) {
+      ul.innerHTML = ""
+      ul.setAttribute("aria-hidden", "true")
+    } else genSummaryEl.textContent = ""
+
+    // hide the generation summary container by default
+    genSummaryEl.classList.remove("is-visible")
+    genSummaryEl.setAttribute("aria-hidden", "true")
+    // also hide the outer section to avoid visible padding/background
+    const genSummarySection = genSummaryEl.closest(".summary-logs")
+    if (genSummarySection) {
+      genSummarySection.classList.remove("is-visible")
+      genSummarySection.setAttribute("aria-hidden", "true")
+    }
   }
 
   // hide theme.json preview panel by default
@@ -133,6 +145,27 @@ async function handleFiles(files) {
     // also remove any stray plain text node inside container (legacy)
     const first = genSummaryEl.firstChild
     if (first && first.nodeType === Node.TEXT_NODE) first.textContent = ""
+
+    // only display the summary container when we have meaningful content
+    const genSummarySection = genSummaryEl.closest(".summary-logs")
+    const ulEl = genSummaryEl.querySelector("#summary-logs-list")
+    if (txt && txt.trim()) {
+      genSummaryEl.classList.add("is-visible")
+      genSummaryEl.setAttribute("aria-hidden", "false")
+      if (ulEl) ulEl.setAttribute("aria-hidden", "false")
+      if (genSummarySection) {
+        genSummarySection.classList.add("is-visible")
+        genSummarySection.setAttribute("aria-hidden", "false")
+      }
+    } else {
+      genSummaryEl.classList.remove("is-visible")
+      genSummaryEl.setAttribute("aria-hidden", "true")
+      if (ulEl) ulEl.setAttribute("aria-hidden", "true")
+      if (genSummarySection) {
+        genSummarySection.classList.remove("is-visible")
+        genSummarySection.setAttribute("aria-hidden", "true")
+      }
+    }
   }
 
   // show or hide the results section depending on whether we have artifacts
@@ -427,6 +460,19 @@ if (genSummaryOnLoad && genSummaryOnLoad.textContent.trim()) {
   // remove stray text node
   const first = genSummaryOnLoad.firstChild
   if (first && first.nodeType === Node.TEXT_NODE) first.textContent = ""
+
+  // show legacy summary on load if present
+  if (txt && txt.trim()) {
+    genSummaryOnLoad.classList.add("is-visible")
+    genSummaryOnLoad.setAttribute("aria-hidden", "false")
+    const ulOnLoad = genSummaryOnLoad.querySelector("#summary-logs-list")
+    if (ulOnLoad) ulOnLoad.setAttribute("aria-hidden", "false")
+    const genSummarySectionOnLoad = genSummaryOnLoad.closest(".summary-logs")
+    if (genSummarySectionOnLoad) {
+      genSummarySectionOnLoad.classList.add("is-visible")
+      genSummarySectionOnLoad.setAttribute("aria-hidden", "false")
+    }
+  }
 }
 
 // COPY BUTTONS: accessible copy functionality for code previews

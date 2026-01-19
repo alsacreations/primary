@@ -264,3 +264,52 @@ details[open] {
 [data-icon="icon-info"] {
   --mask-icon-svg: url("../images/icons/info.svg");
 }
+
+/* Footer */
+.footer {
+  padding-block: var(--spacing-xxl) var(--spacing-xl);
+}
+.logo-alsacreations-pepins-inner {
+  fill: var(--surface);
+}
+
+.footer-alsa {
+  text-align: center;
+
+  & p {
+    margin: 0;
+  }
+
+  & .logo-alsacreations {
+    width: 150px;
+  }
+}
+
+.logo-link {
+  display: inline-block;
+  margin: auto;
+  color: var(--accent);
+
+  @media (width >= 48rem) {
+    &:focus,
+    &:hover {
+      animation: spaceboots 2s linear infinite alternate;
+    }
+  }
+}
+
+.btn-github {
+  --button-background-color: oklch(51.33% 0.18 256.37);
+  --button-background-color-hover: oklch(
+    from oklch(51.33% 0.18 256.37) calc(l * 0.9) c h
+  );
+  --button-border-radius: var(--radius-full);
+  --button-border-color: transparent;
+  --button-text-color: var(--color-white);
+  color: var(--color-white);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-white);
+  }
+}

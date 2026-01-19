@@ -138,7 +138,9 @@
   --spacing-16: 1rem; /* 16px */
   --spacing-24: 1.5rem; /* 24px */
   --spacing-32: 2rem; /* 32px */
+  --spacing-40: 2.5rem; /* 40px */
   --spacing-48: 3rem; /* 48px */
+  --spacing-80: 5rem; /* 80px */
 
   /* Espacements Tokens */
   --spacing-xs: var(--spacing-4);
@@ -149,6 +151,11 @@
     var(--spacing-32),
     1.609rem + 1.7391vw,
     var(--spacing-48)
+  );
+  --spacing-xxl: clamp(
+    var(--spacing-40),
+    1.522rem + 4.3478vw,
+    var(--spacing-80)
   );
 
   /* Typographie Primitives globales */

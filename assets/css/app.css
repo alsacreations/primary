@@ -13,3 +13,6 @@
 
 /* Base */
 @import "styles.css" layer(base);
+
+/* Utilities */
+@import "anime.css" layer(utilities);

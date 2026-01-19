@@ -94,6 +94,12 @@ details[open] {
   }
 }
 
+.blob {
+  aspect-ratio: 3/2;
+  /* border-radius: 30% 70% 48% 52% / 60% 32% 68% 40%; */
+  border-radius: 50%;
+}
+
 .drop-zone-title {
   font-size: var(--text-l);
 

@@ -47,7 +47,7 @@
           data-layout="stack"
           for="file-input"
           id="dropzone"
-          class="dropzone"
+          class="dropzone blob"
           data-theme="dark">
           <input
             id="file-input"
@@ -283,7 +283,7 @@
               <strong>Primary</strong> est un outil de génération de fichiers
               CSS pour les projets Alsacréations, avec configuration et
               téléchargement d'un kit CSS complet (avec tokens, thématisation et
-              layouts) à partir d'exports JSON depuis Figma.
+              layouts) à partir d'exports JSON depuis Figma*.
             </p>
             <p>
               Deux sources sont possibles&#8239;:
@@ -301,6 +301,16 @@
             <p>
               Un export complet est ensuite généré et
               <strong>téléchargeable en ZIP</strong>.
+            </p>
+            <p>
+              <i
+                >*&nbsp;Sur Figma&#8239;: ouvrir la modale Variables, clic droit
+                sur une collection et bouton
+                <a
+                  href="https://help.figma.com/hc/en-us/articles/15343816063383-Modes-for-variables"
+                  >"export modes"</a
+                >.</i
+              >
             </p>
           </div>
         </details>
@@ -344,26 +354,32 @@
           </summary>
           <div>
             <p>
-              Ce composant details contient une grande quantité de contenu pour
-              tester les performances des transitions avec
-              <code>interpolate-size</code>
-              .
+              Nos
+              <a href="https://kiwipedia.fr">Guidelines Alsacréations</a>
+              recommandent d'utiliser ces fichiers CSS dans chacun de nos
+              projets afin d'assurer une base solide et cohérente&#8239;:
             </p>
+            <ul>
+              <li>
+                <a href="https://reset.alsacreations.com/">reset.css</a>&#8239;:
+                Reset CSS moderne + reset print
+              </li>
+              <li>theme.css&#8239;: primitives et tokens issus de Figma</li>
+              <li>
+                <a href="https://bretzel.alsacreations.com/">layouts.css</a
+                >&#8239;: utilitaires de disposition (Bretzel)
+              </li>
+              <li>
+                <a href="https://knacss.com/">natives.css</a>&#8239;: styles
+                natifs des éléments HTML
+              </li>
+            </ul>
+
             <p>
-              Lorem Salu bissame ! Wie geht's les samis ? Hans apporte moi une
-              Wurschtsalad avec un picon bitte, s'il te plaît. Voss ? Une Carola
-              et du Melfor ? Yo dû, espèce de Knäckes, ch'ai dit un picon!
+              Primary peut ajouter ces fichiers automatiquement à votre kit et
+              surtout se charger de récupérer les
+              <b> dernières versions à jour </b>&#8239;!
             </p>
-            <p>
-              Yoo ch ch'ai ramené du schpeck, du chambon, un kuglopf et du
-              schnaps dans mon rucksack. Allez, s'guelt !
-            </p>
-            <p>
-              Wotch a kofee avec ton bibalaekaess et ta wurscht ? Yeuh non che
-              suis au réchime, je ne mange plus que des Grumbeere light et che
-              fais de la chym avec Chulien. Tiens, un rottznoz sur le comptoir.
-            </p>
-            <p>Bande de knäckes!</p>
           </div>
         </details>
 
@@ -376,27 +392,41 @@
             >
           </summary>
           <div>
+            <p>Fichiers présents dans le kit complet ZIP&#8239;:</p>
+            <ul>
+              <li>
+                <code>.editorconfig</code> — règles d'édition / formatage
+                partagées.
+              </li>
+              <li>
+                <code>.gitignore</code> — liste des fichiers et dossiers ignorés
+                par Git.
+              </li>
+              <li>
+                <code>.vscode/extensions.json</code> — recommandations
+                d'extensions pour VS Code.
+              </li>
+              <li>
+                <code>.vscode/settings.json</code> — paramètres d'espace de
+                travail pour VS Code.
+              </li>
+              <li><code>postcss.config.mjs</code> — configuration PostCSS.</li>
+              <li>
+                <code>prettier.config.mjs</code> — configuration Prettier.
+              </li>
+              <li>
+                <code>stylelint.config.mjs</code> — configuration Stylelint.
+              </li>
+              <li>
+                <code>vite.config.js</code> — configuration du
+                bundler/developpement (Vite).
+              </li>
+            </ul>
             <p>
-              Ce composant details contient une grande quantité de contenu pour
-              tester les performances des transitions avec
-              <code>interpolate-size</code>
-              .
+              Ces fichiers servent à standardiser l'environnement de
+              développement et les outils (formatage, linting, build et
+              éditeur).
             </p>
-            <p>
-              Lorem Salu bissame ! Wie geht's les samis ? Hans apporte moi une
-              Wurschtsalad avec un picon bitte, s'il te plaît. Voss ? Une Carola
-              et du Melfor ? Yo dû, espèce de Knäckes, ch'ai dit un picon!
-            </p>
-            <p>
-              Yoo ch ch'ai ramené du schpeck, du chambon, un kuglopf et du
-              schnaps dans mon rucksack. Allez, s'guelt !
-            </p>
-            <p>
-              Wotch a kofee avec ton bibalaekaess et ta wurscht ? Yeuh non che
-              suis au réchime, je ne mange plus que des Grumbeere light et che
-              fais de la chym avec Chulien. Tiens, un rottznoz sur le comptoir.
-            </p>
-            <p>Bande de knäckes!</p>
           </div>
         </details>
       </div>

@@ -9,6 +9,7 @@
     <link
       rel="stylesheet"
       href="assets/css/app.css" />
+
     <meta
       name="description"
       content="Générateur de theme.css, primitives.json, tokens.json et theme.json à partir d'exports Mode JSON Figma" />
@@ -18,8 +19,8 @@
       class="header"
       role="banner">
       <div
-        data-layout="repel"
-        data-gap="m">
+        data-layout="cluster"
+        data-justify="center">
         <h1 class="title-l">Primary</h1>
       </div>
     </header>
@@ -27,7 +28,8 @@
     <!-- Main -->
     <main
       class="main"
-      role="main">
+      role="main"
+      data-layout="boxed">
       <!-- Uploader -->
       <section
         class="section section-uploader"
@@ -37,33 +39,28 @@
         <h2
           id="uploader-title"
           class="visually-hidden">
-          Importer vos fichiers Mode JSON
+          Importer des fichiers Mode JSON
         </h2>
 
-        <div
+        <label
+          data-layout="stack"
+          for="file-input"
           id="dropzone"
           class="dropzone"
-          role="region"
-          aria-label="Zone de dépôt"
-          tabindex="0">
+          data-theme="dark">
           <input
             id="file-input"
             type="file"
             accept="application/json"
             multiple
-            aria-label="Sélectionnez des fichiers JSON" />
-          <div
-            class="dropzone-visual"
-            aria-hidden="true">
-            <div
-              class="drop-illustration"
-              aria-hidden="true">
-              <!-- decorative -->
-            </div>
-            <p class="drop-title">Importer un ou plusieurs fichiers JSON</p>
-            <p class="drop-sub">ou glisser et déposer</p>
-          </div>
-        </div>
+            class="visually-hidden" />
+
+          <p class="drop-zone-title">
+            Importer un fichier
+            <span class="discrete">(.json)</span>
+          </p>
+          <p class="drop-zone-hint">ou glisser-déposer</p>
+        </label>
 
         <div
           class="uploader-hint visually-hidden"
@@ -73,11 +70,13 @@
 
         <div
           class="cta-empty"
-          data-layout="cluster"
-          data-gap="s">
+          data-layout="stack"
+          data-justify="center"
+          data-gap="none">
+          <p>ou…</p>
           <button
             id="btn-empty-project"
-            class="btn btn-secondary"
+            class="btn btn-primary"
             type="button"
             aria-label="Générer un projet vide">
             Débuter un projet vide
@@ -87,7 +86,8 @@
         <!-- Options -->
         <div
           class="options"
-          data-layout="cluster"
+          data-layout="stack"
+          data-justify="center"
           data-gap="s">
           <ul
             class="options-list"
@@ -261,7 +261,9 @@
       </section>
     </main>
 
-    <section class="section section-faq">
+    <section
+      class="section section-faq"
+      data-layout="boxed">
       <h2 class="title-m">FAQ</h2>
 
       <div

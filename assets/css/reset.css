@@ -49,8 +49,9 @@ body {
 
 /* Focus clavier */
 :focus-visible {
+  --outline-color: light-dark(#4285f4, #8ab4f8);
   outline: 2px solid;
-  outline-color: light-dark(#4285f4, #8ab4f8); /* Default color */
+  outline-color: var(--outline-color); /* Default color */
   outline-color: -webkit-focus-ring-color; /* WebKit/Chromium */
   outline-color: -moz-focusring; /* Firefox */
   outline-offset: 2px;

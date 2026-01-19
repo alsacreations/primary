@@ -1,15 +1,40 @@
 /* Généralités */
 
 body {
+  padding: var(--spacing-m);
   font-family: var(--font-base);
-  background: var(--surface);
+  background:
+    linear-gradient(
+      135deg,
+      light-dark(var(--color-white), var(--color-sand-800)) 0%,
+      light-dark(var(--color-sand-200), var(--color-sand-600)) 75%
+    ),
+    var(--surface);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--on-surface);
+}
+
+a,
+:any-link {
+  color: var(--link);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--link-hover);
+  }
+
+  &:active {
+    color: var(--link-active);
+  }
 }
 
 /* Titres */
 .title-l {
   font-size: var(--text-xxl);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-black);
+  text-transform: uppercase;
+  color: var(--primary-darken);
 }
 
 .title-m {
@@ -22,6 +47,11 @@ body {
   font-weight: var(--font-weight-semibold);
 }
 
+/* Sections */
+.section {
+  padding-block: var(--spacing-m);
+}
+
 /* Details */
 details {
   --details-border-color-hover: var(--link);
@@ -31,33 +61,61 @@ details[open] {
   --details-border-color: var(--link);
 }
 
-.dropzone {
-  border: 2px dashed rgba(0, 0, 0, 0.08);
-  background: var(--layer-1);
-  padding: 1.25rem;
-  border-radius: var(--radius-16);
-  min-height: 12rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.dropzone input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
+/* Header */
+
+.header {
+  padding-block: var(--spacing-xxl) var(--spacing-xl);
 }
 
-.dropzone:focus {
-  outline: 3px solid rgba(124, 31, 90, 0.15);
+.dropzone {
+  outline: 4px dashed var(--color-pink-300);
+  outline-offset: 2px;
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 1.25rem;
+  transition: var(--transition-duration);
+  transition-property: background, outline;
+  border-radius: var(--radius-16);
+  min-height: 12rem;
+  display: grid;
+  align-content: center;
+  align-items: center;
+  justify-items: center;
+  justify-content: center;
+  position: relative;
+
+  &:hover {
+    background: var(--color-pink-700);
+    outline-color: var(--color-pink-600);
+  }
+
+  &:is(:focus-within, :focus-visible) {
+    outline-color: var(--outline-color);
+  }
+}
+
+.drop-zone-title {
+  font-size: var(--text-l);
+
+  & .discrete {
+    font-size: var(--text-s);
+  }
 }
 
 .drop-title {
   font-weight: 700;
   font-size: 1.125rem;
+}
+
+.cta-empty {
+  text-align: center;
+
+  & p {
+    margin: 0;
+    font-size: var(--text-m);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-pink-400);
+  }
 }
 
 .log-output {
@@ -173,6 +231,9 @@ details[open] {
 
 /* Options */
 
+.options {
+  padding-top: var(--spacing-m);
+}
 .options-list-item {
   display: flex;
   gap: var(--spacing-8);
@@ -222,9 +283,12 @@ details[open] {
   margin-bottom: 0.25rem;
 }
 
-/* Backwards-compatible aliases for renamed summary logs */
-.logs-summary {
-  margin-bottom: 0.75rem;
+/* Summary logs */
+.summary-logs {
+  margin-block: var(--spacing-l);
+  padding: var(--spacing-m);
+  background-color: var(--color-sand-200);
+  border-radius: var(--radius-12);
 }
 .summary-logs-list {
   margin: 0.25rem 0 0 0;

@@ -18,14 +18,7 @@
   /* Theme (color-scheme) */
   color-scheme: light;
 
-  &[data-theme="light"] {
-    color-scheme: light;
-  }
-  &[data-theme="dark"] {
-    color-scheme: dark;
-  }
-
-  /* Couleurs (globales) */
+  /* Couleurs Primitives globales */
   --color-white: oklch(1 0 0);
   --color-black: oklch(0 0 0);
   --color-gray-50: oklch(0.97 0 0);
@@ -59,9 +52,35 @@
   --color-info-700: oklch(0.3633 0.18 256.37);
   --color-info-900: oklch(0.2133 0.11 256.37);
 
+  /* Couleurs Primitives du projet */
+  --color-pink-50: oklch(100% 0.01 359.56);
+  --color-pink-100: oklch(98% 0.03 359.56);
+  --color-pink-200: oklch(94.5% 0.1 359.56);
+  --color-pink-300: oklch(84.5% 0.17 359.56);
+  --color-pink-400: oklch(71.981% 0.1694 359.561);
+  --color-pink-500: oklch(64.5% 0.17 359.56);
+  --color-pink-600: oklch(54.5% 0.17 359.56);
+  --color-pink-700: oklch(44.5% 0.17 359.56);
+  --color-pink-800: oklch(34.5% 0.12 359.56);
+  --color-pink-900: oklch(24.5% 0.07 359.56);
+  --color-pink-fade: oklch(71.98% 0.1 359.56);
+  --color-pink-bright: oklch(71.98% 0.24 359.56);
+  --color-sand-50: oklch(100% 0.01 27.3);
+  --color-sand-100: oklch(98% 0.01 27.3);
+  --color-sand-200: oklch(94.5% 0.01 27.3);
+  --color-sand-300: oklch(81.2504% 0.0162 27.2997);
+  --color-sand-400: oklch(74.5% 0.02 27.3);
+  --color-sand-500: oklch(64.5% 0.02 27.3);
+  --color-sand-600: oklch(54.5% 0.02 27.3);
+  --color-sand-700: oklch(44.5% 0.02 27.3);
+  --color-sand-800: oklch(34.5% 0.01 27.3);
+  --color-sand-900: oklch(24.5% 0.01 27.3);
+  --color-sand-fade: oklch(81.25% 0.01 27.3);
+  --color-sand-bright: oklch(81.25% 0.02 27.3);
+
   /* Couleurs Tokens globales */
   /* Couleur primaire */
-  --primary: var(--color-gray-500);
+  --primary: var(--color-pink-600);
   --on-primary: var(--color-white);
   --primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);
   --primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);
@@ -75,14 +94,17 @@
   --on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));
 
   /* Niveaux de profondeur */
-  --layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));
+  --layer-1: light-dark(var(--color-sand-200), var(--color-sand-800));
   --layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));
   --layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
 
   /* Interactions */
-  --link: light-dark(var(--color-info-500), var(--color-info-300));
-  --link-hover: light-dark(var(--color-info-700), var(--color-info-500));
-  --link-active: light-dark(var(--color-info-700), var(--color-info-500));
+  --link: light-dark(var(--color-pink-500), var(--color-pink-300));
+  --link-hover: light-dark(var(--color-pink-700), var(--color-pink-500));
+  --link-active: light-dark(var(--color-pink-700), var(--color-pink-500));
+
+  /* Couleur d'outline par défaut */
+  --outline-color: #4285f4;
 
   /* Couleur de sélection */
   --selection: light-dark(var(--primary-lighten), var(--primary-darken));
@@ -119,6 +141,7 @@
 
   /* Familles de police */
   --font-base: system-ui, sans-serif;
+  --font-rubik: "Rubik Lines", sans-serif;
   --font-mono: ui-monospace, monospace;
 
   /* Graisses de police */

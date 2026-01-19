@@ -15,4 +15,5 @@
 @import "styles.css" layer(base);
 
 /* Utilities */
+@import "utilities.css" layer(utilities);
 @import "anime.css" layer(utilities);

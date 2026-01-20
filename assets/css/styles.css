@@ -3,17 +3,57 @@
 body {
   padding: var(--spacing-m);
   font-family: var(--font-base);
-  background:
-    linear-gradient(
-      135deg,
-      light-dark(var(--color-white), var(--color-sand-800)) 0%,
-      light-dark(var(--color-sand-200), var(--color-sand-600)) 75%
-    ),
-    var(--surface);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+
+  /* ----------------------------- */
+  /* Fond hexagonal configurable   */
+  /* ----------------------------- */
+  /* Variables :
+     --hex-size: largeur de la cellule hexagonale (défaut 56px)
+     --hex-scale: facteur d'échelle global (défaut 1)
+     --hex-gap: espacement / contraste entre hex (défaut 2px)
+     --hex-dark: couleur d'ombrage entre hex (rgba)
+     --hex-light: couleur de surbrillance (rgba)
+     --hex-color: couleur de base des hex (préférer tokens du thème)
+  */
+  --hex-size: 56px;
+  --hex-scale: 1;
+  --hex-gap: 2px;
+  --hex-dark: rgba(0,0,0,0.06);
+  --hex-light: rgba(255,255,255,0.03);
+  --hex-color: light-dark(var(--color-sand-200), var(--color-sand-600));
+
   color: var(--on-surface);
+  background-color: var(--surface);
+
+  /* Honeycomb pattern — combinaison de gradients pour former des hexagones */
+  background-image:
+    /* ombre diagonale */
+    linear-gradient(30deg, var(--hex-dark) 12%, transparent 12.5%),
+    linear-gradient(-30deg, var(--hex-dark) 12%, transparent 12.5%),
+    /* surbrillance décalée pour relief */
+    linear-gradient(30deg, var(--hex-light) 12%, transparent 12.5%),
+    linear-gradient(-30deg, var(--hex-light) 12%, transparent 12.5%),
+    /* couche de remplissage basée sur la couleur principale (petits losanges qui recouvrent) */
+    linear-gradient(0deg, transparent 28%, var(--hex-color) 28%, var(--hex-color) 72%, transparent 72%);
+
+  /* Taille et répétition — math approximative pour un rendu hexagonal */
+  background-size: calc(var(--hex-size) * 1.732 * var(--hex-scale)) calc(var(--hex-size) * 0.75 * var(--hex-scale));
+
+  /* Décalages pour créer le motif en nid d'abeille */
+  background-position:
+    0 0,
+    0 0,
+    calc(var(--hex-size) * 0.866 * var(--hex-scale)) calc(var(--hex-size) * 0.375 * var(--hex-scale)),
+    calc(var(--hex-size) * 0.866 * var(--hex-scale)) calc(var(--hex-size) * 0.375 * var(--hex-scale)),
+    0 0;
+
+  background-repeat: repeat;
+  background-attachment: fixed;
+
+  /* mélange subtil avec le fond existant pour conserver le thème */
+  background-blend-mode: overlay;
 }
+
 
 a,
 :any-link {

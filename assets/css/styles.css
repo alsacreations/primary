@@ -1,7 +1,8 @@
 /* Généralités */
 
 body {
-  padding: var(--spacing-m);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
   font-family: var(--font-base);
   background:
     linear-gradient(
@@ -52,6 +53,11 @@ a,
 /* Sections */
 .section {
   padding-block: var(--spacing-m);
+}
+
+.main,
+.section-faq {
+  padding-inline: var(--spacing-m);
 }
 
 /* Details */
@@ -378,7 +384,10 @@ details[open] {
 
 /* Footer */
 .footer {
+  margin-top: var(--spacing-xxl);
   padding-block: var(--spacing-xxl) var(--spacing-xl);
+  background-color: var(--color-sand-400);
+  color: var(--on-surface);
 }
 .logo-alsacreations-pepins-inner {
   fill: var(--surface);
@@ -399,7 +408,7 @@ details[open] {
 .logo-link {
   display: inline-block;
   margin: auto;
-  color: var(--accent);
+  color: var(--color-sand-800);
 
   @media (width >= 48rem) {
     &:focus,

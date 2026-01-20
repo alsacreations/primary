@@ -831,6 +831,49 @@ async function createAndDownloadKit() {
     // placer theme.css dans le dossier css/
     if (cssFolder) cssFolder.file("theme.css", themeCss)
 
+    // styles.css (obligatoire, contenu standard)
+    const stylesCssContent = `/* -----------------------/*
+ * Styles généraux du projet
+ /* ---------------------- */
+
+/* Body et liens */
+body {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-base);
+}
+
+a,
+:any-link {
+  color: var(--link);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--link-hover);
+  }
+
+  &:active {
+    color: var(--link-active);
+  }
+}
+
+/* Titres */
+.title-xl {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.title-l {
+  font-size: var(--text-l);
+  font-weight: var(--font-weight-semibold);
+}
+
+.title-m {
+  font-size: var(--text-m);
+  font-weight: var(--font-weight-semibold);
+}`
+    if (cssFolder) cssFolder.file("styles.css", stylesCssContent)
+
     // theme.json optionnel
     if (
       document.getElementById("generate-themejson") &&

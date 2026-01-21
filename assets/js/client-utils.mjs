@@ -569,6 +569,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         json["Font-Size"] ||
         json.font ||
         json.Font ||
+        json.text ||
         (json.fonts && json.fonts.fontSize) ||
         null
       if (!modeName) {
@@ -635,6 +636,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         json["Font-Size"] ||
         json.font ||
         json.Font ||
+        json.text ||
         (json.fonts && json.fonts.fontSize) ||
         null
       if (fontSection) {

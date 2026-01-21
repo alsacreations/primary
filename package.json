@@ -4,9 +4,10 @@
   "description": "Convert Figma Mode JSON exports into CSS variables and WordPress theme artifacts",
   "main": "scripts/figmatocss.js",
   "scripts": {
-    "figmatocss": "node scripts/figmatocss.js source dist",
+    "figmatocss": "node scripts/figmatocss.js",
+    "figmatocss:run": "node scripts/figmatocss.js",
     "wp-theme": "node scripts/generateThemeJson.js",
-    "build": "node scripts/figmatocss.js source dist && node scripts/generateThemeJson.js --in dist",
+    "build": "node scripts/figmatocss.js && node scripts/generateThemeJson.js --in dist",
     "test:global-colors": "node scripts/tests/check-global-colors.js",
     "test:project-colors": "node scripts/tests/check-project-colors.js",
     "test:global-tokens": "node scripts/tests/check-global-tokens.js",

@@ -9,12 +9,17 @@ Usage:
 
 ```bash
 # node exec (generate CSS + primitives)
+node scripts/figmatocss.js <source-dir> <out-dir>
+# example
 node scripts/figmatocss.js source dist
 
 # generate theme.json from dist
 node scripts/generateThemeJson.js --in dist
 
 # or with npm scripts (recommended)
+# prefer using npm run scripts with `--` to pass args to the CLI
+npm run figmatocss -- -- <src> <out>        # deprecated; use figmatocss:run
+npm run figmatocss:run -- <src> <out>      # recommended (explicit runner)
 npm run wp-theme   # generate theme.json from dist
 npm run build      # run figmatocss then generateThemeJson (recommended)
 ```

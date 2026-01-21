@@ -330,6 +330,14 @@ if (btnEmptyProject) {
     // remember lastFiles as empty project
     lastFiles = []
 
+    // Replace the verbose summary with a minimal one for empty project
+    const minimalSummary = [
+      "Résumé de génération :",
+      "Fichiers traités : 0",
+      "Fichiers générés : theme.css / theme.json / primitives.json / tokens.json",
+    ].join("\n")
+    artifacts["generation-summary.txt"] = minimalSummary
+
     // reuse same log logic as handleFiles (debug UI removed: keep logs hidden)
     const logsContainer = document.querySelector(".logs")
     lastLogs = logs || []
@@ -338,6 +346,9 @@ if (btnEmptyProject) {
       logsContainer.setAttribute("aria-hidden", "true")
     }
     logOutput.textContent = ""
+
+    // Ensure download controls are visible and enabled for empty project
+    updateDownloadControls(true)
 
     // show artifacts
     previewThemed.textContent = artifacts["theme.css"]

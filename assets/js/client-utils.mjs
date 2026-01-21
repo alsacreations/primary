@@ -978,7 +978,8 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   // Collect all flat primitives: colors, spacing, fonts
   const allPrimitivesFlat = Object.assign(
     {},
-    colorResult.primitives || {},
+    // color extractor may return `primitives` (CLI) or `primitivesJson` (client-port), accept both
+    colorResult.primitives || colorResult.primitivesJson || {},
     spacingResult.primitives || {},
     fontResult.primitives || {},
   )
@@ -1133,8 +1134,9 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       normalized.spacing[k.replace(/^--/, "")] = entry
     } else if (entry.value && typeof entry.value === "string") {
       const selfRef = `var(${k})`
-      if (entry.value.trim() !== selfRef)
+      if (entry.value.trim() !== selfRef) {
         normalized.spacing[k.replace(/^--/, "")] = entry
+      }
     }
   })
 
@@ -2290,11 +2292,19 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     const colorsTokensCount = Object.keys(colorResult.tokensJson || {}).length
     const colorsTotal = colorsPrimitivesCount + colorsTokensCount
 
-    const spacingPrimitivesCount = Object.keys(
+    // Final counts (after normalization) for spacing
+    const spacingPrimitivesCount = Object.keys(structured.spacing || {}).length
+    const spacingTokensCount = Object.keys(
+      (normalized && normalized.spacing) || {},
+    ).length
+    const spacingTotal = spacingPrimitivesCount + spacingTokensCount
+    // Extractor-level counts for diagnostic
+    const spacingExtractorPrimitivesCount = Object.keys(
       spacingResult.primitives || {},
     ).length
-    const spacingTokensCount = Object.keys(spacingResult.json || {}).length
-    const spacingTotal = spacingPrimitivesCount + spacingTokensCount
+    const spacingExtractorTokensCount = Object.keys(
+      spacingResult.json || {},
+    ).length
 
     const typographyPrimitivesCount = Object.keys(
       fontResult.primitives || {},
@@ -2330,6 +2340,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       `Typographies extraites : ${typographyTotal} (Primitives : ${typographyPrimitivesCount} / Tokens : ${typographyTokensCount})`,
       `Fichiers générés : ${generatedFiles.join(" / ")}`,
     ]
+
     humanSummary = humanLines.join("\n")
     // emit for logs and also expose as an artifact below
     emit(humanSummary, "info")

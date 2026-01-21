@@ -1512,18 +1512,63 @@ if (rawArgs.length >= 2) {
   console.log("\nExtraction summary:")
   console.log(`- Fichiers extraits : ${fileNames.length}`)
   console.log(
-    `- Couleurs extraites : ${colorPrimitivesCount + colorTokensCount} (dont ${colorPrimitivesCount} Primitives et ${colorTokensCount} Tokens) — extracteur: ${colorExtractorPrimitivesCount}P / ${colorExtractorTokensCount}T`,
+    `- Couleurs extraites : ${colorPrimitivesCount + colorTokensCount} (dont ${colorPrimitivesCount} Primitives et ${colorTokensCount} Tokens)`,
   )
   console.log(
-    `- Espacements extraits : ${spacingPrimitivesCount + spacingTokensCount} (dont ${spacingPrimitivesCount} Primitives et ${spacingTokensCount} Tokens) — extracteur: ${spacingExtractorPrimitivesCount}P / ${spacingExtractorTokensCount}T`,
+    `- Espacements extraits : ${spacingPrimitivesCount + spacingTokensCount} (dont ${spacingPrimitivesCount} Primitives et ${spacingTokensCount} Tokens)`,
   )
   console.log(
-    `- Arrondis extraits : ${roundedPrimitivesCount} (dont ${roundedPrimitivesCount} Primitives)` +
-      ` — extracteur: ${roundedExtractorPrimitivesCount}P`,
+    `- Arrondis extraits : ${roundedPrimitivesCount} (dont ${roundedPrimitivesCount} Primitives)`,
   )
   console.log(
-    `- Typographies extraites : ${typographyPrimitivesCount + typographyTokensCount} (dont ${typographyPrimitivesCount} Primitives et ${typographyTokensCount} Tokens) — extracteur: ${fontExtractorPrimitivesCount}P / ${fontExtractorTokensCount}T`,
+    `- Typographies extraites : ${typographyPrimitivesCount + typographyTokensCount} (dont ${typographyPrimitivesCount} Primitives et ${typographyTokensCount} Tokens)`,
   )
+
+  // Debug: show extractor-level counts when DEBUG=1 or --debug provided on CLI
+  const cliDebug = process.env.DEBUG === "1" || process.argv.includes("--debug")
+  if (cliDebug) {
+    console.log(
+      `DEBUG: Extractor counts: colors ${colorExtractorPrimitivesCount}P/${colorExtractorTokensCount}T, spacing ${spacingExtractorPrimitivesCount}P/${spacingExtractorTokensCount}T, fonts ${fontExtractorPrimitivesCount}P/${fontExtractorTokensCount}T`,
+    )
+    if (spacingExtractorTokensCount > spacingTokensCount) {
+      console.log(
+        `DEBUG: ${spacingExtractorTokensCount - spacingTokensCount} spacing token(s) collapsed into primitives because they referenced the same primitive`,
+      )
+    }
+
+    // Debug dumps to inspect names and help find missing colors
+    try {
+      const extractorColorNamesRaw = Object.keys(
+        colorResult.primitivesJson || {},
+      ).sort()
+      const extractorColorNames = extractorColorNamesRaw
+        .map((n) => n.replace(/^--/, "").replace(/^color-/, ""))
+        .sort()
+      const finalColorNames = Object.keys(
+        finalStructuredPrimitives.color || {},
+      ).sort()
+      console.log(
+        `DEBUG: Extractor color names (${extractorColorNamesRaw.length}): ${extractorColorNamesRaw.join(", ")}`,
+      )
+      console.log(
+        `DEBUG: Final color names (${finalColorNames.length}): ${finalColorNames.join(", ")}`,
+      )
+      const missingFromFinal = extractorColorNames.filter(
+        (n) => !finalColorNames.includes(n),
+      )
+      if (missingFromFinal.length) {
+        console.log(
+          `DEBUG: Colors present in extractor but missing from final primitives (${missingFromFinal.length}): ${missingFromFinal.join(", ")}`,
+        )
+      } else {
+        console.log(
+          `DEBUG: All extractor color primitives are present in final primitives (names normalized).`,
+        )
+      }
+    } catch (e) {
+      /* ignore debug printing errors */
+    }
+  }
   console.log(
     `- Fichiers corrigés finalisés : primitives.json, tokens.json, theme.css`,
   )

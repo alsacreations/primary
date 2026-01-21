@@ -192,10 +192,11 @@ details[open] {
   background: var(--color-gray-800);
   color: var(--color-white);
   border-radius: var(--radius-16);
-  height: 24rem;
+  height: 30rem;
   overflow: auto;
   white-space: pre-wrap;
   font-family: var(--font-mono);
+  resize: vertical;
 }
 
 .preview-group {
@@ -273,6 +274,7 @@ details[open] {
   display: flex;
   gap: var(--spacing-8);
   align-items: center;
+  text-wrap: initial;
 
   & > input {
     flex-shrink: 0;

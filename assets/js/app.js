@@ -139,36 +139,20 @@ async function handleFiles(files) {
       genSummaryContainer.firstChild.textContent = ""
   }
 
-  // Do not print parsing/technical logs unless debug enabled
-  const debugFlag = !!(
-    document.getElementById("debug-toggle") &&
-    document.getElementById("debug-toggle").checked
-  )
-
   const { artifacts, logs } = await processFiles(
     Array.from(files),
-    (message) => {}, // suppress immediate logging; UI shows logs only in debug mode
-    { debug: debugFlag },
+    (message) => {}, // suppress immediate logging; UI does not expose debug logs
   )
 
-  // Show logs in UI only when debug is enabled
-  const logsContainer = document.querySelector(".logs")
-  // cache logs from last run even if debug was not enabled
+  // Cache logs from last run but do not display them in the UI (no debug toggle)
   lastLogs = logs || []
-  if (debugFlag) {
-    logs.forEach((l) => {
-      if (!l) return
-      log(l)
-    })
-    logsContainer.classList.add("is-visible")
-    logsContainer.setAttribute("aria-hidden", "false")
-  } else {
-    // ensure logs panel hidden and cleared
+  // Ensure logs panel is hidden and cleared
+  const logsContainer = document.querySelector(".logs")
+  if (logsContainer) {
     logsContainer.classList.remove("is-visible")
     logsContainer.setAttribute("aria-hidden", "true")
-    // keep the log output empty
-    logOutput.textContent = ""
   }
+  logOutput.textContent = ""
 
   // show artifacts
   previewThemed.textContent = artifacts["theme.css"]
@@ -287,26 +271,7 @@ dropzone.addEventListener("keydown", (e) => {
   }
 })
 
-// Hook debug toggle to show cached logs when enabled
-const debugToggleEl = document.getElementById("debug-toggle")
-if (debugToggleEl) {
-  debugToggleEl.addEventListener("change", (e) => {
-    const logsContainer = document.querySelector(".logs")
-    if (e.target.checked) {
-      if (lastLogs && lastLogs.length) {
-        // populate log output with last known logs
-        logOutput.textContent = ""
-        lastLogs.forEach((l) => log(l))
-      }
-      logsContainer.classList.add("is-visible")
-      logsContainer.setAttribute("aria-hidden", "false")
-    } else {
-      logsContainer.classList.remove("is-visible")
-      logsContainer.setAttribute("aria-hidden", "true")
-      logOutput.textContent = ""
-    }
-  })
-}
+// Debug toggle removed from UI: no runtime handler required
 
 // Toggle to generate and preview theme.json (WordPress project)
 const genThemeJsonToggle = document.getElementById("generate-themejson")
@@ -318,15 +283,10 @@ if (genThemeJsonToggle) {
       // If we don't have theme.json yet, regenerate from lastFiles (or empty project)
       if (!lastArtifacts || !lastArtifacts["theme.json"]) {
         try {
-          const debugFlag = !!(
-            document.getElementById("debug-toggle") &&
-            document.getElementById("debug-toggle").checked
-          )
           const filesToUse = lastFiles || []
           const { artifacts: newArtifacts, logs } = await processFiles(
             filesToUse,
             (m) => {},
-            { debug: debugFlag },
           )
           lastArtifacts = newArtifacts
         } catch (err) {
@@ -366,32 +326,18 @@ if (btnEmptyProject) {
     // generate theme without any JSON files
     resetUi()
 
-    const debugFlag = !!(
-      document.getElementById("debug-toggle") &&
-      document.getElementById("debug-toggle").checked
-    )
-
-    const { artifacts, logs } = await processFiles([], () => {}, {
-      debug: debugFlag,
-    })
+    const { artifacts, logs } = await processFiles([], () => {}, {})
     // remember lastFiles as empty project
     lastFiles = []
 
-    // reuse same log logic as handleFiles
+    // reuse same log logic as handleFiles (debug UI removed: keep logs hidden)
     const logsContainer = document.querySelector(".logs")
     lastLogs = logs || []
-    if (debugFlag) {
-      logs.forEach((l) => {
-        if (!l) return
-        log(l)
-      })
-      logsContainer.classList.add("is-visible")
-      logsContainer.setAttribute("aria-hidden", "false")
-    } else {
+    if (logsContainer) {
       logsContainer.classList.remove("is-visible")
       logsContainer.setAttribute("aria-hidden", "true")
-      logOutput.textContent = ""
     }
+    logOutput.textContent = ""
 
     // show artifacts
     previewThemed.textContent = artifacts["theme.css"]

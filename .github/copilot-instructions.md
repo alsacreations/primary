@@ -116,7 +116,6 @@ Toujours utiliser cet ordre de priorité :
 assets/css/
 ├── reset.css         # Reset CSS
 ├── theme.css         # Variables primitives (immuables)
-├── theme-tokens.css  # Tokens sémantiques (générés)
 ├── layouts.css       # Bretzel Layouts
 ├── natives.css       # Styles éléments natifs
 └── app.css           # Point d'entrée

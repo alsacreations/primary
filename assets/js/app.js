@@ -870,9 +870,9 @@ a,
 
 /* Config */
 @import "reset.css" layer(config);
-@import "theme.css" layer(config);
-@import "layouts.css" layer(config);
 @import "natives.css" layer(config);
+@import "layouts.css" layer(config);
+@import "theme.css" layer(config);
 
 /* Base */
 @import "styles.css" layer(base);

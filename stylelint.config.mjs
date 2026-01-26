@@ -1,9 +1,27 @@
-/** @type {import('stylelint').Config} */
+/**
+ * @see https://stylelint.io/user-guide/configure/
+ * @type {import('stylelint').Config}
+ * Mise à jour : 2026-01-26
+ */
 export default {
   extends: [
     "stylelint-config-standard",
-    "stylelint-config-html",
     "stylelint-config-property-sort-order-smacss",
+  ],
+  overrides: [
+    {
+      // On cible HTML, Handlebars, PHP ET Vue
+      files: [
+        "*.html",
+        "**/*.html",
+        "*.hbs",
+        "**/*.hbs",
+        "*.php",
+        "*.vue",
+        "**/*.vue",
+      ],
+      extends: ["stylelint-config-html"],
+    },
   ],
   plugins: ["stylelint-order"],
   rules: {
@@ -88,7 +106,7 @@ export default {
     // Polices
     "font-family-no-duplicate-names": null,
     "font-weight-notation": "numeric", // on force la notation numérique pour les poids de police
-    "at-rule-descriptor-value-no-unknown": null, // on désactive la règle pour les descripteurs d'@font-face (Variable Fonts)
+    "at-rule-descriptor-value-no-unknown": "null", // on désactive la règle pour les descripteurs d'@font-face (Variable Fonts)
 
     // Couleurs
     "color-hex-length": "long", // on force la notation longue pour les couleurs hexadécimales

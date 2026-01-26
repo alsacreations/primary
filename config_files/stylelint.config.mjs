@@ -1,13 +1,27 @@
 /**
  * @see https://stylelint.io/user-guide/configure/
  * @type {import('stylelint').Config}
- * Mise à jour : 2025-12-28
+ * Mise à jour : 2026-01-26
  */
 export default {
   extends: [
     "stylelint-config-standard",
-    "stylelint-config-html",
     "stylelint-config-property-sort-order-smacss",
+  ],
+  overrides: [
+    {
+      // On cible HTML, Handlebars, PHP ET Vue
+      files: [
+        "*.html",
+        "**/*.html",
+        "*.hbs",
+        "**/*.hbs",
+        "*.php",
+        "*.vue",
+        "**/*.vue",
+      ],
+      extends: ["stylelint-config-html"],
+    },
   ],
   plugins: ["stylelint-order"],
   rules: {
@@ -102,4 +116,4 @@ export default {
     "hue-degree-notation": "number",
     "lightness-notation": null, // on autorise la notation décimale (0-1) pour la lightness
   },
-};
+}

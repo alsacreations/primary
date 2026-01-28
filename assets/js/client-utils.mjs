@@ -91,6 +91,11 @@ function resolvePxFromRef(ref, structuredPrimitivesParam) {
 }
 
 function clampBetweenModes(mobileVarOrHex, desktopVarOrHex) {
+  if (mobileVarOrHex === desktopVarOrHex) {
+    return typeof mobileVarOrHex === "string" && mobileVarOrHex.startsWith("--")
+      ? `var(${mobileVarOrHex})`
+      : pxToRem(Number(mobileVarOrHex))
+  }
   const mobile =
     typeof mobileVarOrHex === "string" && mobileVarOrHex.startsWith("--")
       ? `var(${mobileVarOrHex})`
@@ -195,6 +200,10 @@ function computeFluidClamp(
       )
       if (found) right = `var(${found})`
       else right = pxToRem(deskPx)
+    }
+
+    if (mobPx === deskPx && Number.isFinite(mobPx)) {
+      return left
     }
 
     return `clamp(${left}, ${middle}, ${right})`

@@ -882,7 +882,6 @@ if (rawArgs.length >= 2) {
 
     const middle = `${interceptRem}rem + ${slopeVwStr}vw`
 
-    // Use var(...) endpoints when possible
     const left =
       mobileExpr && mobileExpr.startsWith("var(")
         ? mobileExpr
@@ -891,6 +890,10 @@ if (rawArgs.length >= 2) {
       desktopExpr && desktopExpr.startsWith("var(")
         ? desktopExpr
         : pxToRem(desktopPx)
+
+    if (mobilePx === desktopPx && mobilePx !== null) {
+      return left
+    }
 
     return `clamp(${left}, ${middle}, ${right})`
   }

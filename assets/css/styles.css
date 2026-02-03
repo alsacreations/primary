@@ -258,7 +258,208 @@ details[open] {
   & :is(h1, h2, h3, h4, h5, h6) {
     color: var(--color-white);
   }
+
+  /* Code preview highlighting - CSS Custom Highlight API names + fallback token classes */
+  /* ::highlight(name) where name = code-<element-id>-<token-type> */
+  ::highlight(code-preview-themecss-comment),
+  ::highlight(code-preview-themejson-comment) {
+    color: var(--color-success-400, #7fdc9b);
+    opacity: 0.95;
+    font-style: italic;
+  }
+  ::highlight(code-preview-themecss-variable),
+  ::highlight(code-preview-themejson-variable) {
+    color: var(--color-info-300, #7fdcff);
+  }
+  ::highlight(code-preview-themecss-hex),
+  ::highlight(code-preview-themejson-hex) {
+    color: var(--color-warning-500, #ffb86b);
+  }
+  ::highlight(code-preview-themecss-func),
+  ::highlight(code-preview-themejson-func) {
+    color: var(--color-primary-300, #a8d0ff);
+  }
+  ::highlight(code-preview-themecss-number),
+  ::highlight(code-preview-themejson-number) {
+    color: var(--color-warning-400, #ffd07a);
+  }
+  ::highlight(code-preview-themecss-property),
+  ::highlight(code-preview-themejson-property) {
+    color: var(--color-info-200, #9be7ff);
+    font-weight: 600;
+  }
+  ::highlight(code-preview-themejson-key) {
+    color: var(--color-warning-300, #ffd7a6);
+    font-weight: 600;
+  }
+  ::highlight(code-preview-themejson-string) {
+    color: var(--color-info-300, #7fdcff);
+  }
+  ::highlight(code-preview-themejson-boolean) {
+    color: var(--color-primary-300, #a8d0ff);
+    font-weight: 700;
+  }
+
+  /* Fallback token classes when Highlight API is not available (scoped to previews) */
+  .code-preview .token-comment {
+    color: var(--color-success-400, #7fdc9b);
+    font-style: italic;
+  }
+  .code-preview .token-string {
+    color: var(--color-info-300, #7fdcff);
+  }
+  .code-preview .token-variable {
+    color: var(--color-info-300, #7fdcff);
+  }
+  .code-preview .token-hex {
+    color: var(--color-warning-500, #ffb86b);
+  }
+  .code-preview .token-func {
+    color: var(--color-primary-300, #a8d0ff);
+  }
+  .code-preview .token-number {
+    color: var(--color-warning-400, #ffd07a);
+  }
+  .code-preview .token-property {
+    color: var(--color-info-200, #9be7ff);
+    font-weight: 600;
+  }
+  .code-preview .token-key {
+    color: var(--color-warning-300, #ffd7a6);
+    font-weight: 600;
+  }
+  .code-preview .token-boolean {
+    color: var(--color-primary-300, #a8d0ff);
+    font-weight: 700;
+  }
+
+  /* Code preview highlighting - CSS Custom Highlight API names + fallback token classes */
+  /* ::highlight(name) where name = code-<element-id>-<token-type> */
+  ::highlight(code-preview-themecss-comment),
+  ::highlight(code-preview-themejson-comment) {
+    color: var(--color-success-400);
+    opacity: 0.95;
+    font-style: italic;
+  }
+  ::highlight(code-preview-themecss-variable),
+  ::highlight(code-preview-themejson-variable) {
+    color: var(--color-info-300);
+  }
+  ::highlight(code-preview-themecss-hex),
+  ::highlight(code-preview-themejson-hex) {
+    color: var(--color-warning-500);
+  }
+  ::highlight(code-preview-themecss-func),
+  ::highlight(code-preview-themejson-func) {
+    color: var(--color-primary-300);
+  }
+  ::highlight(code-preview-themecss-number),
+  ::highlight(code-preview-themejson-number) {
+    color: var(--color-warning-400);
+  }
+  ::highlight(code-preview-themecss-property),
+  ::highlight(code-preview-themejson-property) {
+    color: var(--color-info-200);
+    font-weight: 600;
+  }
+  ::highlight(code-preview-themejson-key) {
+    color: var(--color-warning-300);
+    font-weight: 600;
+  }
+  ::highlight(code-preview-themejson-string) {
+    color: var(--color-info-300);
+  }
+  ::highlight(code-preview-themejson-boolean) {
+    color: var(--color-primary-300);
+    font-weight: 700;
+  }
+
+  /* Fallback token classes when Highlight API is not available */
+  .token-comment {
+    color: var(--color-success-400);
+    font-style: italic;
+  }
+  .token-string {
+    color: var(--color-info-300);
+  }
+  .token-variable {
+    color: var(--color-info-300);
+  }
+  .token-hex {
+    color: var(--color-warning-500);
+  }
+  .token-func {
+    color: var(--color-primary-300);
+  }
+  .token-number {
+    color: var(--color-warning-400);
+  }
+  .token-property {
+    color: var(--color-info-200);
+    font-weight: 600;
+  }
+  .token-key {
+    color: var(--color-warning-300);
+    font-weight: 600;
+  }
+  .token-boolean {
+    color: var(--color-primary-300);
+    font-weight: 700;
+  }
 }
+
+/* Top-level Highlight API rules (scoped to .code-preview) */
+.code-preview::highlight {
+  /* default for any custom highlight inside previews */
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #eaf6ff; /* explicit bright color for contrast */
+  /* ensure highlighted text stands out on dark background */
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+  border-radius: 0.15rem;
+  text-decoration: none;
+  padding: 0 0.05rem; /* small inline padding to separate highlight */
+}
+
+.code-preview::highlight(code-preview-themecss-comment),
+.code-preview::highlight(code-preview-themejson-comment) {
+  color: var(--color-success-400, #7fdc9b);
+  opacity: 0.95;
+  font-style: italic;
+}
+.code-preview::highlight(code-preview-themecss-variable),
+.code-preview::highlight(code-preview-themejson-variable) {
+  color: var(--color-info-300, #7fdcff);
+}
+.code-preview::highlight(code-preview-themecss-hex),
+.code-preview::highlight(code-preview-themejson-hex) {
+  color: var(--color-warning-500, #ffb86b);
+}
+.code-preview::highlight(code-preview-themecss-func),
+.code-preview::highlight(code-preview-themejson-func) {
+  color: var(--color-primary-300, #a8d0ff);
+}
+.code-preview::highlight(code-preview-themecss-number),
+.code-preview::highlight(code-preview-themejson-number) {
+  color: var(--color-warning-400, #ffd07a);
+}
+.code-preview::highlight(code-preview-themecss-property),
+.code-preview::highlight(code-preview-themejson-property) {
+  color: var(--color-info-200, #9be7ff);
+  font-weight: 600;
+}
+.code-preview::highlight(code-preview-themejson-key) {
+  color: var(--color-warning-300, #ffd7a6);
+  font-weight: 600;
+}
+.code-preview::highlight(code-preview-themejson-string) {
+  color: var(--color-info-300, #7fdcff);
+}
+.code-preview::highlight(code-preview-themejson-boolean) {
+  color: var(--color-primary-300, #a8d0ff);
+  font-weight: 700;
+}
+
 .log-output {
   max-height: 35vh;
   overflow: auto;

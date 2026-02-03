@@ -1,4 +1,8 @@
 import { processFiles } from "./client-utils.mjs"
+import {
+  highlightCode,
+  clearHighlightsForElement,
+} from "./highlight-preview.mjs"
 
 const dropzone = document.getElementById("dropzone")
 const fileInput = document.getElementById("file-input")
@@ -60,6 +64,9 @@ function resetUi() {
   logOutput.textContent = ""
   // ensure logs panel is hidden
   document.querySelector(".logs")?.classList.remove("is-visible")
+  // clear previews and any registered code highlights
+  clearHighlightsForElement(previewThemed)
+  clearHighlightsForElement(previewThemeJson)
   previewThemed.textContent = ""
   previewThemeJson.textContent = ""
 
@@ -155,7 +162,7 @@ async function handleFiles(files) {
   logOutput.textContent = ""
 
   // show artifacts
-  previewThemed.textContent = artifacts["theme.css"]
+  highlightCode(previewThemed, artifacts["theme.css"], "css")
   // ensure download controls reflect presence of theme.css (Option A: activate if theme exists)
   updateDownloadControls(!!(artifacts && artifacts["theme.css"]))
   // show generation summary just above results (if provided)
@@ -223,12 +230,14 @@ async function handleFiles(files) {
   )
   const panelThemeJson = document.getElementById("panel-preview-themejson")
   if (generateJson && artifacts["theme.json"]) {
-    previewThemeJson.textContent = artifacts["theme.json"]
+    highlightCode(previewThemeJson, artifacts["theme.json"], "json")
     if (panelThemeJson) {
       panelThemeJson.classList.add("is-visible")
       panelThemeJson.setAttribute("aria-hidden", "false")
     }
   } else {
+    // clear preview and highlights
+    clearHighlightsForElement(previewThemeJson)
     previewThemeJson.textContent = ""
     if (panelThemeJson) {
       panelThemeJson.classList.remove("is-visible")
@@ -294,7 +303,7 @@ if (genThemeJsonToggle) {
         }
       }
       if (lastArtifacts && lastArtifacts["theme.json"]) {
-        previewThemeJson.textContent = lastArtifacts["theme.json"]
+        highlightCode(previewThemeJson, lastArtifacts["theme.json"], "json")
         if (panelThemeJson) {
           panelThemeJson.classList.add("is-visible")
           panelThemeJson.setAttribute("aria-hidden", "false")
@@ -302,6 +311,7 @@ if (genThemeJsonToggle) {
         console.log("theme.json généré et affiché")
       } else {
         // nothing to show
+        clearHighlightsForElement(previewThemeJson)
         previewThemeJson.textContent = ""
         if (panelThemeJson) {
           panelThemeJson.classList.remove("is-visible")
@@ -351,7 +361,7 @@ if (btnEmptyProject) {
     updateDownloadControls(true)
 
     // show artifacts
-    previewThemed.textContent = artifacts["theme.css"]
+    highlightCode(previewThemed, artifacts["theme.css"], "css")
 
     // ensure download controls reflect presence of theme.css (Option A)
     updateDownloadControls(!!(artifacts && artifacts["theme.css"]))
@@ -375,12 +385,13 @@ if (btnEmptyProject) {
       )
       const panelThemeJson = document.getElementById("panel-preview-themejson")
       if (generateJson && artifacts["theme.json"]) {
-        previewThemeJson.textContent = artifacts["theme.json"]
+        highlightCode(previewThemeJson, artifacts["theme.json"], "json")
         if (panelThemeJson) {
           panelThemeJson.classList.add("is-visible")
           panelThemeJson.setAttribute("aria-hidden", "false")
         }
       } else {
+        clearHighlightsForElement(previewThemeJson)
         previewThemeJson.textContent = ""
         if (panelThemeJson) {
           panelThemeJson.classList.remove("is-visible")

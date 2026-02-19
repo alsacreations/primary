@@ -53,6 +53,395 @@ a,
   font-weight: var(--font-weight-semibold, 600);
 }`
 
+const UTILITIES_CSS_CONTENT = `/* ----------------------------------
+ * Classes Utilitaires minimales
+ * Consignes : à placer dans un layer \`utilities\`
+ * Mise à jour : 2026-02-19
+ * ----------------------------------
+ */
+
+/* Thème forcé */
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Text */
+.text-underline {
+  text-decoration: underline;
+}
+
+.text-no-underline {
+  text-decoration: none;
+}
+
+.text-start {
+  text-align: start;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-end {
+  text-align: end;
+}
+
+/* Float */
+.fl {
+  float: inline-start;
+}
+
+.fr {
+  float: inline-end;
+}
+
+/* Radius */
+.radius-8 {
+  border-radius: var(--radius-8, 0.5rem);
+}
+
+.radius-16 {
+  border-radius: var(--radius-16, 1rem);
+}
+
+.radius-24 {
+  border-radius: var(--radius-24, 1.5rem);
+}
+
+.radius-full {
+  border-radius: var(--radius-full, 9999px);
+}
+
+/* Marges utilitaires */
+.m-0 {
+  margin: 0;
+}
+
+.m-xs {
+  margin: var(--spacing-xs, 0.25rem);
+}
+
+.m-s {
+  margin: var(--spacing-s, 0.5rem);
+}
+
+.m-m {
+  margin: var(--spacing-m, 1rem);
+}
+
+.m-l {
+  margin: var(--spacing-l, 1.5rem);
+}
+
+.m-xl {
+  margin: var(--spacing-xl, 2rem);
+}
+
+.mt-0 {
+  margin-top: 0;
+}
+
+.mt-xs {
+  margin-top: var(--spacing-xs, 0.25rem);
+}
+
+.mt-s {
+  margin-top: var(--spacing-s, 0.5rem);
+}
+
+.mt-m {
+  margin-top: var(--spacing-m, 1rem);
+}
+
+.mt-l {
+  margin-top: var(--spacing-l, 1.5rem);
+}
+
+.mt-xl {
+  margin-top: var(--spacing-xl, 2rem);
+}
+
+.mr-0 {
+  margin-right: 0;
+}
+
+.mr-xs {
+  margin-right: var(--spacing-xs, 0.25rem);
+}
+
+.mr-s {
+  margin-right: var(--spacing-s, 0.5rem);
+}
+
+.mr-m {
+  margin-right: var(--spacing-m, 1rem);
+}
+
+.mr-l {
+  margin-right: var(--spacing-l, 1.5rem);
+}
+
+.mr-xl {
+  margin-right: var(--spacing-xl, 2rem);
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
+
+.mb-xs {
+  margin-bottom: var(--spacing-xs, 0.25rem);
+}
+
+.mb-s {
+  margin-bottom: var(--spacing-s, 0.5rem);
+}
+
+.mb-m {
+  margin-bottom: var(--spacing-m, 1rem);
+}
+
+.mb-l {
+  margin-bottom: var(--spacing-l, 1.5rem);
+}
+
+.mb-xl {
+  margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.ml-0 {
+  margin-left: 0;
+}
+
+.ml-xs {
+  margin-left: var(--spacing-xs, 0.25rem);
+}
+
+.ml-s {
+  margin-left: var(--spacing-s, 0.5rem);
+}
+
+.ml-m {
+  margin-left: var(--spacing-m, 1rem);
+}
+
+.ml-l {
+  margin-left: var(--spacing-l, 1.5rem);
+}
+
+.ml-xl {
+  margin-left: var(--spacing-xl, 2rem);
+}
+
+.mx-0 {
+  margin-inline: 0;
+}
+
+.mx-xs {
+  margin-inline: var(--spacing-xs, 0.25rem);
+}
+
+.mx-s {
+  margin-inline: var(--spacing-s, 0.5rem);
+}
+
+.mx-m {
+  margin-inline: var(--spacing-m, 1rem);
+}
+
+.mx-l {
+  margin-inline: var(--spacing-l, 1.5rem);
+}
+
+.mx-xl {
+  margin-inline: var(--spacing-xl, 2rem);
+}
+
+.mx-auto {
+  margin-inline: auto;
+}
+
+.my-0 {
+  margin-block: 0;
+}
+
+.my-xs {
+  margin-block: var(--spacing-xs, 0.25rem);
+}
+
+.my-s {
+  margin-block: var(--spacing-s, 0.5rem);
+}
+
+.my-m {
+  margin-block: var(--spacing-m, 1rem);
+}
+
+.my-l {
+  margin-block: var(--spacing-l, 1.5rem);
+}
+
+.my-xl {
+  margin-block: var(--spacing-xl, 2rem);
+}
+
+.my-auto {
+  margin-block: auto;
+}
+
+/* Padding utilitaires */
+.p-0 {
+  padding: 0;
+}
+
+.pt-0 {
+  padding-top: 0;
+}
+
+.pt-xs {
+  padding-top: var(--spacing-xs, 0.25rem);
+}
+
+.pt-s {
+  padding-top: var(--spacing-s, 0.5rem);
+}
+
+.pt-m {
+  padding-top: var(--spacing-m, 1rem);
+}
+
+.pt-l {
+  padding-top: var(--spacing-l, 1.5rem);
+}
+
+.pt-xl {
+  padding-top: var(--spacing-xl, 2rem);
+}
+
+.pr-0 {
+  padding-right: 0;
+}
+
+.pr-xs {
+  padding-right: var(--spacing-xs, 0.25rem);
+}
+
+.pr-s {
+  padding-right: var(--spacing-s, 0.5rem);
+}
+
+.pr-m {
+  padding-right: var(--spacing-m, 1rem);
+}
+
+.pr-l {
+  padding-right: var(--spacing-l, 1.5rem);
+}
+
+.pr-xl {
+  padding-right: var(--spacing-xl, 2rem);
+}
+
+.pb-0 {
+  padding-bottom: 0;
+}
+
+.pb-xs {
+  padding-bottom: var(--spacing-xs, 0.25rem);
+}
+
+.pb-s {
+  padding-bottom: var(--spacing-s, 0.5rem);
+}
+
+.pb-m {
+  padding-bottom: var(--spacing-m, 1rem);
+}
+
+.pb-l {
+  padding-bottom: var(--spacing-l, 1.5rem);
+}
+
+.pb-xl {
+  padding-bottom: var(--spacing-xl, 2rem);
+}
+
+.pl-0 {
+  padding-left: 0;
+}
+
+.pl-xs {
+  padding-left: var(--spacing-xs, 0.25rem);
+}
+
+.pl-s {
+  padding-left: var(--spacing-s, 0.5rem);
+}
+
+.pl-m {
+  padding-left: var(--spacing-m, 1rem);
+}
+
+.pl-l {
+  padding-left: var(--spacing-l, 1.5rem);
+}
+
+.pl-xl {
+  padding-left: var(--spacing-xl, 2rem);
+}
+
+.px-0 {
+  padding-inline: 0;
+}
+
+.px-xs {
+  padding-inline: var(--spacing-xs, 0.25rem);
+}
+
+.px-s {
+  padding-inline: var(--spacing-s, 0.5rem);
+}
+
+.px-m {
+  padding-inline: var(--spacing-m, 1rem);
+}
+
+.px-l {
+  padding-inline: var(--spacing-l, 1.5rem);
+}
+
+.px-xl {
+  padding-inline: var(--spacing-xl, 2rem);
+}
+
+.py-0 {
+  padding-block: 0;
+}
+
+.py-xs {
+  padding-block: var(--spacing-xs, 0.25rem);
+}
+
+.py-s {
+  padding-block: var(--spacing-s, 0.5rem);
+}
+
+.py-m {
+  padding-block: var(--spacing-m, 1rem);
+}
+
+.py-l {
+  padding-block: var(--spacing-l, 1.5rem);
+}
+
+.py-xl {
+  padding-block: var(--spacing-xl, 2rem);
+}`
+
 const EXTRA_CSS_FILES = [
   {
     src: "https://reset.alsacreations.com/public/reset.css",
@@ -542,6 +931,29 @@ if (btnEmptyProject) {
   })
 }
 
+/**
+ * Helper: generates the content of app.css based on current options.
+ * It always includes theme.css, styles.css and utilities.css.
+ * It optionally includes reset.css, natives.css and layouts.css if extra files are checked.
+ */
+function getAppCssContent() {
+  const addExtraCss = document.getElementById("add-extra-css-files")?.checked
+  return `/* L'ordre des layers définit la priorité des styles */
+
+/* Chaque layer écrase le précédent si conflit */
+@layer config, base, components, utilities;
+
+/* Config */
+${addExtraCss ? '@import "reset.css" layer(config);\n' : ""}${addExtraCss ? '@import "natives.css" layer(config);\n' : ""}${addExtraCss ? '@import "layouts.css" layer(config);\n' : ""}@import "theme.css" layer(config);
+
+/* Base */
+@import "styles.css" layer(base);
+
+/* Utilities */
+@import "utilities.css" layer(utilities);
+`
+}
+
 // helper: render the generation summary string into title + list
 function renderGenerationSummaryText(container, txt, artifacts = {}) {
   const ul = container.querySelector("#summary-logs-list")
@@ -587,6 +999,18 @@ function renderGenerationSummaryText(container, txt, artifacts = {}) {
 
     // 1. styles.css (default)
     filesToDisplay.push({ name: "styles.css", content: STYLES_CSS_CONTENT })
+
+    // 1b. utilities.css (default)
+    filesToDisplay.push({
+      name: "utilities.css",
+      content: UTILITIES_CSS_CONTENT,
+    })
+
+    // 1c. app.css (default)
+    filesToDisplay.push({
+      name: "app.css",
+      content: getAppCssContent(),
+    })
 
     // 2. theme.css (default, if exists)
     if (artifacts && artifacts["theme.css"]) {
@@ -922,6 +1346,7 @@ async function createAndDownloadKit() {
     if (cssFolder) cssFolder.file("theme.css", themeCss)
 
     if (cssFolder) cssFolder.file("styles.css", STYLES_CSS_CONTENT)
+    if (cssFolder) cssFolder.file("utilities.css", UTILITIES_CSS_CONTENT)
 
     // theme.json optionnel
     if (
@@ -946,24 +1371,10 @@ async function createAndDownloadKit() {
           extraFilesCache[f.name] = text // update cache
         }
       }
-
-      // add a generated app.css that imports the expected layers and files
-      const appCssContent = `/* L'ordre des layers définit la priorité des styles */
-
-/* Chaque layer écrase le précédent si conflit */
-@layer config, base, components, utilities;
-
-/* Config */
-@import "reset.css" layer(config);
-@import "natives.css" layer(config);
-@import "layouts.css" layer(config);
-@import "theme.css" layer(config);
-
-/* Base */
-@import "styles.css" layer(base);
-`
-      if (cssFolder) cssFolder.file("app.css", appCssContent)
     }
+
+    // Systematic app.css generation
+    if (cssFolder) cssFolder.file("app.css", getAppCssContent())
 
     // option: config files (support 'config_files:*' artifacts + robust fallback fetch)
     if (

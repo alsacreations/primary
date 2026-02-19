@@ -18,39 +18,39 @@ const STYLES_CSS_CONTENT = `/* -----------------------/*
 
 /* Body et liens */
 body {
-  background-color: var(--surface);
-  color: var(--on-surface);
-  font-family: var(--font-base);
+  background-color: var(--surface, canvas);
+  color: var(--on-surface, canvastext);
+  font-family: var(--font-base, system-ui);
 }
 
 a,
 :any-link {
-  color: var(--link);
+  color: var(--link, linktext);
 
   &:hover,
   &:focus-visible {
-    color: var(--link-hover);
+    color: var(--link-hover, highlighttext);
   }
 
   &:active {
-    color: var(--link-active);
+    color: var(--link-active, highlighttext);
   }
 }
 
 /* Titres */
 .title-xl {
   font-size: var(--text-xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-bold, 700);
 }
 
 .title-l {
   font-size: var(--text-l);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-semibold, 600);
 }
 
 .title-m {
   font-size: var(--text-m);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-semibold, 600);
 }`
 
 const EXTRA_CSS_FILES = [

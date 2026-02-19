@@ -16,12 +16,12 @@
 
 ---
 
-## 🛠️架构 Technical overview (Développeur)
+## 🛠️ Infos techniques (Développeur)
 
 ### Stack Technique
 
 - **Vanilla JavaScript** (ESM) : Pas de framework CSS ou JS complexe.
-- **Logic de traitement** : Portée par `assets/js/client-utils.mjs`. C'est ici que sont extraites les couleurs, typographies et espacements.
+- **Logique de traitement** : Portée par `assets/js/client-utils.mjs`. C'est ici que sont extraites les couleurs, typographies et espacements.
 - **Interface & UI** : Gérée par `assets/js/app.js`.
 - **Génération ZIP** : Utilise la bibliothèque [JSZip](https://stuk.github.io/jszip/).
 - **Aperçu du code** : Rendu dynamique avec coloration syntaxique via `highlight-preview.mjs`.
@@ -58,11 +58,9 @@ Pour faire tourner Primary en local :
 
 1. Clonez le dépôt.
 2. Lancez un serveur local (utile pour les imports de modules ESM et les fetches de templates) :
+
    ```bash
    npx serve .
    ```
+
 3. Ouvrez votre navigateur sur `http://localhost:3000`.
-
----
-
-© 2026 Alsacréations

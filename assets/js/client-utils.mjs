@@ -2347,7 +2347,6 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       `Couleurs extraites : ${colorsTotal} (Primitives : ${colorsPrimitivesCount} / Tokens : ${colorsTokensCount})`,
       `Espacements extraits : ${spacingTotal} (Primitives : ${spacingPrimitivesCount} / Tokens : ${spacingTokensCount})`,
       `Typographies extraites : ${typographyTotal} (Primitives : ${typographyPrimitivesCount} / Tokens : ${typographyTokensCount})`,
-      `Fichiers générés : ${generatedFiles.join(" / ")}`,
     ]
 
     humanSummary = humanLines.join("\n")

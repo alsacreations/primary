@@ -12,6 +12,60 @@ const previewThemeJson = document.getElementById("preview-themejson")
 // Note: generated files are shown inside the logs summary; the dedicated `generated-list` element was removed from the DOM
 // Download/reset/apply buttons removed; copy buttons are provided on code previews.
 
+const STYLES_CSS_CONTENT = `/* -----------------------/*
+ * Styles généraux du projet
+ /* ---------------------- */
+
+/* Body et liens */
+body {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-base);
+}
+
+a,
+:any-link {
+  color: var(--link);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--link-hover);
+  }
+
+  &:active {
+    color: var(--link-active);
+  }
+}
+
+/* Titres */
+.title-xl {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.title-l {
+  font-size: var(--text-l);
+  font-weight: var(--font-weight-semibold);
+}
+
+.title-m {
+  font-size: var(--text-m);
+  font-weight: var(--font-weight-semibold);
+}`
+
+const EXTRA_CSS_FILES = [
+  {
+    src: "https://reset.alsacreations.com/public/reset.css",
+    name: "reset.css",
+  },
+  {
+    src: "https://raw.githubusercontent.com/alsacreations/bretzel/refs/heads/main/public/layouts.css",
+    name: "layouts.css",
+  },
+  { src: "https://knacss.com/css/natives.css", name: "natives.css" },
+]
+let extraFilesCache = {}
+
 let lastArtifacts = null
 let lastLogs = []
 let lastFiles = null
@@ -326,8 +380,42 @@ if (genThemeJsonToggle) {
         panelThemeJson.setAttribute("aria-hidden", "true")
       }
     }
+    // Update summary to reflect theme.json addition/removal
+    if (lastArtifacts) {
+      const genSummaryEl = document.getElementById("summary-logs-id")
+      const txt = lastArtifacts["generation-summary.txt"] || ""
+      renderGenerationSummaryText(genSummaryEl, txt, lastArtifacts)
+    }
   })
 }
+
+// Listen to other checkbox changes to update the summary list
+document
+  .getElementById("add-extra-css-files")
+  ?.addEventListener("change", async (e) => {
+    if (e.target.checked) {
+      // Pre-fetch files for summary links if not in cache
+      for (const f of EXTRA_CSS_FILES) {
+        if (!extraFilesCache[f.name]) {
+          const text = await fetchTextWithCacheBust(f.src)
+          if (text) extraFilesCache[f.name] = text
+        }
+      }
+    }
+    if (lastArtifacts) {
+      const genSummaryEl = document.getElementById("summary-logs-id")
+      const txt = lastArtifacts["generation-summary.txt"] || ""
+      renderGenerationSummaryText(genSummaryEl, txt, lastArtifacts)
+    }
+  })
+
+document.getElementById("add-config-files")?.addEventListener("change", () => {
+  if (lastArtifacts) {
+    const genSummaryEl = document.getElementById("summary-logs-id")
+    const txt = lastArtifacts["generation-summary.txt"] || ""
+    renderGenerationSummaryText(genSummaryEl, txt, lastArtifacts)
+  }
+})
 
 // Empty project button handler
 const btnEmptyProject = document.getElementById("btn-empty-project")
@@ -344,7 +432,6 @@ if (btnEmptyProject) {
     const minimalSummary = [
       "Résumé de génération :",
       "Fichiers traités : 0",
-      "Fichiers générés : theme.css / theme.json / primitives.json / tokens.json",
     ].join("\n")
     artifacts["generation-summary.txt"] = minimalSummary
 
@@ -487,42 +574,77 @@ function renderGenerationSummaryText(container, txt, artifacts = {}) {
     }
     titleEl.textContent = lines[0]
     lines.slice(1).forEach((line) => {
-      // If this line is the generated files line, render as linked items when possible
-      if (/^Fichiers générés\s*:/i.test(line)) {
-        const after = line.split(":")[1] || ""
-        const parts = after
-          .split("/")
-          .map((s) => s.trim())
-          .filter(Boolean)
-        const li = document.createElement("li")
-        // Keep the label and append files inline separated by ' / '
-        const label = line.split(":")[0].trim() + ": "
-        li.appendChild(document.createTextNode(label))
-        parts.forEach((name, idx) => {
-          if (artifacts && artifacts[name]) {
-            const blob = new Blob([artifacts[name]], {
-              type: name.endsWith(".json") ? "application/json" : "text/css",
-            })
-            const a = document.createElement("a")
-            const url = URL.createObjectURL(blob)
-            summaryBlobUrls.push(url)
-            a.href = url
-            a.download = name
-            a.textContent = name
-            li.appendChild(a)
-          } else {
-            li.appendChild(document.createTextNode(name))
-          }
-          if (idx !== parts.length - 1)
-            li.appendChild(document.createTextNode(" / "))
+      const li = document.createElement("li")
+      li.textContent = line
+      ul.appendChild(li)
+    })
+
+    // Add the "Fichiers générés" line dynamically
+    const genFilesLi = document.createElement("li")
+    genFilesLi.appendChild(document.createTextNode("Fichiers générés : "))
+
+    const filesToDisplay = []
+
+    // 1. styles.css (default)
+    filesToDisplay.push({ name: "styles.css", content: STYLES_CSS_CONTENT })
+
+    // 2. theme.css (default, if exists)
+    if (artifacts && artifacts["theme.css"]) {
+      filesToDisplay.push({
+        name: "theme.css",
+        content: artifacts["theme.css"],
+      })
+    }
+
+    // 3. theme.json (if checkbox checked)
+    const generateThemeJson =
+      document.getElementById("generate-themejson")?.checked
+    if (generateThemeJson && artifacts && artifacts["theme.json"]) {
+      filesToDisplay.push({
+        name: "theme.json",
+        content: artifacts["theme.json"],
+      })
+    }
+
+    // 4. extra css files (if checkbox checked)
+    const addExtraCss = document.getElementById("add-extra-css-files")?.checked
+    if (addExtraCss) {
+      EXTRA_CSS_FILES.forEach((f) => {
+        filesToDisplay.push({ name: f.name, content: extraFilesCache[f.name] })
+      })
+    }
+
+    // 5. config files (if checkbox checked)
+    const addConfigFiles = document.getElementById("add-config-files")?.checked
+
+    // Render files list with links where content is available
+    filesToDisplay.forEach((file, idx) => {
+      if (file.content) {
+        const isJson = file.name.endsWith(".json")
+        const blob = new Blob([file.content], {
+          type: isJson ? "application/json" : "text/css",
         })
-        ul.appendChild(li)
+        const url = URL.createObjectURL(blob)
+        summaryBlobUrls.push(url)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = file.name
+        a.textContent = file.name
+        genFilesLi.appendChild(a)
       } else {
-        const li = document.createElement("li")
-        li.textContent = line
-        ul.appendChild(li)
+        genFilesLi.appendChild(document.createTextNode(file.name))
+      }
+
+      if (idx < filesToDisplay.length - 1 || addConfigFiles) {
+        genFilesLi.appendChild(document.createTextNode(" / "))
       }
     })
+
+    if (addConfigFiles) {
+      genFilesLi.appendChild(document.createTextNode("+ fichiers de config"))
+    }
+
+    ul.appendChild(genFilesLi)
   }
 }
 
@@ -799,48 +921,7 @@ async function createAndDownloadKit() {
     // placer theme.css dans le dossier css/
     if (cssFolder) cssFolder.file("theme.css", themeCss)
 
-    // styles.css (obligatoire, contenu standard)
-    const stylesCssContent = `/* -----------------------/*
- * Styles généraux du projet
- /* ---------------------- */
-
-/* Body et liens */
-body {
-  background-color: var(--surface);
-  color: var(--on-surface);
-  font-family: var(--font-base);
-}
-
-a,
-:any-link {
-  color: var(--link);
-
-  &:hover,
-  &:focus-visible {
-    color: var(--link-hover);
-  }
-
-  &:active {
-    color: var(--link-active);
-  }
-}
-
-/* Titres */
-.title-xl {
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-bold);
-}
-
-.title-l {
-  font-size: var(--text-l);
-  font-weight: var(--font-weight-semibold);
-}
-
-.title-m {
-  font-size: var(--text-m);
-  font-weight: var(--font-weight-semibold);
-}`
-    if (cssFolder) cssFolder.file("styles.css", stylesCssContent)
+    if (cssFolder) cssFolder.file("styles.css", STYLES_CSS_CONTENT)
 
     // theme.json optionnel
     if (
@@ -856,21 +937,14 @@ a,
       document.getElementById("add-extra-css-files") &&
       document.getElementById("add-extra-css-files").checked
     ) {
-      const files = [
-        {
-          src: "https://reset.alsacreations.com/public/reset.css",
-          dest: "reset.css",
-        },
-        {
-          src: "https://raw.githubusercontent.com/alsacreations/bretzel/refs/heads/main/public/layouts.css",
-          dest: "layouts.css",
-        },
-        { src: "https://knacss.com/css/natives.css", dest: "natives.css" },
-      ]
-      for (const f of files) {
-        // use cache-busted fetch to ensure latest version
-        const text = await fetchTextWithCacheBust(f.src)
-        if (text !== null) cssFolder.file(f.dest, text)
+      for (const f of EXTRA_CSS_FILES) {
+        // use cache if available, else fetch
+        const text =
+          extraFilesCache[f.name] || (await fetchTextWithCacheBust(f.src))
+        if (text !== null) {
+          cssFolder.file(f.name, text)
+          extraFilesCache[f.name] = text // update cache
+        }
       }
 
       // add a generated app.css that imports the expected layers and files

@@ -1,54 +1,68 @@
-# figmatocss
+# Primary — Générateur de thème CSS automatique
 
-Small, modular CLI to convert Figma Mode JSON exports into CSS variables and artifacts.
+**Primary** est un outil web conçu par Alsacréations pour transformer des exports JSON de variables Figma en un kit CSS complet, structuré et prêt à l'emploi. Il permet de générer des tokens, des primitives, et de gérer nativement les modes clair/sombre ainsi que la typographie et les espacements fluides.
 
-Usage:
+---
 
-1. Place one or more Mode JSON files (export from Figma) into the `source/` folder.
-2. Run:
+## 🚀 Fonctionnalités pour l'utilisateur
 
-```bash
-# node exec (generate CSS + primitives)
-node scripts/figmatocss.js <source-dir> <out-dir>
-# example
-node scripts/figmatocss.js source dist
+1. **Importation de fichiers JSON** : Glissez-déposez un ou plusieurs fichiers JSON exportés depuis le plugin "Variables" de Figma (via l'option "Export modes").
+2. **Projet vide** : Possibilité de débuter un projet avec un set de primitives et tokens par défaut si aucune donnée Figma n'est disponible.
+3. **Options de génération** :
+   - **WordPress** : Génère un fichier `theme.json` conforme à la version 3 du schéma (WP 6.7+).
+   - **Extra CSS** : Inclut automatiquement les dernières versions de `reset.css`, `layouts.css` (Bretzel) et `natives.css`.
+   - **Fichiers de config** : Ajoute les fichiers standards de projet (`.editorconfig`, `.prettierrc`, `vite.config.js`, etc.).
+4. **Kit complet (ZIP)** : Téléchargez une archive contenant toute la structure CSS (`app.css`, `theme.css`, `styles.css`, `utilities.css`) prête à être intégrée.
 
-# generate theme.json from dist
-node scripts/generateThemeJson.js --in dist
+---
 
-# or with npm scripts (recommended)
-# prefer using npm run scripts with `--` to pass args to the CLI
-npm run figmatocss -- -- <src> <out>        # deprecated; use figmatocss:run
-npm run figmatocss:run -- <src> <out>      # recommended (explicit runner)
-npm run wp-theme   # generate theme.json from dist
-npm run build      # run figmatocss then generateThemeJson (recommended)
-```
+## 🛠️架构 Technical overview (Développeur)
 
-Output:
+### Stack Technique
 
-- `dist/theme.css` — generated CSS
-- `dist/primitives.json` — extracted primitives (colors)
-- `dist/tokens.json` — resolved tokens (colors, spacing, fonts)
+- **Vanilla JavaScript** (ESM) : Pas de framework CSS ou JS complexe.
+- **Logic de traitement** : Portée par `assets/js/client-utils.mjs`. C'est ici que sont extraites les couleurs, typographies et espacements.
+- **Interface & UI** : Gérée par `assets/js/app.js`.
+- **Génération ZIP** : Utilise la bibliothèque [JSZip](https://stuk.github.io/jszip/).
+- **Aperçu du code** : Rendu dynamique avec coloration syntaxique via `highlight-preview.mjs`.
 
-Modules:
+### Structure des fichiers
 
-- `scripts/extract/colors.js`
-- `scripts/extract/spacing.js`
-- `scripts/extract/fonts.js`
-- `scripts/utils.js`
+- `index.html` : Structure de l'application.
+- `assets/js/` : Logique de l'application.
+- `assets/templates/` : Templates CSS statiques utilisés pour générer le kit.
+- `assets/css/` : Styles propres à l'application web.
 
-Notes:
+---
 
-- This tool expects Mode JSON exports from Figma (see `instructions.md`).
-- The generator handles color primitives, spacing and basic font sizes/line-heights. Light/dark pairing and mobile/desktop clamps are supported in basic form.
+## 📝 Maintenance et Mise à jour
 
-Fallback primitives when `source/` is empty:
+### Mettre à jour les modèles de fichiers
 
-- When no Mode JSON files are present in `source/`, the CLI injects a minimal set of **global fallback primitives** so `theme.css` and `theme.json` can be produced without missing‑reference warnings. These fallbacks include:
-  - Colors: `--color-white`, `--color-black`, `--color-gray-*` (50..900), `--color-error-*`, `--color-success-*`, `--color-warning-*`, `--color-info-*`.
-  - Spacing primitives: `--spacing-0`, `--spacing-2`, `--spacing-4`, `--spacing-8`, `--spacing-12`, `--spacing-16`, `--spacing-24`, `--spacing-32`, `--spacing-48`.
-  - Font sizes: `--text-14`, `--text-16`, `--text-18`, `--text-20`, `--text-24`, `--text-30`, `--text-48`.
-  - Border radii: `--radius-none`, `--radius-4`, `--radius-8`, `--radius-12`, `--radius-16`, `--radius-24`, `--radius-full`.
-  - Other: `--font-base` (system default), `--font-weight-regular`.
+Les fichiers générés dans le kit (`styles.css` et `utilities.css`) sont basés sur des templates externes pour faciliter leur maintenance sans toucher au code JavaScript.
 
-  These values are **fallbacks** only — any primitives present in `source/` override them.
+- Modifiez `assets/templates/styles.css` pour changer les styles de base par défaut.
+- Modifiez `assets/templates/utilities.css` pour ajuster les classes utilitaires (marges, paddings, etc.).
+
+### Modifier la logique de génération
+
+- **Calculs CSS (Clamp, Colors)** : Tout se passe dans `assets/js/client-utils.mjs`.
+- **Structure du kit ZIP** : La composition de l'archive et la génération de `app.css` se font dans `assets/js/app.js`.
+- **Instructions WP (theme.json)** : La fonction `processFiles.generateThemeJson` dans `client-utils.mjs` définit la structure du fichier JSON pour WordPress.
+
+---
+
+## 💻 Installation locale
+
+Pour faire tourner Primary en local :
+
+1. Clonez le dépôt.
+2. Lancez un serveur local (utile pour les imports de modules ESM et les fetches de templates) :
+   ```bash
+   npx serve .
+   ```
+3. Ouvrez votre navigateur sur `http://localhost:3000`.
+
+---
+
+© 2026 Alsacréations

@@ -192,7 +192,7 @@ details[open] {
   background: var(--color-gray-800);
   color: var(--color-white);
   border-radius: var(--radius-16);
-  height: 30rem;
+  height: 42rem;
   overflow: auto;
   white-space: pre-wrap;
   font-family: var(--font-mono);

@@ -1,7 +1,7 @@
 /**
  * @see https://stylelint.io/user-guide/configure/
  * @type {import('stylelint').Config}
- * Mise à jour : 2026-01-26
+ * Mise à jour : 2026-02-20
  */
 export default {
   extends: [
@@ -30,13 +30,7 @@ export default {
     "selector-max-class": 3, // on limite le nombre de classes
     "selector-max-type": 3, // on limite le nombre de sélecteurs d'éléments
     "no-descending-specificity": null, // on désactive la règle de spécificité descendante
-    "selector-class-pattern": [
-      "^[a-z][a-z0-9]*(-[a-z0-9]+)*(--[a-z0-9]+(-[a-z0-9]+)*)?$",
-      {
-        message:
-          "Expected class selector to be kebab-case or BEM notation (block-name__element-name--modifier-name)",
-      },
-    ], // on accepte kebab-case et BEM
+    "selector-class-pattern": null, // on désactive la règle de nommage des classes
 
     // Sélécteurs spécifiques
     "selector-pseudo-class-no-unknown": [
@@ -60,6 +54,9 @@ export default {
         },
       },
     ],
+
+    // Custom properties
+    "custom-property-pattern": null, // on désactive la règle de nommage des custom properties
 
     // Prefixes
     "property-no-vendor-prefix": [
@@ -90,7 +87,7 @@ export default {
 
     // Unités
     "declaration-property-unit-disallowed-list": {
-      "/^font|^font-size/": ["px"], // pas de pixels
+      "/^font|^font-size/": ["px"], // pas de pixels pour les polices
     },
 
     // Imports

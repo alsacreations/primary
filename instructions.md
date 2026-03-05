@@ -307,7 +307,7 @@ Parmi les primitives injectées par défaut on trouve :
 - **Espacements** : `--spacing-0` (0), `--spacing-2` (0.125rem) `--spacing-4` (0.25rem), `--spacing-8` (0.5rem), `--spacing-12` (0.75rem), `--spacing-16` (1rem), `--spacing-24` (1.5rem), `--spacing-32` (2rem), `--spacing-48` (3rem).
 - **Tailles de texte** : `--text-14` (0.875rem), `--text-16` (1rem), `--text-18` (1.125rem), `--text-20` (1.25rem), `--text-24` (1.5rem), `--text-30` (1.875rem), `--text-48` (3rem).
 - **Hauteurs de ligne** : non spécifiées par défaut.
-- **Arrondis** : `--radius-none`, `--radius-4`, `--radius-8`, `--radius-12`, `--radius-16`, `--radius-24`, `--radius-full`.
+- **Arrondis** : `--radius-none`, `--radius-4`, `--radius-8`, `--radius-16`, `--radius-24`, `--radius-full`.
 - **Autres** : `--font-base` ("system-ui, sans-serif"), `--font-mono` ("ui-monospace, monospace").
 
 Ces valeurs sont des _fallbacks_ : si `source/` contient des primitives correspondantes, elles remplacent ces valeurs par défaut.
@@ -505,7 +505,6 @@ Autres variables CSS globales à inclure dans tous les thèmes, **si elles sont 
 --radius-none: 0;
 --radius-4: 0.25rem;
 --radius-8: 0.5rem;
---radius-12: 0.75rem;
 --radius-16: 1rem;
 --radius-24: 1.5rem;
 --radius-full: 9999px;

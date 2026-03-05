@@ -211,7 +211,7 @@ details[open] {
   color: var(--color-white);
   border: none;
   padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-12);
+  border-radius: var(--radius-8);
   cursor: pointer;
   font-size: var(--text-14);
   transition: var(--transition-duration);
@@ -527,7 +527,7 @@ details[open] {
   margin-block: var(--spacing-l);
   padding: var(--spacing-m);
   background-color: var(--color-sand-200);
-  border-radius: var(--radius-12);
+  border-radius: var(--radius-8);
 }
 .summary-logs.is-visible {
   display: block;

@@ -5,6 +5,12 @@
  * ----------------------------------
  */
 
+/* Offscreen (ignore le rendu des éléments hors-écran) */
+.offscreen {
+  contain-intrinsic-size: auto 500px;
+  content-visibility: auto;
+}
+
 /* Thème forcé */
 [data-theme="light"],
 .theme-light {

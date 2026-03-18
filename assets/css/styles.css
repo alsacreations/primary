@@ -587,6 +587,7 @@ details[open] {
 /* Icons */
 [data-icon="icon-info"] {
   --mask-icon-svg: url("../images/icons/info.svg");
+  flex-shrink: 0;
 }
 
 /* Footer */

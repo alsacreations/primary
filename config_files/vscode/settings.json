@@ -7,9 +7,13 @@
     "source.fixAll.stylelint": "explicit",
     "source.fixAll.markdownlint": "explicit"
   },
-  "[vue]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
   "prettier.enable": true,
-  "stylelint.enable": true
+  "stylelint.enable": true,
+  "files.exclude": {
+    "**/.git": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  }
 }

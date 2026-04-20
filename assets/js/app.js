@@ -39,6 +39,10 @@ const EXTRA_CSS_FILES = [
     name: "reset.css",
   },
   {
+    src: "https://reset.alsacreations.com/public/print.css",
+    name: "print.css",
+  },
+  {
     src: "https://raw.githubusercontent.com/alsacreations/bretzel/refs/heads/main/public/layouts.css",
     name: "layouts.css",
   },
@@ -541,6 +545,7 @@ ${addExtraCss ? '@import "reset.css" layer(config);\n' : ""}${addExtraCss ? '@im
 @import "styles.css" layer(base);
 
 /* Utilities */
+@import "print.css" layer(utilities);
 @import "utilities.css" layer(utilities);
 `
 }

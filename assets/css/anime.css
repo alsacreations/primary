@@ -1,7 +1,7 @@
 /* -----------------------/*
  * AnimeCSS
  * Made par Alsacréations
- * Mise à jour : 2025-12-17
+ * Mise à jour : 2026-05-28
  /* ---------------------- */
 
 /* View Transition API */
@@ -53,9 +53,7 @@
   [data-anime]:where(:not([data-anime*="hover"])) {
     --anime-offset: 40px;
 
-    animation-duration: auto;
-    animation-timing-function: linear;
-    animation-timeline: view(block);
+    animation-timeline: view();
     animation-fill-mode: both;
   }
 

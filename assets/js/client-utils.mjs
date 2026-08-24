@@ -58,6 +58,42 @@ function numericSortKeys(keys) {
   })
 }
 
+// Semantic token scale order (xxs -> xxxxl), used to order token CSS lines
+// (--text-s, --spacing-l, etc.) regardless of their underlying px anchor.
+const SEMANTIC_SIZE_ORDER = [
+  "xxs",
+  "xs",
+  "s",
+  "m",
+  "l",
+  "xl",
+  "xxl",
+  "xxxl",
+  "xxxxl",
+]
+function semanticSizeRank(key) {
+  const suffix = String(key)
+    .replace(/^--/, "")
+    .replace(/^(text|line-height|spacing|radius)-/, "")
+  const idx = SEMANTIC_SIZE_ORDER.indexOf(suffix)
+  return idx === -1 ? null : idx
+}
+function semanticSortKeys(keys) {
+  return keys.sort((a, b) => {
+    const ra = semanticSizeRank(a)
+    const rb = semanticSizeRank(b)
+    if (ra !== null && rb !== null) return ra - rb
+    if (ra !== null) return -1
+    if (rb !== null) return 1
+    const na = _numericKeyValue(a)
+    const nb = _numericKeyValue(b)
+    if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+    if (!Number.isNaN(na)) return -1
+    if (!Number.isNaN(nb)) return 1
+    return String(a).localeCompare(String(b))
+  })
+}
+
 function resolvePxFromRef(ref, structuredPrimitivesParam) {
   if (ref === undefined || ref === null) return NaN
   if (typeof ref === "number") return Number(ref)
@@ -327,7 +363,7 @@ function extractSpacing(entries) {
   const tokens = {}
   const warnings = []
 
-  numericSortKeys(Object.keys(spacingTokensByName)).forEach((token) => {
+  semanticSortKeys(Object.keys(spacingTokensByName)).forEach((token) => {
     const per = spacingTokensByName[token]
 
     if (
@@ -2042,22 +2078,22 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     )
   }
 
-  tokenObjects.sort((a, b) => {
-    const ax = Number.isNaN(a.anchorRem) ? Infinity : a.anchorRem
-    const bx = Number.isNaN(b.anchorRem) ? Infinity : b.anchorRem
-    if (ax !== bx) return ax - bx
-    return a.name.localeCompare(b.name)
-  })
-
-  const textTokenObjs = tokenObjects.filter((o) => /^text-/.test(o.name))
-  const lhTokenObjs = tokenObjects.filter((o) => /^line-height-/.test(o.name))
-
   function anchorSort(a, b) {
+    const ra = semanticSizeRank(a.name)
+    const rb = semanticSizeRank(b.name)
+    if (ra !== null && rb !== null) return ra - rb
+    if (ra !== null) return -1
+    if (rb !== null) return 1
     const ax = Number.isNaN(a.anchorRem) ? Infinity : a.anchorRem
     const bx = Number.isNaN(b.anchorRem) ? Infinity : b.anchorRem
     if (ax !== bx) return ax - bx
     return a.name.localeCompare(b.name)
   }
+
+  tokenObjects.sort(anchorSort)
+
+  const textTokenObjs = tokenObjects.filter((o) => /^text-/.test(o.name))
+  const lhTokenObjs = tokenObjects.filter((o) => /^line-height-/.test(o.name))
 
   textTokenObjs.sort(anchorSort)
   lhTokenObjs.sort(anchorSort)

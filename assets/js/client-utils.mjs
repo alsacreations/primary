@@ -248,7 +248,12 @@ function emitSpacingTokenLines(spacingTokensObj, structuredPrimitivesParam) {
 // Inline extractor for spacing (simple adaptation of scripts/extract/spacing.js)
 function extractSpacing(entries) {
   const spacing = {}
-  entries.forEach(({ json }) => {
+  const modes = new Set()
+
+  // Primitive scale (numeric keys, no device mode) + radius, unaffected by mobile/desktop
+  entries.forEach(({ json, modeName }) => {
+    if (modeName) modes.add(modeName.toLowerCase())
+    if (modeName) return
     const spacingSection = json.Spacing || json.spacing || json.spacings || null
     if (spacingSection) {
       Object.keys(spacingSection).forEach((k) => {
@@ -269,11 +274,118 @@ function extractSpacing(entries) {
     }
   })
 
+  // Spacing tokens by name, across all entries (mode-tagged files or a single
+  // combined file where each value embeds mobile/desktop directly)
+  const spacingTokensByName = {}
+  entries.forEach(({ json, modeName }) => {
+    const mode = (modeName || "").toLowerCase()
+    const spacingSection = json.Spacing || json.spacing || json.spacings || null
+    if (!spacingSection) return
+    Object.keys(spacingSection).forEach((k) => {
+      const name = k.startsWith("spacing-") ? k.replace(/^spacing-/, "") : k
+      const token = `spacing-${name}`
+      spacingTokensByName[token] = spacingTokensByName[token] || {}
+      const raw = spacingSection[k]
+      if (
+        raw &&
+        typeof raw === "object" &&
+        (raw.modes || raw.mobile !== undefined || raw.desktop !== undefined)
+      ) {
+        const modesObj = raw.modes || {}
+        if (raw.mobile !== undefined) modesObj.mobile = raw.mobile
+        if (raw.desktop !== undefined) modesObj.desktop = raw.desktop
+        Object.keys(modesObj).forEach((mn) => {
+          spacingTokensByName[token][mn] = modesObj[mn]
+        })
+      } else {
+        spacingTokensByName[token][mode] =
+          raw && (raw.$value ?? raw.value ?? raw)
+      }
+    })
+  })
+
+  const tokensCss = []
   const primitives = {}
-  const tokens = {}
   Object.keys(spacing).forEach((name) => {
     primitives[name] = spacing[name]
-    tokens[name] = { value: `var(${name})`, px: spacing[name] }
+  })
+
+  // Find an existing --spacing-<px> primitive matching this value, or create one,
+  // so identical mobile/desktop tokens can alias to it instead of duplicating it.
+  function findOrCreatePrimitiveAlias(px) {
+    const re = /^--spacing-\d+$/
+    const existingKey = Object.keys(primitives).find(
+      (k) => re.test(k) && primitives[k] === px,
+    )
+    if (existingKey) return existingKey
+    const alias = `--spacing-${Math.round(px)}`
+    if (primitives[alias] === undefined) primitives[alias] = px
+    return alias
+  }
+
+  const hasDeviceModes = modes.has("desktop") || modes.has("mobile")
+  const tokens = {}
+  const warnings = []
+
+  numericSortKeys(Object.keys(spacingTokensByName)).forEach((token) => {
+    const per = spacingTokensByName[token]
+
+    if (
+      hasDeviceModes &&
+      per[""] !== undefined &&
+      (per.desktop !== undefined || per.mobile !== undefined)
+    ) {
+      const fallback = per[""]
+      if (!per.desktop && !per.mobile) {
+        per.desktop = fallback
+        per.mobile = fallback
+      } else if (!per.desktop && per.mobile) {
+        per.desktop = fallback
+      } else if (per.desktop && !per.mobile) {
+        per.mobile = fallback
+      }
+      delete per[""]
+    }
+
+    const modesForToken = Object.keys(per)
+    // Plain primitive-scale entry (no device mode): already captured above as a primitive.
+    if (modesForToken.length === 1 && modesForToken[0] === "") return
+
+    if (modesForToken.length === 1 && modesForToken[0] !== "") {
+      const only = modesForToken[0]
+      if (only === "mobile") per.desktop = per.mobile
+      else if (only === "desktop") per.mobile = per.desktop
+      warnings.push({
+        token: `--${token}`,
+        type: "missing-mode-variant",
+        message: `Token '--${token}' present only in mode '${only}'. Using available value as fallback.`,
+      })
+    }
+
+    tokens[`--${token}`] = { value: `var(--${token})`, modes: per }
+
+    if (modesForToken.includes("mobile") && modesForToken.includes("desktop")) {
+      if (
+        typeof per.mobile === "number" &&
+        typeof per.desktop === "number" &&
+        per.mobile === per.desktop
+      ) {
+        const primVar = findOrCreatePrimitiveAlias(per.mobile)
+        tokensCss.push(`--${token}: var(${primVar});`)
+        warnings.push({
+          token: `--${token}`,
+          type: "redundant-token-numeric",
+          message: `Token '--${token}' has identical mobile and desktop numeric value ${per.mobile}px; aliasing token to primitive ${primVar}.`,
+        })
+      } else {
+        tokensCss.push(
+          `--${token}: ${computeFluidClamp(per.mobile, per.desktop, primitives, "spacing")};`,
+        )
+      }
+    } else {
+      const only = modesForToken[0]
+      tokensCss.push(`--${token}: ${pxToRem(per[only])};`)
+    }
   })
 
   const css = Object.keys(spacing)
@@ -283,7 +395,7 @@ function extractSpacing(entries) {
         `${name}: ${pxToRem(spacing[name])}; /* ${String(spacing[name])} */`,
     )
 
-  return { primitives, json: tokens, css }
+  return { primitives, json: tokens, css, tokensCss, warnings }
 }
 
 // Inserted extractColors (ESM port)
@@ -563,6 +675,9 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   }
 
   const spacingResult = extractSpacing(entries)
+  ;(spacingResult.warnings || []).forEach((w) => {
+    emit(`WARN: spacing:${w.type}:${w.token || ""}:${w.message || ""}`, "warn")
+  })
   const colorResult = extractColors(entries)
   // Extract fonts (font-size and line-height)
   function extractFonts(entries) {
@@ -721,6 +836,20 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     const tokenFontSize = {}
     const tokenLineHeight = {}
 
+    // Find an existing numeric-scale primitive matching this px value, or create one
+    // (e.g. --text-16 / --line-height-16) so identical mobile/desktop tokens can alias
+    // to it instead of being flattened into a standalone primitive.
+    function findOrCreatePrimitiveAlias(px, prefix) {
+      const re = new RegExp(`^--${prefix}-\\d+$`)
+      const existingKey = Object.keys(primitives).find(
+        (k) => re.test(k) && primitives[k] === px,
+      )
+      if (existingKey) return existingKey
+      const alias = `--${prefix}-${Math.round(px)}`
+      if (primitives[alias] === undefined) primitives[alias] = px
+      return alias
+    }
+
     const hasDeviceModes = modes.has("desktop") || modes.has("mobile")
 
     const warnings = []
@@ -787,34 +916,27 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           const leftVar = extractVarName(leftResolved)
           const rightVar = extractVarName(rightResolved)
 
-          // Case A: both resolve to same primitive var -> convert token into primitive alias
+          // Case A: both resolve to same primitive var -> keep the token, alias it to that primitive
           if (leftVar && rightVar && leftVar === rightVar) {
-            primitives[`--${token}`] = `var(${leftVar})`
-            // remove token mapping and any emitted css for this token
-            if (tokenFontSize[`--${token}`]) delete tokenFontSize[`--${token}`]
-            for (let i = tokensCss.length - 1; i >= 0; i--) {
-              if (tokensCss[i].startsWith(`--${token}:`)) tokensCss.splice(i, 1)
-            }
+            tokensCss.push(`--${token}: var(${leftVar});`)
             warnings.push({
               token: `--${token}`,
               type: "redundant-token",
-              message: `Token '--${token}' has identical mobile and desktop primitive ${leftVar}; converting to primitive alias.`,
+              message: `Token '--${token}' has identical mobile and desktop primitive ${leftVar}; aliasing token to that primitive instead of duplicating it.`,
             })
           } else if (
             typeof per.mobile === "number" &&
             typeof per.desktop === "number" &&
             per.mobile === per.desktop
           ) {
-            // Case B: both endpoints are the same numeric value -> emit primitive with rem value
-            primitives[`--${token}`] = pxToRem(per.mobile)
-            if (tokenFontSize[`--${token}`]) delete tokenFontSize[`--${token}`]
-            for (let i = tokensCss.length - 1; i >= 0; i--) {
-              if (tokensCss[i].startsWith(`--${token}:`)) tokensCss.splice(i, 1)
-            }
+            // Case B: both endpoints are the same numeric value -> keep the token, alias it to
+            // the matching (or newly created) numeric-scale primitive, e.g. --text-s: var(--text-16);
+            const primVar = findOrCreatePrimitiveAlias(per.mobile, "text")
+            tokensCss.push(`--${token}: var(${primVar});`)
             warnings.push({
               token: `--${token}`,
               type: "redundant-token-numeric",
-              message: `Token '--${token}' has identical mobile and desktop numeric value ${per.mobile}px; converting to primitive.`,
+              message: `Token '--${token}' has identical mobile and desktop numeric value ${per.mobile}px; aliasing token to primitive ${primVar}.`,
             })
           } else {
             tokensCss.push(
@@ -897,33 +1019,23 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           const rightVar = extractVarName(rightResolved)
 
           if (leftVar && rightVar && leftVar === rightVar) {
-            primitives[`--${token}`] = `var(${leftVar})`
-            // remove token mapping and any emitted css for this token
-            if (tokenLineHeight[`--${token}`])
-              delete tokenLineHeight[`--${token}`]
-            for (let i = tokensCss.length - 1; i >= 0; i--) {
-              if (tokensCss[i].startsWith(`--${token}:`)) tokensCss.splice(i, 1)
-            }
+            tokensCss.push(`--${token}: var(${leftVar});`)
             warnings.push({
               token: `--${token}`,
               type: "redundant-token",
-              message: `Token '--${token}' has identical mobile and desktop primitive ${leftVar}; converting to primitive alias.`,
+              message: `Token '--${token}' has identical mobile and desktop primitive ${leftVar}; aliasing token to that primitive instead of duplicating it.`,
             })
           } else if (
             typeof per.mobile === "number" &&
             typeof per.desktop === "number" &&
             per.mobile === per.desktop
           ) {
-            primitives[`--${token}`] = pxToRem(per.mobile)
-            if (tokenLineHeight[`--${token}`])
-              delete tokenLineHeight[`--${token}`]
-            for (let i = tokensCss.length - 1; i >= 0; i--) {
-              if (tokensCss[i].startsWith(`--${token}:`)) tokensCss.splice(i, 1)
-            }
+            const primVar = findOrCreatePrimitiveAlias(per.mobile, "line-height")
+            tokensCss.push(`--${token}: var(${primVar});`)
             warnings.push({
               token: `--${token}`,
               type: "redundant-token-numeric",
-              message: `Token '--${token}' has identical mobile and desktop numeric value ${per.mobile}px; converting to primitive.`,
+              message: `Token '--${token}' has identical mobile and desktop numeric value ${per.mobile}px; aliasing token to primitive ${primVar}.`,
             })
           } else {
             tokensCss.push(
@@ -1590,26 +1702,11 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     parts.push("\n")
   }
 
-  // Build token object only from actual tokens (entries that declare modes)
-  const tokenObj = Object.fromEntries(
-    Object.entries(normalized.spacing)
-      .filter(([k, v]) => {
-        if (!v) return false
-        // Include only if modes are present (mobile/desktop or light/dark)
-        if (v.modes) return true
-        // If a single value is present, skip if it only references the same primitive (avoid duplicate primitive-as-token)
-        if (v.value && typeof v.value === "string") {
-          const samePrimitiveVar = `var(--spacing-${k})`
-          return v.value.trim() !== samePrimitiveVar
-        }
-        return false
-      })
-      .map(([k, v]) => [`--${k}`, v]),
-  )
-  const tokenLines = emitSpacingTokenLines(tokenObj, structured)
-  if (tokenLines.length) {
+  // Espacements Tokens (built by the extractor itself, so mobile/desktop clamps
+  // reference the primitive scale via var(--spacing-<px>) correctly)
+  if (spacingResult.tokensCss && spacingResult.tokensCss.length) {
     parts.push("  /* Espacements Tokens du projet */\n")
-    tokenLines.forEach((l) => parts.push(`  ${l}\n`))
+    spacingResult.tokensCss.forEach((l) => parts.push(`  ${l}\n`))
     parts.push("\n")
   }
 

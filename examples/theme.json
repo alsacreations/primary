@@ -12,6 +12,26 @@
         { "name": "white", "color": "var(--color-white)", "slug": "white" },
         { "name": "black", "color": "var(--color-black)", "slug": "black" },
         {
+          "name": "slate-100",
+          "color": "var(--color-slate-100)",
+          "slug": "slate-100"
+        },
+        {
+          "name": "slate-400",
+          "color": "var(--color-slate-400)",
+          "slug": "slate-400"
+        },
+        {
+          "name": "slate-700",
+          "color": "var(--color-slate-700)",
+          "slug": "slate-700"
+        },
+        {
+          "name": "slate-800",
+          "color": "var(--color-slate-800)",
+          "slug": "slate-800"
+        },
+        {
           "name": "gray-50",
           "color": "var(--color-gray-50)",
           "slug": "gray-50"

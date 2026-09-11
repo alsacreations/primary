@@ -524,6 +524,10 @@ if (rawArgs.length >= 2) {
   const globalColorDefaults = {
     white: "oklch(1 0 0)",
     black: "oklch(0 0 0)",
+    "slate-100": "#F1F5F9",
+    "slate-400": "#90A1B9",
+    "slate-700": "#314158",
+    "slate-800": "#161F2C",
     "gray-50": "oklch(0.97 0 0)",
     "gray-100": "oklch(0.922 0 0)",
     "gray-200": "oklch(0.87 0 0)",

@@ -1188,6 +1188,10 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     const globalColorDefaults = {
       "--color-white": "oklch(1 0 0)",
       "--color-black": "oklch(0 0 0)",
+      "--color-slate-100": "#F1F5F9",
+      "--color-slate-400": "#90A1B9",
+      "--color-slate-700": "#314158",
+      "--color-slate-800": "#161F2C",
       "--color-gray-50": "oklch(0.97 0 0)",
       "--color-gray-100": "oklch(0.922 0 0)",
       "--color-gray-200": "oklch(0.87 0 0)",
@@ -1387,6 +1391,10 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   const globalColorDefaults = {
     white: "oklch(1 0 0)",
     black: "oklch(0 0 0)",
+    "slate-100": "#F1F5F9",
+    "slate-400": "#90A1B9",
+    "slate-700": "#314158",
+    "slate-800": "#161F2C",
     "gray-50": "oklch(0.97 0 0)",
     "gray-100": "oklch(0.922 0 0)",
     "gray-200": "oklch(0.87 0 0)",
@@ -1423,6 +1431,10 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   const globalColorOrder = [
     "white",
     "black",
+    "slate-100",
+    "slate-400",
+    "slate-700",
+    "slate-800",
     "gray-50",
     "gray-100",
     "gray-200",

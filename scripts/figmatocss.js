@@ -74,6 +74,7 @@ if (rawArgs.length >= 2) {
   let colorSchemeSelectors = ""
   const hasLight = colorResult.modes.includes("light")
   const hasDark = colorResult.modes.includes("dark")
+  const hasLightDarkMode = hasLight && hasDark
   if (hasLight && hasDark) {
     colorSchemeProperty = `/* Theme (color-scheme) */\ncolor-scheme: light dark;\n\n&[data-theme="light"] { color-scheme: light; }\n&[data-theme="dark"] { color-scheme: dark; }`
     colorSchemeSelectors = ""
@@ -938,6 +939,32 @@ if (rawArgs.length >= 2) {
     "border-medium": "var(--color-gray-600)",
   }
 
+  // Par défaut (aucun mode light/dark détecté dans la source), on ne garde que la
+  // valeur "light" des tokens globaux plutôt que de les envelopper dans light-dark().
+  // (parenthèses imbriquées dans var(...) obligent à compter la profondeur plutôt
+  // qu'à s'appuyer sur une regex non-ancrée.)
+  function resolveDefaultForMode(value) {
+    if (hasLightDarkMode) return value
+    const start = value.indexOf("light-dark(")
+    if (start === -1) return value
+    const argsStart = start + "light-dark(".length
+    let depth = 1
+    let i = argsStart
+    for (; i < value.length; i++) {
+      if (value[i] === "(") depth++
+      else if (value[i] === ")") {
+        depth--
+        if (depth === 0) break
+      }
+    }
+    const inner = value.slice(argsStart, i)
+    const commaIdx = inner.indexOf(",")
+    const lightVal = (
+      commaIdx === -1 ? inner : inner.slice(0, commaIdx)
+    ).trim()
+    return value.slice(0, start) + lightVal + value.slice(i + 1)
+  }
+
   function findTokenLineFromExtractor(name) {
     const arr = (colorResult.tokensCss || []).map((l) => l.trim())
     return arr.find((l) => l.startsWith(`--${name}:`)) || null
@@ -1018,7 +1045,7 @@ if (rawArgs.length >= 2) {
       }
 
       globalColorTokensLines.push(
-        `--${name}: ${globalColorTokenDefaults[name]};`,
+        `--${name}: ${resolveDefaultForMode(globalColorTokenDefaults[name])};`,
       )
     })
     if (idx !== colorTokenGroups.length - 1) globalColorTokensLines.push("") // blank line between groups

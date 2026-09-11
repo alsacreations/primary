@@ -197,9 +197,44 @@ function toVarName(prefix, slug) {
   return `var(--${prefix}${slug})`;
 }
 
+// Par défaut (aucun token du projet ne fournit les deux modes light ET dark),
+// on ne garde que la valeur "light" des couleurs de palette par défaut plutôt
+// que de les envelopper dans light-dark() — nos projets n'ont que très
+// rarement un vrai mode sombre. La fonctionnalité s'active dès que le projet
+// fournit réellement des tokens en mode light et dark.
+function hasProjectLightDarkMode(tokens) {
+  const colors = (tokens && tokens.colors) || {};
+  return Object.values(colors).some(
+    (t) => t && t.modes && t.modes.light && t.modes.dark,
+  );
+}
+
+// (parenthèses imbriquées dans var(...) obligent à compter la profondeur
+// plutôt qu'à s'appuyer sur une regex non-ancrée.)
+function resolveDefaultForMode(value, hasLightDarkMode) {
+  if (hasLightDarkMode) return value;
+  const start = value.indexOf("light-dark(");
+  if (start === -1) return value;
+  const argsStart = start + "light-dark(".length;
+  let depth = 1;
+  let i = argsStart;
+  for (; i < value.length; i++) {
+    if (value[i] === "(") depth++;
+    else if (value[i] === ")") {
+      depth--;
+      if (depth === 0) break;
+    }
+  }
+  const inner = value.slice(argsStart, i);
+  const commaIdx = inner.indexOf(",");
+  const lightVal = (commaIdx === -1 ? inner : inner.slice(0, commaIdx)).trim();
+  return value.slice(0, start) + lightVal + value.slice(i + 1);
+}
+
 function buildPalette(primitives, tokens) {
   const palette = [];
   const seen = new Set();
+  const hasLightDarkMode = hasProjectLightDarkMode(tokens);
 
   // Add color primitives first
   if (primitives && primitives.color) {
@@ -226,7 +261,10 @@ function buildPalette(primitives, tokens) {
   // Finally add defaults for commonly expected tokens if missing
   defaultPalette.forEach((entry) => {
     if (!seen.has(entry.slug)) {
-      palette.push(entry);
+      palette.push({
+        ...entry,
+        color: resolveDefaultForMode(entry.color, hasLightDarkMode),
+      });
       seen.add(entry.slug);
     }
   });

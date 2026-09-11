@@ -1516,9 +1516,35 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     if (m) tokensMap.set(m[1], m[0])
   })
 
+  // Par défaut (aucun mode light/dark détecté dans la source), on ne garde que la
+  // valeur "light" des tokens globaux plutôt que de les envelopper dans light-dark().
+  // (parenthèses imbriquées dans var(...) obligent à compter la profondeur plutôt
+  // qu'à s'appuyer sur une regex non-ancrée.)
+  function resolveDefaultForMode(def) {
+    if (hasLightDarkModes) return def
+    const start = def.indexOf("light-dark(")
+    if (start === -1) return def
+    const argsStart = start + "light-dark(".length
+    let depth = 1
+    let i = argsStart
+    for (; i < def.length; i++) {
+      if (def[i] === "(") depth++
+      else if (def[i] === ")") {
+        depth--
+        if (depth === 0) break
+      }
+    }
+    const inner = def.slice(argsStart, i)
+    const commaIdx = inner.indexOf(",")
+    const lightVal = (
+      commaIdx === -1 ? inner : inner.slice(0, commaIdx)
+    ).trim()
+    return def.slice(0, start) + lightVal + def.slice(i + 1)
+  }
+
   function pushOrDefault(name, def) {
     if (tokensMap.has(name)) parts.push(`  ${tokensMap.get(name)}\n`)
-    else parts.push(`  ${def}\n`)
+    else parts.push(`  ${resolveDefaultForMode(def)}\n`)
   }
 
   parts.push("  /* Couleurs Tokens globales */\n")

@@ -443,6 +443,52 @@ Si ces données sont présentes dans le JSON source, débuter la section par ce 
 
 Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS globales avec les commentaires, **si elles sont présentes dans les données JSON exportées de Figma, elles doivent être remplacées par les valeurs extraites** :
 
+> **Règle light/dark** : nos projets n'ont que très rarement un vrai mode sombre. Le `light-dark()` n'est donc généré pour ces tokens globaux que si les données JSON exportées de Figma contiennent effectivement des fichiers en mode `light` **et** `dark`. Par défaut (aucun mode détecté dans `source/`), seule la valeur "light" est émise, sans enveloppe `light-dark()`. La fonctionnalité s'active donc automatiquement dès que le projet en a besoin, sans configuration manuelle.
+
+**Cas par défaut (aucun mode light/dark dans la source)** :
+
+```css
+/* Couleurs Tokens globales */
+/* Couleur primaire */
+--primary: var(--color-gray-500);
+--on-primary: var(--color-white);
+--primary-lighten: color-mix(in srgb, var(--primary), white 20%);
+--primary-darken: color-mix(in srgb, var(--primary), black 20%);
+
+/* Couleur d'accent */
+--accent: var(--primary);
+--accent-invert: var(--primary-lighten);
+
+/* Surface du document */
+--surface: var(--color-white);
+--on-surface: var(--color-gray-900);
+
+/* Niveaux de profondeur */
+--layer-1: var(--color-gray-50);
+--layer-2: var(--color-gray-100);
+--layer-3: var(--color-gray-200);
+
+/* Interactions */
+--link: var(--primary);
+--link-hover: var(--primary-darken);
+--link-active: var(--primary-darken);
+
+/* Couleur de sélection */
+--selection: var(--primary-lighten);
+
+/* États d'alerte */
+--warning: var(--color-warning-500);
+--error: var(--color-error-500);
+--success: var(--color-success-500);
+--info: var(--color-info-500);
+
+/* Bordures */
+--border-light: var(--color-gray-400);
+--border-medium: var(--color-gray-600);
+```
+
+**Cas où le projet définit des modes light/dark** (fichiers `source/` en mode `light` et `dark`) :
+
 ```css
 /* Couleurs Tokens globales */
 /* Couleur primaire */

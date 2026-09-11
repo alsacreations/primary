@@ -935,8 +935,6 @@ if (rawArgs.length >= 2) {
     error: "light-dark(var(--color-error-500), var(--color-error-300))",
     success: "light-dark(var(--color-success-500), var(--color-success-300))",
     info: "light-dark(var(--color-info-500), var(--color-info-300))",
-    "border-light": "var(--color-gray-400)",
-    "border-medium": "var(--color-gray-600)",
   }
 
   // Par défaut (aucun mode light/dark détecté dans la source), on ne garde que la
@@ -1001,7 +999,6 @@ if (rawArgs.length >= 2) {
       comment: "/* États d'alerte */",
       keys: ["warning", "error", "success", "info"],
     },
-    { comment: "/* Bordures */", keys: ["border-light", "border-medium"] },
   ]
 
   const globalColorTokensLines = []

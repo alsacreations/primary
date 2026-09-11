@@ -1639,10 +1639,6 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "--info: light-dark(var(--color-info-500), var(--color-info-300));",
   )
   parts.push("\n")
-  parts.push("  /* Bordures */\n")
-  pushOrDefault("border-light", "--border-light: var(--color-gray-400);")
-  pushOrDefault("border-medium", "--border-medium: var(--color-gray-600);")
-  parts.push("\n")
 
   // Project color tokens (exclude global tokens)
   const colorTokenLines = colorResult.tokensCss || []
@@ -1666,8 +1662,6 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "error",
     "success",
     "info",
-    "border-light",
-    "border-medium",
   ])
   const projectTokenLines = colorTokenLines.filter((line) => {
     const m = String(line).match(/^\s*--([a-z0-9\-]+):/)

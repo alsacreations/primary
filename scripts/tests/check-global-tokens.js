@@ -65,10 +65,6 @@ async function run() {
     "  --error: var(--color-error-500);",
     "  --success: var(--color-success-500);",
     "  --info: var(--color-info-500);",
-    "",
-    "  /* Bordures */",
-    "  --border-light: var(--color-gray-400);",
-    "  --border-medium: var(--color-gray-600);",
   ]
 
   const actual = lines.slice(0, expected.length)

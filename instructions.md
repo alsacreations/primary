@@ -481,10 +481,6 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 --error: var(--color-error-500);
 --success: var(--color-success-500);
 --info: var(--color-info-500);
-
-/* Bordures */
---border-light: var(--color-gray-400);
---border-medium: var(--color-gray-600);
 ```
 
 **Cas où le projet définit des modes light/dark** (fichiers `source/` en mode `light` et `dark`) :
@@ -523,10 +519,6 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 --error: light-dark(var(--color-error-500), var(--color-error-300));
 --success: light-dark(var(--color-success-500), var(--color-success-300));
 --info: light-dark(var(--color-info-500), var(--color-info-300));
-
-/* Bordures */
---border-light: var(--color-gray-400);
---border-medium: var(--color-gray-600);
 ```
 
 ### 8. Couleurs Tokens du projet (contenus dans `tokens.json`)

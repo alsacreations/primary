@@ -28,11 +28,15 @@ button,
 a:where(.btn),
 input:where([type="button"], [type="reset"], [type="submit"]) {
   --button-background-color: var(--form-background, Field);
-  --button-background-color-hover: oklch(
-    from var(--button-background-color) calc(l * 0.9) c h
+  --button-background-color-hover: color-mix(
+    in srgb,
+    var(--button-background-color),
+    black 10%
   );
-  --button-background-color-active: oklch(
-    from var(--button-background-color) calc(l * 0.8) c h
+  --button-background-color-active: color-mix(
+    in srgb,
+    var(--button-background-color),
+    black 20%
   );
   --button-border-color: var(--form-border-color, ButtonBorder);
   --button-border-color-hover: var(--button-border-color);
@@ -251,7 +255,7 @@ dialog {
   --dialog-border-color: var(--form-border-color, ButtonBorder);
   --dialog-border-radius: var(--form-border-radius, 0);
   --dialog-border-width: var(--form-border-width, 1px);
-  --dialog-backdrop-color: oklch(0% 0 0 / 50%);
+  --dialog-backdrop-color: #00000080;
   --dialog-padding: var(--spacing-24, 1.5rem);
   --dialog-header-padding: var(--spacing-16, 1rem) var(--spacing-24, 1.5rem);
   --dialog-footer-padding: var(--spacing-16, 1rem) var(--spacing-24, 1.5rem);
@@ -503,8 +507,8 @@ table {
 
   /* Zébrage (conditionné par --table-zebra */
   & tbody tr:nth-child(odd) {
-    background-color: oklch(
-      from var(--color-black, #000000) l c h / var(--table-zebra, 0%)
+    background-color: rgb(
+      from var(--color-black, #000000) r g b / var(--table-zebra, 0%)
     );
   }
 }
@@ -670,8 +674,10 @@ input:not(
     /* État survol */
     &:hover,
     &:focus-visible {
-      background-color: oklch(
-        from var(--primary, AccentColor) calc(l * 0.9) c h
+      background-color: color-mix(
+        in srgb,
+        var(--primary, AccentColor),
+        black 10%
       );
     }
   }
@@ -691,8 +697,10 @@ input:not(
     /* État survol */
     &:hover,
     &:focus-visible {
-      background-color: oklch(
-        from var(--primary, AccentColor) calc(l * 0.9) c h
+      background-color: color-mix(
+        in srgb,
+        var(--primary, AccentColor),
+        black 10%
       );
     }
   }

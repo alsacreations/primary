@@ -6,7 +6,7 @@
 
 **Stack technique :**
 - JavaScript Vanilla (Node.js pour les scripts, Browser pour l'UI)
-- CSS moderne (Cascade Layers, `light-dark()`, `clamp()`, `oklch()`)
+- CSS moderne (Cascade Layers, `light-dark()`, `clamp()`, `color-mix()`)
 - HTML sémantique & Accessibilité (RGAA)
 
 ---
@@ -14,7 +14,7 @@
 ## 1. Concepts de Design Tokens
 
 ### Définitions
-- **Primitive** : Valeur brute (couleur hex/oklch, nombre px/rem). Toujours préfixée par son type (ex: `--color-pink-500`, `--spacing-16`).
+- **Primitive** : Valeur brute (couleur hex, nombre px/rem). Toujours préfixée par son type (ex: `--color-pink-500`, `--spacing-16`).
 - **Token** : Référence sémantique pointant vers une Primitive.
   - **Token Simple** : Référence une seule primitive (ex: `--surface: var(--color-white)`).
   - **Token de Mode** : Référence des primitives différentes selon le contexte (Light/Dark ou Mobile/Desktop).

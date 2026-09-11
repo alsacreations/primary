@@ -627,10 +627,8 @@ details[open] {
 }
 
 .btn-github {
-  --button-background-color: oklch(51.33% 0.18 256.37);
-  --button-background-color-hover: oklch(
-    from oklch(51.33% 0.18 256.37) calc(l * 0.9) c h
-  );
+  --button-background-color: #0063CB;
+  --button-background-color-hover: #0053BA;
   --button-border-radius: var(--radius-full);
   --button-border-color: transparent;
   --button-text-color: var(--color-white);

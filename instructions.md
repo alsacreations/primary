@@ -387,46 +387,48 @@ color-scheme: light;
 
 Présentes dans tous les cas et tous les themes, même si non présentes dans les données JSON exportées de Figma.
 
+> **Notation** : toutes les couleurs (primitives et tokens) sont exprimées en notation hexadécimale (`#RRGGBB` / `#RRGGBBAA`), jamais en `oklch()`. Figma ne propose pas nativement la notation OKLCH, ce qui crée des divergences entre les valeurs vues par les designers et celles produites par le script. Les ajustements dynamiques (éclaircir/assombrir une couleur runtime comme `--primary`) utilisent `color-mix(in srgb, ...)` plutôt que la syntaxe de couleur relative `oklch(from ...)`.
+
 Les couleurs globales à inclure sont les suivantes, **si elles sont présentes dans les données JSON exportées de Figma, elles doivent être remplacées par les valeurs extraites**:
 
 ```css
 /* Couleurs Primitives globales */
---color-white: oklch(1 0 0);
---color-black: oklch(0 0 0);
+--color-white: #FFFFFF;
+--color-black: #000000;
 --color-slate-100: #F1F5F9;
 --color-slate-400: #90A1B9;
 --color-slate-700: #314158;
 --color-slate-800: #161F2C;
---color-gray-50: oklch(0.97 0 0);
---color-gray-100: oklch(0.922 0 0);
---color-gray-200: oklch(0.87 0 0);
---color-gray-300: oklch(0.708 0 0);
---color-gray-400: oklch(0.556 0 0);
---color-gray-500: oklch(0.439 0 0);
---color-gray-600: oklch(0.371 0 0);
---color-gray-700: oklch(0.269 0 0);
---color-gray-800: oklch(0.205 0 0);
---color-gray-900: oklch(0.145 0 0);
---color-error-100: oklch(0.97 0.1 27.52);
---color-error-300: oklch(0.7054 0.19 27.52);
---color-error-500: oklch(0.5054 0.19 27.52);
---color-error-700: oklch(0.3554 0.19 27.52);
---color-error-900: oklch(0.2054 0.11 27.52);
---color-success-100: oklch(0.9446 0.13 150.685);
---color-success-300: oklch(0.7166 0.13 150.73);
---color-success-500: oklch(0.5166 0.13 150.73);
---color-success-700: oklch(0.3666 0.13 150.73);
---color-success-900: oklch(0.2166 0.13 150.73);
---color-warning-100: oklch(0.97 0.08 49.95);
---color-warning-300: oklch(0.8315 0.17 49.95);
---color-warning-500: oklch(0.6315 0.17 49.95);
---color-warning-700: oklch(0.4815 0.17 49.95);
---color-warning-900: oklch(0.3315 0.11 49.95);
---color-info-100: oklch(0.97 0.09 256.37);
---color-info-300: oklch(0.7133 0.18 256.37);
---color-info-500: oklch(0.5133 0.18 256.37);
---color-info-700: oklch(0.3633 0.18 256.37);
---color-info-900: oklch(0.2133 0.11 256.37);
+--color-gray-50: #F5F5F5;
+--color-gray-100: #E5E5E5;
+--color-gray-200: #D4D4D4;
+--color-gray-300: #A1A1A1;
+--color-gray-400: #737373;
+--color-gray-500: #525252;
+--color-gray-600: #404040;
+--color-gray-700: #262626;
+--color-gray-800: #171717;
+--color-gray-900: #0A0A0A;
+--color-error-100: #FFECE8;
+--color-error-300: #FF675A;
+--color-error-500: #B91D1C;
+--color-error-700: #7C0000;
+--color-error-900: #3A0000;
+--color-success-100: #AAFFBF;
+--color-success-300: #60BA78;
+--color-success-500: #187C3E;
+--color-success-700: #005013;
+--color-success-900: #002401;
+--color-warning-100: #FFEEDD;
+--color-warning-300: #FFAE79;
+--color-warning-500: #D76300;
+--color-warning-700: #9D3B00;
+--color-warning-900: #5F1D00;
+--color-info-100: #E6F7FF;
+--color-info-300: #53A2FF;
+--color-info-500: #0063CB;
+--color-info-700: #003498;
+--color-info-900: #00134A;
 ```
 
 ### 6. Couleurs Primitives du projet (contenues dans `primitives.json`)
@@ -446,8 +448,8 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 /* Couleur primaire */
 --primary: var(--color-gray-500);
 --on-primary: var(--color-white);
---primary-lighten: oklch(from var(--primary) calc(l * 1.2) c h);
---primary-darken: oklch(from var(--primary) calc(l * 0.8) c h);
+--primary-lighten: color-mix(in srgb, var(--primary), white 20%);
+--primary-darken: color-mix(in srgb, var(--primary), black 20%);
 
 /* Couleur d'accent */
 --accent: light-dark(var(--primary), var(--primary-lighten));

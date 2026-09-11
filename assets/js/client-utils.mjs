@@ -554,18 +554,15 @@ function extractColors(entries) {
     .sort()
     .map((name) => `${name}: ${primitives[name]};`)
 
+  // Convention de nommage WordPress Twenty Twenty-Five (accent-1/2/3, base, contrast, base-2/3).
   const exceptions = new Set([
-    "primary",
-    "on-primary",
-    "primary-lighten",
-    "primary-darken",
-    "accent",
-    "accent-invert",
-    "surface",
-    "on-surface",
-    "layer-1",
-    "layer-2",
-    "layer-3",
+    "accent-1",
+    "accent-2",
+    "accent-3",
+    "base",
+    "contrast",
+    "base-2",
+    "base-3",
     "link",
     "link-hover",
     "link-active",
@@ -574,8 +571,6 @@ function extractColors(entries) {
     "error",
     "success",
     "info",
-    "border-light",
-    "border-medium",
   ])
 
   const tokensCss = []
@@ -1518,8 +1513,9 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
 
   // Par défaut (aucun mode light/dark détecté dans la source), on ne garde que la
   // valeur "light" des tokens globaux plutôt que de les envelopper dans light-dark().
-  // (parenthèses imbriquées dans var(...) obligent à compter la profondeur plutôt
-  // qu'à s'appuyer sur une regex non-ancrée.)
+  // (parenthèses imbriquées dans var(...)/color-mix(...) obligent à compter la
+  // profondeur plutôt que de s'appuyer sur une regex non-ancrée : la virgule qui
+  // sépare les deux arguments de light-dark() doit être trouvée à profondeur 1.)
   function resolveDefaultForMode(def) {
     if (hasLightDarkModes) return def
     const start = def.indexOf("light-dark(")
@@ -1527,17 +1523,18 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     const argsStart = start + "light-dark(".length
     let depth = 1
     let i = argsStart
+    let commaIdx = -1
     for (; i < def.length; i++) {
       if (def[i] === "(") depth++
       else if (def[i] === ")") {
         depth--
         if (depth === 0) break
+      } else if (def[i] === "," && depth === 1 && commaIdx === -1) {
+        commaIdx = i
       }
     }
-    const inner = def.slice(argsStart, i)
-    const commaIdx = inner.indexOf(",")
     const lightVal = (
-      commaIdx === -1 ? inner : inner.slice(0, commaIdx)
+      commaIdx === -1 ? def.slice(argsStart, i) : def.slice(argsStart, commaIdx)
     ).trim()
     return def.slice(0, start) + lightVal + def.slice(i + 1)
   }
@@ -1548,77 +1545,56 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   }
 
   parts.push("  /* Couleurs Tokens globales */\n")
-  // Couleur primaire
-  parts.push("  /* Couleur primaire */\n")
-  pushOrDefault("primary", "--primary: var(--color-gray-500);")
-  pushOrDefault("on-primary", "--on-primary: var(--color-white);")
+  // Couleurs d'accent
+  parts.push("  /* Couleurs d'accent */\n")
+  pushOrDefault("accent-1", "--accent-1: var(--color-gray-500);")
   pushOrDefault(
-    "primary-lighten",
-    "--primary-lighten: color-mix(in srgb, var(--primary), white 20%);",
+    "accent-2",
+    "--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));",
   )
   pushOrDefault(
-    "primary-darken",
-    "--primary-darken: color-mix(in srgb, var(--primary), black 20%);",
-  )
-  parts.push("\n")
-
-  // Couleur d'accent
-  parts.push("  /* Couleur d'accent */\n")
-  pushOrDefault(
-    "accent",
-    "--accent: light-dark(var(--primary), var(--primary-lighten));",
-  )
-  pushOrDefault(
-    "accent-invert",
-    "--accent-invert: light-dark(var(--primary-lighten), var(--primary));",
+    "accent-3",
+    "--accent-3: light-dark(color-mix(in srgb, var(--accent-1), white 20%), var(--accent-1));",
   )
   parts.push("\n")
 
-  // Surface
-  parts.push("  /* Surface du document */\n")
+  // Base
+  parts.push("  /* Base */\n")
   pushOrDefault(
-    "surface",
-    "--surface: light-dark(var(--color-white), var(--color-gray-900));",
+    "base",
+    "--base: light-dark(var(--color-white), var(--color-gray-900));",
   )
   pushOrDefault(
-    "on-surface",
-    "--on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));",
-  )
-  parts.push("\n")
-
-  // Niveaux de profondeur
-  parts.push("  /* Niveaux de profondeur */\n")
-  pushOrDefault(
-    "layer-1",
-    "--layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));",
+    "contrast",
+    "--contrast: light-dark(var(--color-gray-900), var(--color-gray-100));",
   )
   pushOrDefault(
-    "layer-2",
-    "--layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));",
+    "base-2",
+    "--base-2: light-dark(var(--color-gray-50), var(--color-gray-800));",
   )
   pushOrDefault(
-    "layer-3",
-    "--layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));",
+    "base-3",
+    "--base-3: light-dark(var(--color-gray-100), var(--color-gray-700));",
   )
   parts.push("\n")
   parts.push("  /* Interactions */\n")
   pushOrDefault(
     "link",
-    "--link: light-dark(var(--primary), var(--primary-lighten));",
+    "--link: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));",
   )
   pushOrDefault(
     "link-hover",
-    "--link-hover: light-dark(var(--primary-darken), var(--primary));",
+    "--link-hover: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));",
   )
   pushOrDefault(
     "link-active",
-    "--link-active: light-dark(var(--primary-darken), var(--primary));",
+    "--link-active: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));",
   )
   parts.push("\n")
   parts.push("  /* Couleur de sélection */\n")
   pushOrDefault(
     "selection",
-    "--selection: light-dark(var(--primary-lighten), var(--primary-darken));",
+    "--selection: light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%));",
   )
   parts.push("\n")
   parts.push("  /* États d'alerte */\n")
@@ -1643,17 +1619,13 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   // Project color tokens (exclude global tokens)
   const colorTokenLines = colorResult.tokensCss || []
   const exceptions = new Set([
-    "primary",
-    "on-primary",
-    "primary-lighten",
-    "primary-darken",
-    "accent",
-    "accent-invert",
-    "surface",
-    "on-surface",
-    "layer-1",
-    "layer-2",
-    "layer-3",
+    "accent-1",
+    "accent-2",
+    "accent-3",
+    "base",
+    "contrast",
+    "base-2",
+    "base-3",
     "link",
     "link-hover",
     "link-active",
@@ -2332,8 +2304,8 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" }
     theme.styles = {
       color: {
-        background: "var:preset|color|surface",
-        text: "var:preset|color|on-surface",
+        background: "var:preset|color|base",
+        text: "var:preset|color|contrast",
       },
       spacing: {
         blockGap: "var:preset|spacing|spacing-16",
@@ -2351,7 +2323,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       },
       elements: {
         heading: {
-          color: { text: "var:preset|color|primary" },
+          color: { text: "var:preset|color|accent-1" },
           typography: {
             fontFamily: "var:preset|font-family|poppins",
             fontWeight: "600",
@@ -2386,8 +2358,8 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         "core/button": {
           border: { radius: "0.5rem" },
           color: {
-            background: "var:preset|color|primary",
-            text: "var:preset|color|on-primary",
+            background: "var:preset|color|accent-1",
+            text: "var:preset|color|white",
           },
           typography: {
             fontFamily: "var:preset|font-family|poppins",

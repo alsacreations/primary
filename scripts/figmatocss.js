@@ -416,7 +416,7 @@ if (rawArgs.length >= 2) {
       finalStructuredPrimitives.rounded[k]
     )
       return true
-    // also accept primary names like --primary --surface which are tokens (may not be primitives) but should exist in tokens.json
+    // also accept token names like --accent-1 --base which are tokens (may not be primitives) but should exist in tokens.json
     // check tokens.json for presence
     const tokenCheck =
       normalizedTokens.colors &&
@@ -915,22 +915,19 @@ if (rawArgs.length >= 2) {
     : []
 
   // Build global color tokens (step 7) — prefer explicit token CSS from extractor, otherwise fall back to defaults
+  // Convention de nommage WordPress Twenty Twenty-Five (accent-1/2/3, base, contrast, base-2/3).
   const globalColorTokenDefaults = {
-    primary: "var(--color-gray-500)",
-    "on-primary": "var(--color-white)",
-    "primary-lighten": "color-mix(in srgb, var(--primary), white 20%)",
-    "primary-darken": "color-mix(in srgb, var(--primary), black 20%)",
-    accent: "light-dark(var(--primary), var(--primary-lighten))",
-    "accent-invert": "light-dark(var(--primary-lighten), var(--primary))",
-    surface: "light-dark(var(--color-white), var(--color-gray-900))",
-    "on-surface": "light-dark(var(--color-gray-900), var(--color-gray-100))",
-    "layer-1": "light-dark(var(--color-gray-50), var(--color-gray-800))",
-    "layer-2": "light-dark(var(--color-gray-100), var(--color-gray-700))",
-    "layer-3": "light-dark(var(--color-gray-200), var(--color-gray-600))",
-    link: "light-dark(var(--primary), var(--primary-lighten))",
-    "link-hover": "light-dark(var(--primary-darken), var(--primary))",
-    "link-active": "light-dark(var(--primary-darken), var(--primary))",
-    selection: "light-dark(var(--primary-lighten), var(--primary-darken))",
+    "accent-1": "var(--color-gray-500)",
+    "accent-2": "light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%))",
+    "accent-3": "light-dark(color-mix(in srgb, var(--accent-1), white 20%), var(--accent-1))",
+    base: "light-dark(var(--color-white), var(--color-gray-900))",
+    contrast: "light-dark(var(--color-gray-900), var(--color-gray-100))",
+    "base-2": "light-dark(var(--color-gray-50), var(--color-gray-800))",
+    "base-3": "light-dark(var(--color-gray-100), var(--color-gray-700))",
+    link: "light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%))",
+    "link-hover": "light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1))",
+    "link-active": "light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1))",
+    selection: "light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%))",
     warning: "light-dark(var(--color-warning-500), var(--color-warning-300))",
     error: "light-dark(var(--color-error-500), var(--color-error-300))",
     success: "light-dark(var(--color-success-500), var(--color-success-300))",
@@ -939,8 +936,9 @@ if (rawArgs.length >= 2) {
 
   // Par défaut (aucun mode light/dark détecté dans la source), on ne garde que la
   // valeur "light" des tokens globaux plutôt que de les envelopper dans light-dark().
-  // (parenthèses imbriquées dans var(...) obligent à compter la profondeur plutôt
-  // qu'à s'appuyer sur une regex non-ancrée.)
+  // (parenthèses imbriquées dans var(...)/color-mix(...) obligent à compter la
+  // profondeur plutôt que de s'appuyer sur une regex non-ancrée : la virgule qui
+  // sépare les deux arguments de light-dark() doit être trouvée à profondeur 1.)
   function resolveDefaultForMode(value) {
     if (hasLightDarkMode) return value
     const start = value.indexOf("light-dark(")
@@ -948,17 +946,18 @@ if (rawArgs.length >= 2) {
     const argsStart = start + "light-dark(".length
     let depth = 1
     let i = argsStart
+    let commaIdx = -1
     for (; i < value.length; i++) {
       if (value[i] === "(") depth++
       else if (value[i] === ")") {
         depth--
         if (depth === 0) break
+      } else if (value[i] === "," && depth === 1 && commaIdx === -1) {
+        commaIdx = i
       }
     }
-    const inner = value.slice(argsStart, i)
-    const commaIdx = inner.indexOf(",")
     const lightVal = (
-      commaIdx === -1 ? inner : inner.slice(0, commaIdx)
+      commaIdx === -1 ? value.slice(argsStart, i) : value.slice(argsStart, commaIdx)
     ).trim()
     return value.slice(0, start) + lightVal + value.slice(i + 1)
   }
@@ -981,15 +980,10 @@ if (rawArgs.length >= 2) {
   // Grouped sections with comments, matching instructions.md step 7
   const colorTokenGroups = [
     {
-      comment: "/* Couleur primaire */",
-      keys: ["primary", "on-primary", "primary-lighten", "primary-darken"],
+      comment: "/* Couleurs d'accent */",
+      keys: ["accent-1", "accent-2", "accent-3"],
     },
-    { comment: "/* Couleur d'accent */", keys: ["accent", "accent-invert"] },
-    { comment: "/* Surface du document */", keys: ["surface", "on-surface"] },
-    {
-      comment: "/* Niveaux de profondeur */",
-      keys: ["layer-1", "layer-2", "layer-3"],
-    },
+    { comment: "/* Base */", keys: ["base", "contrast", "base-2", "base-3"] },
     {
       comment: "/* Interactions */",
       keys: ["link", "link-hover", "link-active"],

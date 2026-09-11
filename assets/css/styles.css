@@ -10,10 +10,10 @@ body {
       light-dark(var(--color-white), var(--color-sand-800)) 0%,
       light-dark(var(--color-sand-200), var(--color-sand-600)) 75%
     ),
-    var(--surface);
+    var(--base);
   background-repeat: no-repeat;
   background-attachment: fixed;
-  color: var(--on-surface);
+  color: var(--contrast);
 }
 
 a,
@@ -35,7 +35,7 @@ a,
   font-size: var(--text-xxl);
   font-weight: var(--font-weight-black);
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--accent-1);
   position: relative;
   text-align: center;
 }
@@ -79,8 +79,8 @@ details[open] {
 .dropzone {
   outline: 4px dashed var(--color-pink-300);
   outline-offset: 2px;
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--accent-1);
+  color: var(--color-white);
   padding: 1.25rem;
   transition: var(--transition-duration);
   transition-property: background, outline;
@@ -595,10 +595,10 @@ details[open] {
   margin-top: var(--spacing-xxl);
   padding-block: var(--spacing-xxl) var(--spacing-xl);
   background-color: var(--color-sand-400);
-  color: var(--on-surface);
+  color: var(--contrast);
 }
 .logo-alsacreations-pepins-inner {
-  fill: var(--surface);
+  fill: var(--base);
 }
 
 .footer-alsa {

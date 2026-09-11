@@ -115,8 +115,8 @@
 }
 
 /* Couleurs */
-.text-on-surface {
-  color: var(--on-surface, canvastext);
+.text-contrast {
+  color: var(--contrast, canvastext);
 }
 
 .text-black {
@@ -127,17 +127,13 @@
   color: var(--color-white, #FFFFFF);
 }
 
-.text-primary {
-  color: var(--primary);
-}
-
-.text-on-primary {
-  color: var(--on-primary);
+.text-accent-1 {
+  color: var(--accent-1);
 }
 
 /* Couleurs de fond */
-.bg-surface {
-  background-color: var(--surface, canvas);
+.bg-base {
+  background-color: var(--base, canvas);
 }
 
 .bg-black {
@@ -148,8 +144,8 @@
   background-color: var(--color-white, #FFFFFF);
 }
 
-.bg-primary {
-  background-color: var(--primary);
+.bg-accent-1 {
+  background-color: var(--accent-1);
 }
 
 .bg-gray-50 {

@@ -48,16 +48,15 @@ const defaultPalette = [
   { name: "info-300", color: "var(--color-info-300)", slug: "info-300" },
   { name: "info-500", color: "var(--color-info-500)", slug: "info-500" },
 
-  { name: "primary", color: "light-dark(var(--color-gray-500), var(--color-gray-300))", slug: "primary" },
-  { name: "on-primary", color: "light-dark(var(--color-white), var(--color-black))", slug: "on-primary" },
-  { name: "accent", color: "light-dark(var(--color-gray-300), var(--color-gray-500))", slug: "accent" },
+  { name: "accent-1", color: "light-dark(var(--color-gray-500), var(--color-gray-300))", slug: "accent-1" },
+  { name: "accent-2", color: "light-dark(var(--color-gray-300), var(--color-gray-500))", slug: "accent-2" },
   {
-    name: "accent-invert",
+    name: "accent-3",
     color: "light-dark(var(--color-gray-500), var(--color-gray-300))",
-    slug: "accent-invert",
+    slug: "accent-3",
   },
-  { name: "surface", color: "light-dark(var(--color-white), var(--color-gray-900))", slug: "surface" },
-  { name: "on-surface", color: "light-dark(var(--color-gray-900), var(--color-gray-100))", slug: "on-surface" },
+  { name: "base", color: "light-dark(var(--color-white), var(--color-gray-900))", slug: "base" },
+  { name: "contrast", color: "light-dark(var(--color-gray-900), var(--color-gray-100))", slug: "contrast" },
   { name: "link", color: "light-dark(var(--color-gray-500), var(--color-gray-300))", slug: "link" },
   {
     name: "link-hover",
@@ -120,7 +119,7 @@ const defaultFontFamilies = [
 ];
 
 const defaultStyles = {
-  color: { background: "var:preset|color|surface", text: "var:preset|color|on-surface" },
+  color: { background: "var:preset|color|base", text: "var:preset|color|contrast" },
   spacing: {
     blockGap: "var:preset|spacing|spacing-16",
     padding: { left: "var:preset|spacing|spacing-16", right: "var:preset|spacing|spacing-16" },
@@ -134,7 +133,7 @@ const defaultStyles = {
   },
   elements: {
     heading: {
-      color: { text: "var:preset|color|primary" },
+      color: { text: "var:preset|color|accent-1" },
       typography: { fontFamily: "var:preset|font-family|poppins", fontWeight: "600" },
     },
     h1: {
@@ -162,7 +161,7 @@ const defaultStyles = {
   blocks: {
     "core/button": {
       border: { radius: "0.5rem" },
-      color: { background: "var:preset|color|primary", text: "var:preset|color|on-primary" },
+      color: { background: "var:preset|color|accent-1", text: "var:preset|color|white" },
       typography: { fontFamily: "var:preset|font-family|poppins", fontWeight: "600" },
       spacing: {
         padding: {
@@ -209,8 +208,9 @@ function hasProjectLightDarkMode(tokens) {
   );
 }
 
-// (parenthèses imbriquées dans var(...) obligent à compter la profondeur
-// plutôt qu'à s'appuyer sur une regex non-ancrée.)
+// (parenthèses imbriquées dans var(...)/color-mix(...) obligent à compter la
+// profondeur plutôt que de s'appuyer sur une regex non-ancrée : la virgule qui
+// sépare les deux arguments de light-dark() doit être trouvée à profondeur 1.)
 function resolveDefaultForMode(value, hasLightDarkMode) {
   if (hasLightDarkMode) return value;
   const start = value.indexOf("light-dark(");
@@ -218,16 +218,19 @@ function resolveDefaultForMode(value, hasLightDarkMode) {
   const argsStart = start + "light-dark(".length;
   let depth = 1;
   let i = argsStart;
+  let commaIdx = -1;
   for (; i < value.length; i++) {
     if (value[i] === "(") depth++;
     else if (value[i] === ")") {
       depth--;
       if (depth === 0) break;
+    } else if (value[i] === "," && depth === 1 && commaIdx === -1) {
+      commaIdx = i;
     }
   }
-  const inner = value.slice(argsStart, i);
-  const commaIdx = inner.indexOf(",");
-  const lightVal = (commaIdx === -1 ? inner : inner.slice(0, commaIdx)).trim();
+  const lightVal = (
+    commaIdx === -1 ? value.slice(argsStart, i) : value.slice(argsStart, commaIdx)
+  ).trim();
   return value.slice(0, start) + lightVal + value.slice(i + 1);
 }
 

@@ -95,18 +95,15 @@ function extractColors(entries) {
     .map((name) => `${name}: ${primitives[name]};`);
 
   // Tokens: normalize token names and produce CSS
+  // Convention de nommage WordPress Twenty Twenty-Five (accent-1/2/3, base, contrast, base-2/3).
   const exceptions = new Set([
-    "primary",
-    "on-primary",
-    "primary-lighten",
-    "primary-darken",
-    "accent",
-    "accent-invert",
-    "surface",
-    "on-surface",
-    "layer-1",
-    "layer-2",
-    "layer-3",
+    "accent-1",
+    "accent-2",
+    "accent-3",
+    "base",
+    "contrast",
+    "base-2",
+    "base-3",
     "link",
     "link-hover",
     "link-active",
@@ -115,8 +112,6 @@ function extractColors(entries) {
     "error",
     "success",
     "info",
-    "border-light",
-    "border-medium",
   ]);
 
   const tokensCss = [];

@@ -83,24 +83,16 @@
   --color-sand-bright: #CEBDBB;
 
   /* Couleurs Tokens globales */
-  /* Couleur primaire */
-  --primary: var(--color-pink-600);
-  --on-primary: var(--color-white);
-  --primary-lighten: color-mix(in srgb, var(--primary), white 20%);
-  --primary-darken: color-mix(in srgb, var(--primary), black 20%);
+  /* Couleurs d'accent */
+  --accent-1: var(--color-pink-600);
+  --accent-2: var(--accent-1);
+  --accent-3: color-mix(in srgb, var(--accent-1), white 20%);
 
-  /* Couleur d'accent */
-  --accent: var(--primary);
-  --accent-invert: var(--primary-lighten);
-
-  /* Surface du document */
-  --surface: var(--color-white);
-  --on-surface: var(--color-gray-900);
-
-  /* Niveaux de profondeur */
-  --layer-1: var(--color-sand-200);
-  --layer-2: var(--color-gray-100);
-  --layer-3: var(--color-gray-200);
+  /* Base */
+  --base: var(--color-white);
+  --contrast: var(--color-gray-900);
+  --base-2: var(--color-sand-200);
+  --base-3: var(--color-gray-100);
 
   /* Interactions */
   --link: var(--color-pink-500);
@@ -111,7 +103,7 @@
   --outline-color: #4285f4;
 
   /* Couleur de sélection */
-  --selection: var(--primary-lighten);
+  --selection: color-mix(in srgb, var(--accent-1), white 20%);
 
   /* États d'alerte */
   --warning: var(--color-warning-500);

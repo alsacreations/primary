@@ -4,8 +4,8 @@
 
 /* Body et liens */
 body {
-  background-color: var(--surface, canvas);
-  color: var(--on-surface, canvastext);
+  background-color: var(--base, canvas);
+  color: var(--contrast, canvastext);
   font-family: var(--font-base, system-ui);
   font-size: var(--text-m, 1rem);
 }

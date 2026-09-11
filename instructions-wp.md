@@ -48,7 +48,7 @@ Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleu
   - `slug`: `XXX` (supprime le préfixe `color-` si présent). Exemple : `--color-raspberry-500` → `slug: "raspberry-500"`.
   - `name`: identique au `slug` (ex. `"raspberry-500"`).
   - `color`: référence CSS telle quelle dans `primitives.json` (ex. `"var(--color-raspberry-500)"` ou la valeur littérale si présente).
-- Inclure aussi tous les **tokens couleurs** (ex. `--primary`, `--surface`, `--accent`) comme entrées distinctes dans la palette si ces tokens existent dans `tokens.json` ou `primitives.json`.
+- Inclure aussi tous les **tokens couleurs** (ex. `--accent-1`, `--base`, `--accent-2`) comme entrées distinctes dans la palette si ces tokens existent dans `tokens.json` ou `primitives.json`.
   - Si le token est **light/dark**, conserver l'expression `light-dark(var(...), var(...))` (ne pas l'évaluer).
   - Si le token est **simple** ou référencé par `var(--...)`, mettre la chaîne telle quelle dans `color`.
 - Priorité : préférez la représentation à partir de `tokens.json` quand une entrée token existe, sinon tombez sur la primitive correspondante.
@@ -198,34 +198,29 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
   { "name": "info-500", "color": "var(--color-info-500)", "slug": "info-500" },
 
   {
-    "name": "primary",
+    "name": "accent-1",
     "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
-    "slug": "primary"
+    "slug": "accent-1"
   },
   {
-    "name": "on-primary",
-    "color": "light-dark(var(--color-white), var(--color-black))",
-    "slug": "on-primary"
-  },
-  {
-    "name": "accent",
+    "name": "accent-2",
     "color": "light-dark(var(--color-raspberry-300), var(--color-raspberry-500))",
-    "slug": "accent"
+    "slug": "accent-2"
   },
   {
-    "name": "accent-invert",
+    "name": "accent-3",
     "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
-    "slug": "accent-invert"
+    "slug": "accent-3"
   },
   {
-    "name": "surface",
+    "name": "base",
     "color": "light-dark(var(--color-white), var(--color-gray-900))",
-    "slug": "surface"
+    "slug": "base"
   },
   {
-    "name": "on-surface",
+    "name": "contrast",
     "color": "light-dark(var(--color-gray-900), var(--color-gray-100))",
-    "slug": "on-surface"
+    "slug": "contrast"
   },
   {
     "name": "link",
@@ -334,8 +329,8 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
 ```json
 "styles": {
   "color": {
-    "background": "var:preset|color|surface",
-    "text": "var:preset|color|on-surface"
+    "background": "var:preset|color|base",
+    "text": "var:preset|color|contrast"
   },
   "spacing": {
     "blockGap": "var:preset|spacing|spacing-16",
@@ -350,7 +345,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
   },
   "elements": {
     "heading": {
-      "color": { "text": "var:preset|color|primary" },
+      "color": { "text": "var:preset|color|accent-1" },
       "typography": { "fontFamily": "var:preset|font-family|poppins", "fontWeight": "600" }
     },
     "h1": {
@@ -368,7 +363,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
   "blocks": {
     "core/button": {
       "border": { "radius": "0.5rem" },
-      "color": { "background": "var:preset|color|primary", "text": "var:preset|color|on-primary" },
+      "color": { "background": "var:preset|color|accent-1", "text": "var:preset|color|white" },
       "typography": { "fontFamily": "var:preset|font-family|poppins", "fontWeight": "600" },
       "spacing": { "padding": { "top": "var:preset|spacing|spacing-12", "right": "var:preset|spacing|spacing-12", "bottom": "var:preset|spacing|spacing-12", "left": "var:preset|spacing|spacing-12" } }
     }

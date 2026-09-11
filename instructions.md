@@ -77,17 +77,13 @@ Les primitives corrigées sont à convertir en variables CSS selon cette convent
 Les couleurs suivantes sont à convertir en variables CSS avec un nommage spécifique (pas de préfixe `--color-`) :
 
 ```css
---primary: …;
---on-primary: …;
---primary-lighten: …;
---primary-darken: …;
---accent: …;
---accent-invert: …;
---surface: …;
---on-surface: …;
---layer-1: …;
---layer-2: …;
---layer-3: …;
+--accent-1: …;
+--accent-2: …;
+--accent-3: …;
+--base: …;
+--contrast: …;
+--base-2: …;
+--base-3: …;
 --link: …;
 --link-hover: …;
 --link-active: …;
@@ -96,8 +92,6 @@ Les couleurs suivantes sont à convertir en variables CSS avec un nommage spéci
 --error: …;
 --success: …;
 --info: …;
---border-light: …;
---border-medium: …;
 ```
 
 ## Tokens simple
@@ -123,7 +117,7 @@ Remarque : dans le JSON exporté, un token simple n'est pas associé à un `vari
 
 Les tokens simples sont à convertir en variables CSS selon cette convention de nommage (+ exemples) :
 
-- Couleurs : `--variable-*: var(primitive)`. Exemple: `--surface: var(--color-gray-100);`
+- Couleurs : `--variable-*: var(primitive)`. Exemple: `--base: var(--color-gray-100);`
 - Espacements et gouttières : `--spacing-*: var(primitive)`. Exemple: `--spacing-m: var(--spacing-16);`
 - Taille de texte : `--text-*: var(primitive)`. Exemple: `--text-m: var(--text-16);`
 
@@ -134,19 +128,19 @@ Un token light/dark référence une primitive différente selon le mode (light o
 Par exemple, le token suivant :
 
 ```json
-"surface": { "hex": "#FFFFFF", "variableId": "VariableID:3921:10839", "alias": "color/white" },
+"base": { "hex": "#FFFFFF", "variableId": "VariableID:3921:10839", "alias": "color/white" },
 ```
 
 Est lié au token suivant en mode dark :
 
 ```json
-"surface": { "hex": "#111827", "variableId": "VariableID:3921:10839", "alias": "color/gray/900" },
+"base": { "hex": "#111827", "variableId": "VariableID:3921:10839", "alias": "color/gray/900" },
 ```
 
 Exemple de token light/dark présent dans JSON source (lié à l'autre alias via `variableId`) :
 
 ```json
-  "surface": {
+  "base": {
     "$type": "color",
     "$value": {
       "colorSpace": "srgb",
@@ -178,9 +172,9 @@ Exemple de token light/dark présent dans JSON source (lié à l'autre alias via
 
 ```json
 {
-  "surface": {
+  "base": {
     "type": "color",
-    "value": "var(--surface)",
+    "value": "var(--base)",
     "modes": {
       "light": "var(--color-gray-100)",
       "dark": "var(--color-gray-900)"
@@ -193,7 +187,7 @@ Exemple de token light/dark présent dans JSON source (lié à l'autre alias via
 
 Les tokens light/dark sont à convertir en variables CSS via `light-dark()` selon cette convention de nommage (+ exemples) :
 
-- Couleurs : `--variable: light-dark(var(primitive light), var(primitive dark))`. Exemple: `--surface: light-dark(var(--color-white), var(--color-gray-900));` ou `--accent: light-dark(var(--primary), var(--primary-lighten));`
+- Couleurs : `--variable: light-dark(var(primitive light), var(primitive dark))`. Exemple: `--base: light-dark(var(--color-white), var(--color-gray-900));` ou `--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));`
 - Ombres : `--shadow-*: light-dark(var(primitive light), var(primitive dark))`. Exemple: `--shadow-xs: light-dark(var(--shadow-light), var(--shadow-dark));`
 
 ## Tokens de mode mobile/desktop
@@ -387,7 +381,7 @@ color-scheme: light;
 
 Présentes dans tous les cas et tous les themes, même si non présentes dans les données JSON exportées de Figma.
 
-> **Notation** : toutes les couleurs (primitives et tokens) sont exprimées en notation hexadécimale (`#RRGGBB` / `#RRGGBBAA`), jamais en `oklch()`. Figma ne propose pas nativement la notation OKLCH, ce qui crée des divergences entre les valeurs vues par les designers et celles produites par le script. Les ajustements dynamiques (éclaircir/assombrir une couleur runtime comme `--primary`) utilisent `color-mix(in srgb, ...)` plutôt que la syntaxe de couleur relative `oklch(from ...)`.
+> **Notation** : toutes les couleurs (primitives et tokens) sont exprimées en notation hexadécimale (`#RRGGBB` / `#RRGGBBAA`), jamais en `oklch()`. Figma ne propose pas nativement la notation OKLCH, ce qui crée des divergences entre les valeurs vues par les designers et celles produites par le script. Les ajustements dynamiques (éclaircir/assombrir une couleur runtime comme `--accent-1`) utilisent `color-mix(in srgb, ...)` plutôt que la syntaxe de couleur relative `oklch(from ...)`.
 
 Les couleurs globales à inclure sont les suivantes, **si elles sont présentes dans les données JSON exportées de Figma, elles doivent être remplacées par les valeurs extraites**:
 
@@ -449,32 +443,24 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 
 ```css
 /* Couleurs Tokens globales */
-/* Couleur primaire */
---primary: var(--color-gray-500);
---on-primary: var(--color-white);
---primary-lighten: color-mix(in srgb, var(--primary), white 20%);
---primary-darken: color-mix(in srgb, var(--primary), black 20%);
+/* Couleurs d'accent */
+--accent-1: var(--color-gray-500);
+--accent-2: var(--accent-1);
+--accent-3: color-mix(in srgb, var(--accent-1), white 20%);
 
-/* Couleur d'accent */
---accent: var(--primary);
---accent-invert: var(--primary-lighten);
-
-/* Surface du document */
---surface: var(--color-white);
---on-surface: var(--color-gray-900);
-
-/* Niveaux de profondeur */
---layer-1: var(--color-gray-50);
---layer-2: var(--color-gray-100);
---layer-3: var(--color-gray-200);
+/* Base */
+--base: var(--color-white);
+--contrast: var(--color-gray-900);
+--base-2: var(--color-gray-50);
+--base-3: var(--color-gray-100);
 
 /* Interactions */
---link: var(--primary);
---link-hover: var(--primary-darken);
---link-active: var(--primary-darken);
+--link: var(--accent-1);
+--link-hover: color-mix(in srgb, var(--accent-1), black 20%);
+--link-active: color-mix(in srgb, var(--accent-1), black 20%);
 
 /* Couleur de sélection */
---selection: var(--primary-lighten);
+--selection: color-mix(in srgb, var(--accent-1), white 20%);
 
 /* États d'alerte */
 --warning: var(--color-warning-500);
@@ -487,32 +473,24 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 
 ```css
 /* Couleurs Tokens globales */
-/* Couleur primaire */
---primary: var(--color-gray-500);
---on-primary: var(--color-white);
---primary-lighten: color-mix(in srgb, var(--primary), white 20%);
---primary-darken: color-mix(in srgb, var(--primary), black 20%);
+/* Couleurs d'accent */
+--accent-1: var(--color-gray-500);
+--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));
+--accent-3: light-dark(color-mix(in srgb, var(--accent-1), white 20%), var(--accent-1));
 
-/* Couleur d'accent */
---accent: light-dark(var(--primary), var(--primary-lighten));
---accent-invert: light-dark(var(--primary-lighten), var(--primary));
-
-/* Surface du document */
---surface: light-dark(var(--color-white), var(--color-gray-900));
---on-surface: light-dark(var(--color-gray-900), var(--color-gray-100));
-
-/* Niveaux de profondeur */
---layer-1: light-dark(var(--color-gray-50), var(--color-gray-800));
---layer-2: light-dark(var(--color-gray-100), var(--color-gray-700));
---layer-3: light-dark(var(--color-gray-200), var(--color-gray-600));
+/* Base */
+--base: light-dark(var(--color-white), var(--color-gray-900));
+--contrast: light-dark(var(--color-gray-900), var(--color-gray-100));
+--base-2: light-dark(var(--color-gray-50), var(--color-gray-800));
+--base-3: light-dark(var(--color-gray-100), var(--color-gray-700));
 
 /* Interactions */
---link: light-dark(var(--primary), var(--primary-lighten));
---link-hover: light-dark(var(--primary-darken), var(--primary));
---link-active: light-dark(var(--primary-darken), var(--primary));
+--link: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));
+--link-hover: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));
+--link-active: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));
 
 /* Couleur de sélection */
---selection: light-dark(var(--primary-lighten), var(--primary-darken));
+--selection: light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%));
 
 /* États d'alerte */
 --warning: light-dark(var(--color-warning-500), var(--color-warning-300));

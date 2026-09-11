@@ -16,7 +16,7 @@
 ### Définitions
 - **Primitive** : Valeur brute (couleur hex, nombre px/rem). Toujours préfixée par son type (ex: `--color-pink-500`, `--spacing-16`).
 - **Token** : Référence sémantique pointant vers une Primitive.
-  - **Token Simple** : Référence une seule primitive (ex: `--surface: var(--color-white)`).
+  - **Token Simple** : Référence une seule primitive (ex: `--base: var(--color-white)`).
   - **Token de Mode** : Référence des primitives différentes selon le contexte (Light/Dark ou Mobile/Desktop).
 
 ### Modes supportés
@@ -30,7 +30,7 @@
 L'extraction transforme le JSON brut de Figma en fichiers intermédiaires (`primitives.json`, `tokens.json`) puis en fichiers finaux (`theme.css`, `theme.json`).
 
 ### Conventions de nommage CSS
-- Couleurs : `--color-*` (Primitives) ou noms sémantiques (ex: `--primary`, `--surface`).
+- Couleurs : `--color-*` (Primitives) ou noms sémantiques (ex: `--accent-1`, `--base`).
 - Espacements : `--spacing-*`.
 - Typographie : `--text-*` (taille), `--font-*` (famille), `--line-height-*`, `--font-weight-*`.
 - Divers : `--radius-*`, `--shadow-*`, `--z-*`.

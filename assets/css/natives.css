@@ -90,16 +90,16 @@ input:where([type="button"], [type="reset"], [type="submit"]) {
 
   /* Primary button */
   &.btn-primary:where(:not(:disabled, [disabled])) {
-    --button-background-color: var(--primary, AccentColor);
+    --button-background-color: var(--accent-1, AccentColor);
     --button-border-color: transparent;
-    --button-text-color: var(--on-primary, #ffffff);
+    --button-text-color: #ffffff;
   }
 
   /* Secondary button */
   &.btn-secondary:where(:not(:disabled, [disabled])) {
     --button-background-color: var(--color-gray-200, GrayText);
     --button-border-color: transparent;
-    --button-text-color: var(--primary, #000000);
+    --button-text-color: var(--accent-1, #000000);
   }
 
   /* Reset button */
@@ -130,7 +130,7 @@ details {
   --details-border-color-hover: var(--details-border-color);
   --details-border-width: var(--form-border-width, 1px);
   --details-border-radius: var(--form-border-radius, 0);
-  --details-background-color: var(--layer-1, Canvas);
+  --details-background-color: var(--base-2, Canvas);
   --details-content-border-radius: 0;
   --details-title-color: var(--on-form, FieldText);
   --details-title-color-hover: var(--details-title-color);
@@ -250,8 +250,8 @@ details {
  * -------------------- */
 
 dialog {
-  --dialog-background-color: var(--surface, Field);
-  --dialog-text-color: var(--on-surface, CanvasText);
+  --dialog-background-color: var(--base, Field);
+  --dialog-text-color: var(--contrast, CanvasText);
   --dialog-border-color: var(--form-border-color, ButtonBorder);
   --dialog-border-radius: var(--form-border-radius, 0);
   --dialog-border-width: var(--form-border-width, 1px);
@@ -317,7 +317,7 @@ dialog {
   padding: var(--dialog-header-padding);
   border-bottom: 1px solid var(--dialog-border-color);
   border-radius: var(--dialog-border-radius) var(--dialog-border-radius) 0 0;
-  background-color: var(--layer-1, Canvas);
+  background-color: var(--base-2, Canvas);
   gap: var(--spacing-16, 1rem);
 }
 
@@ -346,7 +346,7 @@ dialog {
   /* État survol */
   &:hover,
   &:focus-visible {
-    background-color: var(--layer-2, GrayText);
+    background-color: var(--base-3, GrayText);
   }
 }
 
@@ -369,7 +369,7 @@ dialog {
   padding: var(--dialog-footer-padding);
   border-top: 1px solid var(--dialog-border-color);
   border-radius: 0 0 var(--dialog-border-radius) var(--dialog-border-radius);
-  background-color: var(--layer-1, Canvas);
+  background-color: var(--base-2, Canvas);
 }
 
 /* Animations */
@@ -428,7 +428,7 @@ hr {
 
   /* Variante couleur primaire */
   &.hr-primary {
-    --hr-border-color: var(--primary, AccentColor);
+    --hr-border-color: var(--accent-1, AccentColor);
   }
 
   /* Variante épaisseur moyenne (x2) */
@@ -474,7 +474,7 @@ table {
   table-layout: var(--table-layout, fixed);
   border-spacing: var(--table-border-spacing, 0);
   border-collapse: var(--table-border-collapse, collapse);
-  color: var(--on-surface, CanvasText);
+  color: var(--contrast, CanvasText);
 
   /* Légende */
   & caption {
@@ -494,14 +494,14 @@ table {
 
   /* En-têtes */
   & thead th {
-    background-color: var(--layer-1, Canvas);
+    background-color: var(--base-2, Canvas);
     font-weight: var(--font-weight-semibold, 600);
   }
 
   /* Pied de tableau */
   & tfoot th,
   & tfoot td {
-    background-color: var(--layer-1, Canvas);
+    background-color: var(--base-2, Canvas);
     font-weight: var(--font-weight-medium, 500);
   }
 
@@ -666,8 +666,8 @@ input:not(
     transition: background-color var(--transition-duration, 0.25s);
     border: 0;
     border-radius: var(--input-border-radius);
-    background-color: var(--primary, AccentColor);
-    color: var(--on-primary, #ffffff);
+    background-color: var(--accent-1, AccentColor);
+    color: #ffffff;
     font: inherit;
     cursor: pointer;
 
@@ -676,7 +676,7 @@ input:not(
     &:focus-visible {
       background-color: color-mix(
         in srgb,
-        var(--primary, AccentColor),
+        var(--accent-1, AccentColor),
         black 10%
       );
     }
@@ -689,8 +689,8 @@ input:not(
     transition: background-color var(--transition-duration, 0.25s);
     border: 0;
     border-radius: var(--input-border-radius);
-    background-color: var(--primary, AccentColor);
-    color: var(--on-primary, #ffffff);
+    background-color: var(--accent-1, AccentColor);
+    color: #ffffff;
     font: inherit;
     cursor: pointer;
 
@@ -699,7 +699,7 @@ input:not(
     &:focus-visible {
       background-color: color-mix(
         in srgb,
-        var(--primary, AccentColor),
+        var(--accent-1, AccentColor),
         black 10%
       );
     }
@@ -836,7 +836,7 @@ textarea {
   /* Placeholder */
   &::placeholder {
     opacity: 100%;
-    color: var(--on-surface);
+    color: var(--contrast);
   }
 }
 
@@ -884,7 +884,7 @@ textarea {
 
 [type="checkbox"]:not([role="switch"]) {
   --checkbox-background-color: var(--form-background, Field);
-  --checkbox-checked-color: var(--primary, AccentColor);
+  --checkbox-checked-color: var(--accent-1, AccentColor);
   --checkbox-border-color: var(--checkables-border-color, ButtonBorder);
   --checkbox-border-color-hover: var(--checkbox-border-color);
   --checkbox-border-radius: var(--form-border-radius, 0);
@@ -931,7 +931,7 @@ textarea {
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: var(--on-primary, #ffffff);
+    background-color: #ffffff;
     mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="16" width="14" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>')
       center no-repeat;
   }
@@ -967,7 +967,7 @@ textarea {
   --radio-border-color-hover: var(--radio-border-color);
   --radio-border-radius: var(--radius-full, 9999px);
   --radio-border-width: var(--form-border-width, 1px);
-  --radio-checked-color: var(--primary, AccentColor);
+  --radio-checked-color: var(--accent-1, AccentColor);
   --radio-checked-border-color: var(--color-white, #ffffff);
 
   display: inline-grid;
@@ -1030,7 +1030,7 @@ textarea {
   --switch-width: 2.5rem;
   --switch-height: 1.5rem;
   --switch-track-color: var(--form-background, ButtonFace);
-  --switch-track-color-checked: var(--primary, AccentColor);
+  --switch-track-color-checked: var(--accent-1, AccentColor);
   --switch-thumb-color: ButtonBorder;
   --switch-border-radius: var(--radius-full, 9999px);
   --switch-border-color: var(--checkables-border-color, ButtonBorder);
@@ -1090,7 +1090,7 @@ textarea {
 
     &::after {
       scale: 0.8;
-      background-color: var(--on-primary, #ffffff);
+      background-color: #ffffff;
       background-size: 70%;
     }
   }
@@ -1123,7 +1123,7 @@ textarea {
   --range-thumb-size: 24px;
   --range-thumb-border-width: 4px;
   --range-thumb-border-color: var(--color-white, #ffffff);
-  --range-color: var(--primary, AccentColor);
+  --range-color: var(--accent-1, AccentColor);
   --range-track-color: var(--form-border-color, ButtonBorder);
   --range-track-height: calc(var(--form-border-width, 1px) + 2px);
 

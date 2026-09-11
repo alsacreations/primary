@@ -11,7 +11,7 @@ async function run() {
       JSON.stringify({
         mode: "light",
         color: {
-          primary: {
+          "accent-1": {
             $type: "color",
             $value: { hex: "#112233" },
             $extensions: { "com.figma.isOverride": true },
@@ -26,7 +26,7 @@ async function run() {
       JSON.stringify({
         mode: "dark",
         color: {
-          primary: {
+          "accent-1": {
             $type: "color",
             $value: { hex: "#445566" },
             $extensions: { "com.figma.isOverride": true },
@@ -42,24 +42,24 @@ async function run() {
     process.exit(2)
   }
 
-  // Expect primary to be replaced by a light-dark expression using the provided hex values
-  const start = css.indexOf("--primary:")
+  // Expect accent-1 to be replaced by a light-dark expression using the provided hex values
+  const start = css.indexOf("--accent-1:")
   if (start === -1) {
-    console.error("No --primary line found in theme.css")
+    console.error("No --accent-1 line found in theme.css")
     process.exit(1)
   }
   const line = css.slice(start, css.indexOf("\n", start))
   if (!line.includes("light-dark(") || !line.includes("#112233")) {
-    console.error("Primary line not formatted as expected:", line)
+    console.error("Accent-1 line not formatted as expected:", line)
     process.exit(1)
   }
   // Dark side can be direct hex or var reference to project primitive
-  if (!line.includes("#445566") && !line.includes("var(--color-primary)")) {
-    console.error("Primary dark value not found in primary line:", line)
+  if (!line.includes("#445566") && !line.includes("var(--color-accent-1)")) {
+    console.error("Accent-1 dark value not found in accent-1 line:", line)
     process.exit(1)
   }
 
-  console.log("Global primary token replaced correctly — OK")
+  console.log("Global accent-1 token replaced correctly — OK")
   process.exit(0)
 }
 

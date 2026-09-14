@@ -45,17 +45,24 @@ function toFrenchName(slug) {
   return frenchWord.charAt(0).toUpperCase() + frenchWord.slice(1) + suffix;
 }
 
+// Seuls les tokens de spacing sémantiques (spacing-xs/s/m/l/xl) sont exposés
+// dans theme.json — l'échelle brute (spacing-0, spacing-16, ...) reste une
+// variable CSS interne, hors settings.spacing.
 const defaultSpacingSizes = [
-  { name: "spacing-0", size: "var(--spacing-0)", slug: "spacing-0" },
-  { name: "spacing-2", size: "var(--spacing-2)", slug: "spacing-2" },
-  { name: "spacing-4", size: "var(--spacing-4)", slug: "spacing-4" },
-  { name: "spacing-8", size: "var(--spacing-8)", slug: "spacing-8" },
-  { name: "spacing-12", size: "var(--spacing-12)", slug: "spacing-12" },
-  { name: "spacing-16", size: "var(--spacing-16)", slug: "spacing-16" },
-  { name: "spacing-24", size: "var(--spacing-24)", slug: "spacing-24" },
-  { name: "spacing-32", size: "var(--spacing-32)", slug: "spacing-32" },
-  { name: "spacing-48", size: "var(--spacing-48)", slug: "spacing-48" },
+  { name: "XS", size: "var(--spacing-xs)", slug: "spacing-xs" },
+  { name: "S", size: "var(--spacing-s)", slug: "spacing-s" },
+  { name: "M", size: "var(--spacing-m)", slug: "spacing-m" },
+  { name: "L", size: "var(--spacing-l)", slug: "spacing-l" },
+  { name: "XL", size: "var(--spacing-xl)", slug: "spacing-xl" },
 ];
+
+function isSpacingToken(slug) {
+  return !/^spacing-\d+$/.test(slug);
+}
+
+function toSpacingDisplayName(slug) {
+  return slug.replace(/^spacing-/, "").toUpperCase();
+}
 
 const defaultFontSizes = [
   { name: "text-14", size: "var(--text-14)", slug: "text-14" },
@@ -100,8 +107,8 @@ const defaultFontFamilies = [
 const defaultStyles = {
   color: { background: "var:preset|color|base", text: "var:preset|color|contrast" },
   spacing: {
-    blockGap: "var:preset|spacing|spacing-16",
-    padding: { left: "var:preset|spacing|spacing-16", right: "var:preset|spacing|spacing-16" },
+    blockGap: "var:preset|spacing|spacing-m",
+    padding: { left: "var:preset|spacing|spacing-m", right: "var:preset|spacing|spacing-m" },
   },
   typography: {
     fontFamily: "var:preset|font-family|poppins",
@@ -194,13 +201,13 @@ function buildSpacing(primitives, tokens) {
   const sizes = [];
   const seen = new Set();
 
-  // Use tokens spacing first
+  // Ne garder que les tokens de spacing sémantiques (spacing-xs/s/m/l/xl...),
+  // jamais l'échelle brute (spacing-0, spacing-16, ...).
   if (tokens && tokens.spacing) {
-    Object.keys(tokens.spacing).forEach((k) => {
-      const item = tokens.spacing[k];
-      const slug = k;
-      const size = item.value || `var(--${slug})`;
-      sizes.push({ name: slug, size, slug });
+    Object.keys(tokens.spacing).forEach((slug) => {
+      if (!isSpacingToken(slug)) return;
+      if (seen.has(slug)) return;
+      sizes.push({ name: toSpacingDisplayName(slug), size: `var(--${slug})`, slug });
       seen.add(slug);
     });
   }
@@ -212,16 +219,6 @@ function buildSpacing(primitives, tokens) {
       seen.add(s.slug);
     }
   });
-
-  // Ensure primitives are available as var entries (append additional unnamed primitives)
-  if (primitives && primitives.spacing) {
-    Object.keys(primitives.spacing).forEach((p) => {
-      if (!seen.has(p)) {
-        sizes.push({ name: p, size: `var(--${p})`, slug: p });
-        seen.add(p);
-      }
-    });
-  }
 
   return { defaultSpacingSizes: false, spacingSizes: sizes, units: ["px", "rem", "%", "vh", "vw"] };
 }
@@ -321,6 +318,9 @@ function validate(theme, primitives, tokens) {
     "link-active",
     "selection",
   ]);
+  // Tokens de spacing sémantiques (theme.css), distincts de l'échelle brute
+  // spacing-0..48 vérifiée via primitives.spacing.
+  const knownSemanticSpacingVars = new Set(["spacing-xs", "spacing-s", "spacing-m", "spacing-l", "spacing-xl"]);
 
   // Check var references exist in primitives or tokens where possible (naive check)
   const varRefs = JSON.stringify(theme).match(/var\(--[a-zA-Z0-9-]+\)/g) || [];
@@ -340,7 +340,9 @@ function validate(theme, primitives, tokens) {
       (primitives && primitives.rounded && primitives.rounded[name]) ||
       (primitives && primitives[name]) ||
       (tokens && tokens.colors && tokens.colors[name]) ||
-      knownSemanticColorVars.has(name);
+      (tokens && tokens.spacing && tokens.spacing[name]) ||
+      knownSemanticColorVars.has(name) ||
+      knownSemanticSpacingVars.has(name);
 
     if (!exists) warnings.push(`Reference to ${v} not found in primitives`);
   });

@@ -54,28 +54,28 @@
       "defaultSpacingSizes": false,
       "spacingSizes": [
         {
-          "name": "spacing-xs",
-          "size": "var(--spacing-4)",
+          "name": "XS",
+          "size": "var(--spacing-xs)",
           "slug": "spacing-xs"
         },
         {
-          "name": "spacing-s",
-          "size": "clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16))",
+          "name": "S",
+          "size": "var(--spacing-s)",
           "slug": "spacing-s"
         },
         {
-          "name": "spacing-m",
-          "size": "clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32))",
+          "name": "M",
+          "size": "var(--spacing-m)",
           "slug": "spacing-m"
         },
         {
-          "name": "spacing-l",
-          "size": "clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48))",
+          "name": "L",
+          "size": "var(--spacing-l)",
           "slug": "spacing-l"
         },
         {
-          "name": "spacing-xl",
-          "size": "clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80))",
+          "name": "XL",
+          "size": "var(--spacing-xl)",
           "slug": "spacing-xl"
         }
       ],
@@ -152,10 +152,10 @@
       "text": "var:preset|color|contrast"
     },
     "spacing": {
-      "blockGap": "var:preset|spacing|spacing-16",
+      "blockGap": "var:preset|spacing|spacing-m",
       "padding": {
-        "left": "var:preset|spacing|spacing-16",
-        "right": "var:preset|spacing|spacing-16"
+        "left": "var:preset|spacing|spacing-m",
+        "right": "var:preset|spacing|spacing-m"
       }
     },
     "typography": {

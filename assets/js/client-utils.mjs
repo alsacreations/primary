@@ -2206,31 +2206,32 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       palette,
     }
 
-    // 2) Spacing
+    // 2) Spacing — uniquement les tokens sémantiques (spacing-xs/s/m/l/xl),
+    // jamais l'échelle brute (spacing-0, spacing-16, ...)
+    const isSpacingToken = (slug) => !/^spacing-\d+$/.test(slug)
+    const toSpacingDisplayName = (slug) => slug.replace(/^spacing-/, "").toUpperCase()
+
     const spacingSizes = []
     const seenSp = new Set()
     if (tokens && tokens.spacing) {
-      Object.keys(tokens.spacing).forEach((k) => {
-        const t = tokens.spacing[k]
-        spacingSizes.push({ name: k, size: t.value || `var(--${k})`, slug: k })
-        seenSp.add(k)
+      Object.keys(tokens.spacing).forEach((slug) => {
+        if (!isSpacingToken(slug) || seenSp.has(slug)) return
+        spacingSizes.push({ name: toSpacingDisplayName(slug), size: `var(--${slug})`, slug })
+        seenSp.add(slug)
       })
     }
-    if (primitives && primitives.spacing) {
-      Object.keys(primitives.spacing).forEach((p) => {
-        if (!seenSp.has(p)) {
-          spacingSizes.push({
-            name: p,
-            size: primitives.spacing[p].value || `var(--${p})`,
-            slug: p,
-          })
-          seenSp.add(p)
-        }
-      })
-    }
-    ;["spacing-16", "spacing-24", "spacing-32", "spacing-48"].forEach((s) => {
-      if (!seenSp.has(s))
-        spacingSizes.push({ name: s, size: `var(--${s})`, slug: s })
+    const spacingDefaults = [
+      ["spacing-xs", "XS"],
+      ["spacing-s", "S"],
+      ["spacing-m", "M"],
+      ["spacing-l", "L"],
+      ["spacing-xl", "XL"],
+    ]
+    spacingDefaults.forEach(([slug, name]) => {
+      if (!seenSp.has(slug)) {
+        spacingSizes.push({ name, size: `var(--${slug})`, slug })
+        seenSp.add(slug)
+      }
     })
     theme.settings.spacing = {
       defaultSpacingSizes: false,
@@ -2310,10 +2311,10 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         text: "var:preset|color|contrast",
       },
       spacing: {
-        blockGap: "var:preset|spacing|spacing-16",
+        blockGap: "var:preset|spacing|spacing-m",
         padding: {
-          left: "var:preset|spacing|spacing-16",
-          right: "var:preset|spacing|spacing-16",
+          left: "var:preset|spacing|spacing-m",
+          right: "var:preset|spacing|spacing-m",
         },
       },
       typography: {
@@ -2360,6 +2361,27 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     }
 
     // 6) Validation: check var(...) references exist in primitives or tokens
+    // Tokens sémantiques définis directement dans theme.css (pas des
+    // primitives) : couleurs base/contrast/accent-*/link/selection, et
+    // spacings spacing-xs/s/m/l/xl.
+    const knownSemanticVars = new Set([
+      "base",
+      "base-2",
+      "base-3",
+      "contrast",
+      "accent-1",
+      "accent-2",
+      "accent-3",
+      "link",
+      "link-hover",
+      "link-active",
+      "selection",
+      "spacing-xs",
+      "spacing-s",
+      "spacing-m",
+      "spacing-l",
+      "spacing-xl",
+    ])
     const allVars = new Set()
     const varRe = /var\(--([a-z0-9-]+)\)/gi
     const themeStr = JSON.stringify(theme)
@@ -2388,7 +2410,8 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           (tokens.fonts &&
             tokens.fonts.lineHeight &&
             tokens.fonts.lineHeight[checkName]))
-      if (!inPrimitives && !inTokens) missingRefs.push(v)
+      if (!inPrimitives && !inTokens && !knownSemanticVars.has(checkName))
+        missingRefs.push(v)
     })
     if (missingRefs.length) {
       warnings.push(

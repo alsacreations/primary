@@ -76,14 +76,16 @@ Exemple d'éléments :
 
 ### 2) Espacements — `settings.spacing.spacingSizes`
 
-- Construire une liste de `spacingSizes` à partir :
-  - des **tokens** de spacing présents dans `tokens.json` (préférence),
-  - sinon des primitives `--spacing-*` (convertir en `var(--spacing-*)`).
-- Pour chaque token :
-  - `name`: prendre le slug du token (ex. `spacing-s`),
-  - `size`: conservé tel quel (soit `var(--spacing-16)`, soit `clamp(...)` déjà calculé par l'extracteur),
-  - `slug`: identique au `name` (ex. `spacing-s`).
+- **Ne pas inclure l'échelle brute** (`--spacing-0`, `--spacing-16`, ... issus de `primitives.json`) : elle reste une variable CSS interne, hors `theme.json`.
+- Ne conserver que les **tokens de spacing sémantiques** (ex. `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`) présents dans `tokens.json`.
+- Pour chaque token conservé :
+  - `slug`: le slug du token tel quel (ex. `spacing-s`).
+  - `name`: le suffixe du slug (après `spacing-`) tout en majuscules. Exemple : `spacing-s` → `"S"`, `spacing-xs` → `"XS"`.
+  - `size`: référence directe à la variable CSS du token, sans l'expression `clamp(...)` sous-jacente (ex. `"var(--spacing-s)"`).
+- Si le projet ne fournit pas ces tokens, injecter les valeurs par défaut `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl` avec les mêmes règles de nommage.
 - Inclure `units`: `["px","rem","%","vh","vw"]` et définir `defaultSpacingSizes: false` (ou selon configuration).
+
+> Comme pour les couleurs (section 1), les références `var:preset|spacing|<slug>` utilisées dans `styles` doivent pointer vers un slug de la palette de spacing (ex. `var:preset|spacing|spacing-m`), jamais vers l'échelle brute (`spacing-16`).
 
 ---
 
@@ -118,7 +120,7 @@ Exemple d'éléments :
 
 ### 6) Validation et avertissements
 
-- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
+- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`, `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
 - Valider la structure minimale du `theme.json` (présence de `settings`, `settings.color.palette`, `settings.typography.fontSizes` et `settings.spacing.spacingSizes`).
 - Emettre des erreurs non bloquantes (warnings) pour : tokens mono-mode apparents, primitives sans utilisation, tokens dont la valeur est `NaN` ou `calc` invalide.
 
@@ -163,29 +165,15 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
 
 ```json
 [
-  { "name": "spacing-xs", "size": "var(--spacing-4)", "slug": "spacing-xs" },
-  {
-    "name": "spacing-s",
-    "size": "clamp(var(--spacing-8), 0.2955rem + 0.9091vw, var(--spacing-16))",
-    "slug": "spacing-s"
-  },
-  {
-    "name": "spacing-m",
-    "size": "clamp(var(--spacing-16), 0.5909rem + 1.8182vw, var(--spacing-32))",
-    "slug": "spacing-m"
-  },
-  {
-    "name": "spacing-l",
-    "size": "clamp(var(--spacing-24), 0.8864rem + 2.2727vw, var(--spacing-48))",
-    "slug": "spacing-l"
-  },
-  {
-    "name": "spacing-xl",
-    "size": "clamp(var(--spacing-32), 0.7727rem + 5.4545vw, var(--spacing-80))",
-    "slug": "spacing-xl"
-  }
+  { "name": "XS", "size": "var(--spacing-xs)", "slug": "spacing-xs" },
+  { "name": "S", "size": "var(--spacing-s)", "slug": "spacing-s" },
+  { "name": "M", "size": "var(--spacing-m)", "slug": "spacing-m" },
+  { "name": "L", "size": "var(--spacing-l)", "slug": "spacing-l" },
+  { "name": "XL", "size": "var(--spacing-xl)", "slug": "spacing-xl" }
 ]
 ```
+
+> Remarque : cette liste est la base minimale — le script doit y ajouter tout token de spacing du projet (`tokens.json`) qui n'est pas déjà représenté. L'échelle brute `--spacing-*` (primitives) n'est jamais ajoutée.
 
 ### Typographie — valeurs par défaut
 
@@ -237,8 +225,8 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
     "text": "var:preset|color|contrast"
   },
   "spacing": {
-    "blockGap": "var:preset|spacing|spacing-16",
-    "padding": { "left": "var:preset|spacing|spacing-16", "right": "var:preset|spacing|spacing-16" }
+    "blockGap": "var:preset|spacing|spacing-m",
+    "padding": { "left": "var:preset|spacing|spacing-m", "right": "var:preset|spacing|spacing-m" }
   },
   "typography": {
     "fontFamily": "var:preset|font-family|poppins",
@@ -275,7 +263,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
 1. Lire `dist/primitives.json` et `dist/tokens.json`.
 2. Construire :
    - `settings.color.palette` : uniquement les tokens couleur (tokens.json) dont le slug commence par `base`, `contrast` ou `accent` (slug conservé en anglais, name traduit en français et capitalisé — voir section 1), complétés par les valeurs par défaut si absents. Aucune primitive `--color-*` n'est ajoutée.
-   - `settings.spacing.spacingSizes` : tokens spacing (préférer tokens à primitives) ordonnés par slug ou valeur.
+   - `settings.spacing.spacingSizes` : uniquement les tokens de spacing sémantiques (`tokens.json`), complétés par les valeurs par défaut si absents (voir section 2). Aucune primitive `--spacing-*` n'est ajoutée.
    - `settings.typography.fontSizes` et `fontFamilies`.
    - Insérer les mappings `styles`, `elements`, `blocks` par défaut (copie depuis `examples/theme.json`).
 3. Valider la sortie et écrire `dist/theme.json`.

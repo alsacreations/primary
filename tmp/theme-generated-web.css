@@ -1,0 +1,189 @@
+/* ----------------------------------
+ * Theme du projet
+ * ---------------------------------- */
+
+/* stylelint-disable */
+/* Custom Breakpoints */
+@custom-media --md (width >= 48rem); /* 768px */
+@custom-media --lg (width >= 64rem); /* 1024px */
+@custom-media --xl (width >= 80rem); /* 1280px */
+@custom-media --xxl (width >= 96rem); /* 1536px */
+@custom-media --until-md (width < 48rem); /* < 768px */
+@custom-media --until-lg (width < 64rem); /* < 1024px */
+@custom-media --until-xl (width < 80rem); /* < 1280px */
+@custom-media --until-xxl (width < 96rem); /* < 1536px */
+/* stylelint-enable */
+
+:root {
+
+  /* Theme (color-scheme) */
+  color-scheme: light;
+
+  &[data-theme="light"] { color-scheme: light; }
+  &[data-theme="dark"] { color-scheme: dark; }
+
+  /* Couleurs Primitives globales */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  --color-slate-100: #F1F5F9;
+  --color-slate-400: #90A1B9;
+  --color-slate-700: #314158;
+  --color-slate-800: #161F2C;
+  --color-gray-50: #F5F5F5;
+  --color-gray-100: #E5E5E5;
+  --color-gray-200: #D4D4D4;
+  --color-gray-300: #A1A1A1;
+  --color-gray-400: #737373;
+  --color-gray-500: #525252;
+  --color-gray-600: #404040;
+  --color-gray-700: #262626;
+  --color-gray-800: #171717;
+  --color-gray-900: #0A0A0A;
+  --color-error-100: #FFDCD0;
+  --color-error-300: #FF675A;
+  --color-error-500: #B91D1C;
+  --color-error-700: #840000;
+  --color-error-900: #3C0000;
+  --color-success-100: #D9FFE1;
+  --color-success-300: #60BA78;
+  --color-success-500: #187C3E;
+  --color-success-700: #005013;
+  --color-success-900: #002700;
+  --color-warning-100: #FFE6C5;
+  --color-warning-300: #FFA358;
+  --color-warning-500: #D76300;
+  --color-warning-700: #A43300;
+  --color-warning-900: #5F1D00;
+  --color-info-100: #E6F7FF;
+  --color-info-300: #52A2FF;
+  --color-info-500: #0063CB;
+  --color-info-700: #003498;
+  --color-info-900: #00134A;
+
+  /* Couleurs Primitives du projet */
+  --color-black-60: #000000;
+  --color-green-100: #F0F2DD;
+  --color-green-500: #5A6F00;
+  --color-green-900: #1C2200;
+  --color-pink-100: #F9F2F6;
+  --color-pink-900: #5E143B;
+  --color-slate-900: #161F2C;
+  --color-white-20: #FFFFFF;
+
+  /* Couleurs Tokens globales */
+  /* Couleurs d'accent */
+  --accent-1: var(--color-green-500);
+  --accent-2: var(--color-green-900);
+  --accent-3: var(--color-green-100);
+
+  /* Base */
+  --base: var(--color-white);
+  --contrast: var(--color-slate-900);
+  --base-2: var(--color-gray-50);
+  --base-3: var(--color-gray-100);
+
+  /* Interactions */
+  --link: var(--accent-1);
+  --link-hover: color-mix(in srgb, var(--accent-1), black 20%);
+  --link-active: color-mix(in srgb, var(--accent-1), black 20%);
+
+  /* Couleur de sélection */
+  --selection: color-mix(in srgb, var(--accent-1), white 20%);
+
+  /* États d'alerte */
+  --warning: var(--color-warning-500);
+  --error: var(--color-error-500);
+  --success: var(--color-success-500);
+  --info: var(--color-info-500);
+
+  /* Autres Primitives globales */
+  /* Transitions et animations */
+  --transition-duration: 250ms;
+
+  /* Niveaux de z-index */
+  --z-under-page-level: -1;
+  --z-above-page-level: 1;
+  --z-header-level: 1000;
+  --z-above-header-level: 2000;
+  --z-above-all-level: 3000;
+
+  /* Border radius */
+  --radius-none: 0;
+  --radius-4: 0.25rem;
+  --radius-8: 0.5rem;
+  --radius-16: 1rem;
+  --radius-24: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Familles de police */
+  --font-base: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* Graisses de police */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+
+  /* Espacements Primitives du projet */
+  --spacing-0: 0rem; /* 0px */
+  --spacing-2: 0.125rem; /* 2px */
+  --spacing-4: 0.25rem; /* 4px */
+  --spacing-8: 0.5rem; /* 8px */
+  --spacing-12: 0.75rem; /* 12px */
+  --spacing-16: 1rem; /* 16px */
+  --spacing-20: 1.25rem; /* 20px */
+  --spacing-24: 1.5rem; /* 24px */
+  --spacing-32: 2rem; /* 32px */
+  --spacing-40: 2.5rem; /* 40px */
+  --spacing-48: 3rem; /* 48px */
+  --spacing-56: 3.5rem; /* 56px */
+  --spacing-80: 5rem; /* 80px */
+  --spacing-128: 8rem; /* 128px */
+  --spacing-160: 10rem; /* 160px */
+
+  /* Espacements Tokens du projet */
+  --spacing-s: clamp(var(--spacing-16), 0.804rem + 0.8696vw, var(--spacing-24));
+  --spacing-m: clamp(var(--spacing-16), 0.413rem + 2.6087vw, var(--spacing-40));
+  --spacing-l: clamp(var(--spacing-24), 1.109rem + 1.7391vw, var(--spacing-40));
+  --spacing-xl: clamp(var(--spacing-24), 0.717rem + 3.4783vw, var(--spacing-56));
+  --spacing-xxl: clamp(var(--spacing-40), 1.522rem + 4.3478vw, var(--spacing-80));
+
+  /* Typographie Primitives du projet */
+  --text-14: 0.875rem; /* 14px */
+  --text-16: 1rem; /* 16px */
+  --text-18: 1.125rem; /* 18px */
+  --text-20: 1.25rem; /* 20px */
+  --text-24: 1.5rem; /* 24px */
+  --text-30: 1.875rem; /* 30px */
+  --text-40: 2.5rem; /* 40px */
+  --text-60: 3.75rem; /* 60px */
+  --line-height-18: 1.125rem; /* 18px */
+  --line-height-22: 1.375rem; /* 22px */
+  --line-height-26: 1.625rem; /* 26px */
+  --line-height-30: 1.875rem; /* 30px */
+  --line-height-36: 2.25rem; /* 36px */
+  --line-height-48: 3rem; /* 48px */
+  --line-height-68: 4.25rem; /* 68px */
+
+  /* Typographie Tokens du projet */
+  --text-xs: var(--text-14);
+  --text-s: var(--text-16);
+  --text-m: clamp(var(--text-16), 0.951rem + 0.2174vw, var(--text-18));
+  --text-l: clamp(var(--text-18), 1.076rem + 0.2174vw, var(--text-20));
+  --text-xl: clamp(var(--text-20), 1.152rem + 0.4348vw, var(--text-24));
+  --text-xxl: clamp(var(--text-24), 1.353rem + 0.6522vw, var(--text-30));
+  --text-xxxl: clamp(var(--text-30), 1.63rem + 1.087vw, var(--text-40));
+  --text-xxxxl: clamp(var(--text-40), 2.011rem + 2.1739vw, var(--text-60));
+  --line-height-xs: var(--line-height-18);
+  --line-height-s: var(--line-height-22);
+  --line-height-m: clamp(var(--line-height-22), 1.277rem + 0.4348vw, var(--line-height-26));
+  --line-height-l: clamp(var(--line-height-22), 1.277rem + 0.4348vw, var(--line-height-26));
+  --line-height-xl: clamp(var(--line-height-26), 1.527rem + 0.4348vw, var(--line-height-30));
+  --line-height-xxl: clamp(var(--line-height-30), 1.728rem + 0.6522vw, var(--line-height-36));
+  --line-height-xxxl: clamp(var(--line-height-36), 1.957rem + 1.3043vw, var(--line-height-48));
+  --line-height-xxxxl: clamp(var(--line-height-48), 2.511rem + 2.1739vw, var(--line-height-68));
+
+}

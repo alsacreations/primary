@@ -2,18 +2,6 @@
  * Theme du projet
  * ---------------------------------- */
 
-/* stylelint-disable */
-/* Custom Breakpoints */
-@custom-media --md (width >= 48rem);
-@custom-media --lg (width >= 64rem);
-@custom-media --xl (width >= 80rem);
-@custom-media --xxl (width >= 96rem);
-@custom-media --until-md (width < 48rem);
-@custom-media --until-lg (width < 64rem);
-@custom-media --until-xl (width < 80rem);
-@custom-media --until-xxl (width < 96rem);
-/* stylelint-enable */
-
 :root {
   /* Theme (color-scheme) */
   color-scheme: light;

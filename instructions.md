@@ -289,7 +289,7 @@ Exemples de ressources pour le calcul des valeurs fluides :
 
 - Récupérer les données JSON exportées de Figma (Mode JSON export). Vérifier que le JSON contient les sections attendues (couleurs, Spacing, FontSize, etc.). Valider la présence des clés nécessaires et des `$extensions` attendues (p.ex. `com.figma.variableId`) avant de lancer la conversion.
 
-> **Comportement si aucune source fournie :** Si aucun fichier JSON n'est présent dans `source/`, le script **ne doit pas échouer**. Il doit générer quand même `theme.css` (contenant uniquement les **données globales** — commentaire général, custom breakpoints, color-scheme (light par défaut), couleurs globales, couleurs tokens globales et autres primitives globales) et `primitives.json` / `tokens.json` (vides ou ne contenant que les valeurs dérivées des données globales). Le script `generateThemeJson.js` doit ensuite pouvoir produire `theme.json` basé sur ces valeurs globales.
+> **Comportement si aucune source fournie :** Si aucun fichier JSON n'est présent dans `source/`, le script **ne doit pas échouer**. Il doit générer quand même `theme.css` (contenant uniquement les **données globales** — commentaire général, color-scheme (light par défaut), couleurs globales, couleurs tokens globales et autres primitives globales), `custom-media.css` (fichier statique, identique dans tous les cas — voir section **Fichier `custom-media.css`**) et `primitives.json` / `tokens.json` (vides ou ne contenant que les valeurs dérivées des données globales). Le script `generateThemeJson.js` doit ensuite pouvoir produire `theme.json` basé sur ces valeurs globales.
 
 ### Primitives globales de fallback (si aucune source)
 
@@ -325,7 +325,12 @@ Ces valeurs sont des _fallbacks_ : si `source/` contient des primitives correspo
  */
 ```
 
-### 2. Insérer les custom breakpoints après le commentaire général
+### 2. Les custom breakpoints ne sont PAS insérés dans `theme.css`
+
+Contrairement à une version antérieure de ces instructions, les `@custom-media` ne
+font plus partie de `theme.css`. Ils sont générés dans un fichier séparé
+`custom-media.css` (voir section **Fichier `custom-media.css`** ci-dessous),
+importé sans layer depuis `app.css`.
 
 ```css
 /* stylelint-disable */
@@ -577,3 +582,21 @@ Si ces données sont présentes dans le JSON source, débuter la section par ce 
 ```css
 /* Typographie Tokens du projet */
 ```
+
+## Fichier `custom-media.css`
+
+Les breakpoints `@custom-media` (voir section 2) ne sont **jamais** insérés dans
+`theme.css` : ils sont écrits dans un fichier dédié `custom-media.css`, généré
+systématiquement en sortie à côté de `theme.css`, `primitives.json` et
+`tokens.json` — y compris dans le cas « aucune source fournie » (fichier
+statique, identique à chaque génération).
+
+- **Dans `app.css`** : importé **sans layer** (`@import "custom-media.css";`),
+  placé avant la déclaration `@layer config, base, components, utilities;` —
+  les `@custom-media` doivent être définis avant toute utilisation de
+  `--md`/`--lg`/etc. et ne doivent pas être soumis à l'ordre des layers.
+- **Dans le kit téléchargeable** : `custom-media.css` doit systématiquement
+  figurer parmi les fichiers du kit (au même titre que `theme.css`,
+  `styles.css`, `utilities.css` et `app.css`), qu'il s'agisse du kit généré
+  par le CLI (`figmatocss.js`, dossier de sortie) ou du kit ZIP téléchargeable
+  depuis l'outil web.

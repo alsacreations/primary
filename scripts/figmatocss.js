@@ -55,8 +55,9 @@ if (rawArgs.length >= 2) {
   // Merge CSS parts
   const header = `/* ----------------------------------\n * Theme du projet\n * ---------------------------------- */\n`
 
-  // Custom breakpoint helpers (inserted after header as per instructions.md)
-  const breakpointsBlock = `/* stylelint-disable */
+  // Custom breakpoints: fichier séparé custom-media.css (voir instructions.md)
+  // — importé sans layer depuis app.css, jamais intégré à theme.css.
+  const customMediaCss = `/* stylelint-disable */
 /* Custom Breakpoints */
 @custom-media --md (width >= 48rem);
 @custom-media --lg (width >= 64rem);
@@ -1468,19 +1469,14 @@ if (rawArgs.length >= 2) {
     .filter(Boolean)
     .join("\n\n")
 
-  const cssPartsFinal = [
-    header,
-    breakpointsBlock,
-    ":root {",
-    rootBody,
-    "}",
-  ].join("\n\n")
+  const cssPartsFinal = [header, ":root {", rootBody, "}"].join("\n\n")
 
   // Collapse multiple consecutive blank lines into a single blank line for tidy output
   let cleanedCss = cssPartsFinal.replace(/\n{3,}/g, "\n\n").trimEnd() + "\n"
 
   // Write outputs
   writeFile(path.join(OUT_DIR, "theme.css"), cleanedCss)
+  writeFile(path.join(OUT_DIR, "custom-media.css"), customMediaCss)
   writeFile(
     path.join(OUT_DIR, "primitives.json"),
     JSON.stringify(finalStructuredPrimitives, null, 2),
@@ -1606,7 +1602,7 @@ if (rawArgs.length >= 2) {
     }
   }
   console.log(
-    `- Fichiers corrigés finalisés : primitives.json, tokens.json, theme.css`,
+    `- Fichiers corrigés finalisés : primitives.json, tokens.json, theme.css, custom-media.css`,
   )
 
   console.log("Wrote", path.join(OUT_DIR, "theme.css"))

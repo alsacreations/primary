@@ -14,18 +14,21 @@ const previewThemeJson = document.getElementById("preview-themejson")
 
 let STYLES_CSS_CONTENT = ""
 let UTILITIES_CSS_CONTENT = ""
+let CUSTOM_MEDIA_CSS_CONTENT = ""
 
 /**
- * Fetch template files for styles.css and utilities.css
+ * Fetch template files for styles.css, utilities.css and custom-media.css
  */
 async function initTemplates() {
   try {
-    const [styles, utilities] = await Promise.all([
+    const [styles, utilities, customMedia] = await Promise.all([
       fetchTextIfAvailable("assets/templates/styles.css"),
       fetchTextIfAvailable("assets/templates/utilities.css"),
+      fetchTextIfAvailable("assets/templates/custom-media.css"),
     ])
     if (styles) STYLES_CSS_CONTENT = styles
     if (utilities) UTILITIES_CSS_CONTENT = utilities
+    if (customMedia) CUSTOM_MEDIA_CSS_CONTENT = customMedia
   } catch (e) {
     console.warn("Could not load CSS templates from assets/templates/", e)
   }
@@ -528,12 +531,15 @@ if (btnEmptyProject) {
 
 /**
  * Helper: generates the content of app.css based on current options.
- * It always includes theme.css, styles.css and utilities.css.
+ * It always includes theme.css, styles.css, utilities.css and custom-media.css.
  * It optionally includes reset.css, natives.css and layouts.css if extra files are checked.
  */
 function getAppCssContent() {
   const addExtraCss = document.getElementById("add-extra-css-files")?.checked
-  return `/* L'ordre des layers définit la priorité des styles */
+  return `/* Custom media queries (hors layers, requises avant leur utilisation) */
+@import "custom-media.css";
+
+/* L'ordre des layers définit la priorité des styles */
 
 /* Chaque layer écrase le précédent si conflit */
 @layer config, base, components, utilities;
@@ -592,6 +598,12 @@ function renderGenerationSummaryText(container, txt, artifacts = {}) {
     genFilesLi.appendChild(document.createTextNode("Fichiers générés : "))
 
     const filesToDisplay = []
+
+    // 1a. custom-media.css (default)
+    filesToDisplay.push({
+      name: "custom-media.css",
+      content: (artifacts && artifacts["custom-media.css"]) || CUSTOM_MEDIA_CSS_CONTENT,
+    })
 
     // 1. styles.css (default)
     filesToDisplay.push({ name: "styles.css", content: STYLES_CSS_CONTENT })
@@ -940,6 +952,13 @@ async function createAndDownloadKit() {
       ""
     // placer theme.css dans le dossier css/
     if (cssFolder) cssFolder.file("theme.css", themeCss)
+
+    // custom-media.css (obligatoire, importé sans layer depuis app.css)
+    const customMediaCss =
+      (lastArtifacts && lastArtifacts["custom-media.css"]) ||
+      CUSTOM_MEDIA_CSS_CONTENT ||
+      ""
+    if (cssFolder) cssFolder.file("custom-media.css", customMediaCss)
 
     if (cssFolder) cssFolder.file("styles.css", STYLES_CSS_CONTENT)
     if (cssFolder) cssFolder.file("utilities.css", UTILITIES_CSS_CONTENT)

@@ -1386,13 +1386,14 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   createNumericAliasesForTokens(normalized.fonts.fontSize, "text")
   createNumericAliasesForTokens(normalized.fonts.lineHeight, "line-height")
 
+  // Custom breakpoints: fichier séparé custom-media.css (importé sans layer
+  // depuis app.css), jamais intégré à theme.css — voir instructions.md.
+  const customMediaCss =
+    "/* stylelint-disable */\n/* Custom Breakpoints */\n@custom-media --md (width >= 48rem); /* 768px */\n@custom-media --lg (width >= 64rem); /* 1024px */\n@custom-media --xl (width >= 80rem); /* 1280px */\n@custom-media --xxl (width >= 96rem); /* 1536px */\n@custom-media --until-md (width < 48rem); /* < 768px */\n@custom-media --until-lg (width < 64rem); /* < 1024px */\n@custom-media --until-xl (width < 80rem); /* < 1280px */\n@custom-media --until-xxl (width < 96rem); /* < 1536px */\n/* stylelint-enable */\n"
+
   const parts = []
   parts.push(
     "/* ----------------------------------\n * Theme du projet\n * ---------------------------------- */\n\n",
-  )
-
-  parts.push(
-    "/* stylelint-disable */\n/* Custom Breakpoints */\n@custom-media --md (width >= 48rem); /* 768px */\n@custom-media --lg (width >= 64rem); /* 1024px */\n@custom-media --xl (width >= 80rem); /* 1280px */\n@custom-media --xxl (width >= 96rem); /* 1536px */\n@custom-media --until-md (width < 48rem); /* < 768px */\n@custom-media --until-lg (width < 64rem); /* < 1024px */\n@custom-media --until-xl (width < 80rem); /* < 1280px */\n@custom-media --until-xxl (width < 96rem); /* < 1536px */\n/* stylelint-enable */\n\n",
   )
 
   parts.push(":root {\n\n")
@@ -2526,6 +2527,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "primitives.json": primitivesJsonStr,
     "tokens.json": tokensJsonStr,
     "theme.css": themeCss,
+    "custom-media.css": customMediaCss,
     "theme.json": generateThemeJson(primitivesJsonStr, tokensJsonStr)
       .themeStrOut,
   }

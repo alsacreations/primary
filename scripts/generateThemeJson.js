@@ -75,6 +75,28 @@ function toFontSizeDisplayName(slug) {
   return slug.replace(/^text-/, "").toUpperCase();
 }
 
+// Ordre "t-shirt sizing" attendu pour les listes de tailles (spacing, texte) —
+// l'ordre d'itération de tokens.json (dépendant de l'export Figma) n'est pas
+// garanti, donc on trie explicitement avant de renvoyer settings.*.
+const SEMANTIC_SIZE_ORDER = ["xxs", "xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl"];
+
+function semanticSizeRank(slug) {
+  const suffix = slug.replace(/^(spacing|text)-/, "").toLowerCase();
+  const idx = SEMANTIC_SIZE_ORDER.indexOf(suffix);
+  return idx === -1 ? null : idx;
+}
+
+function sortBySemanticSize(entries) {
+  return entries.slice().sort((a, b) => {
+    const ra = semanticSizeRank(a.slug);
+    const rb = semanticSizeRank(b.slug);
+    if (ra !== null && rb !== null) return ra - rb;
+    if (ra !== null) return -1;
+    if (rb !== null) return 1;
+    return a.slug.localeCompare(b.slug);
+  });
+}
+
 // Defaults for base/mono fonts and weight scale
 const defaultFontBase = "system-ui, sans-serif";
 const defaultFontMono = "ui-monospace, monospace";
@@ -217,7 +239,11 @@ function buildSpacing(primitives, tokens) {
     }
   });
 
-  return { defaultSpacingSizes: false, spacingSizes: sizes, units: ["px", "rem", "%", "vh", "vw"] };
+  return {
+    defaultSpacingSizes: false,
+    spacingSizes: sortBySemanticSize(sizes),
+    units: ["px", "rem", "%", "vh", "vw"],
+  };
 }
 
 function buildTypography(primitives, tokens) {
@@ -252,7 +278,7 @@ function buildTypography(primitives, tokens) {
       defaultFontSizes: false,
       fluid: false,
       customFontSize: false,
-      fontSizes,
+      fontSizes: sortBySemanticSize(fontSizes),
       fontFamilies,
       // encode font base/mono and weight scale explicitly
     },

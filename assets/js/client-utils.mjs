@@ -94,6 +94,20 @@ function semanticSortKeys(keys) {
   })
 }
 
+// Variante de semanticSortKeys pour des tableaux d'objets { slug, ... } (ex.
+// settings.spacing.spacingSizes / settings.typography.fontSizes) — l'ordre
+// d'itération de tokens.json (dépendant de l'export Figma) n'est pas garanti.
+function sortEntriesBySemanticSize(entries) {
+  return entries.slice().sort((a, b) => {
+    const ra = semanticSizeRank(a.slug)
+    const rb = semanticSizeRank(b.slug)
+    if (ra !== null && rb !== null) return ra - rb
+    if (ra !== null) return -1
+    if (rb !== null) return 1
+    return String(a.slug).localeCompare(String(b.slug))
+  })
+}
+
 function resolvePxFromRef(ref, structuredPrimitivesParam) {
   if (ref === undefined || ref === null) return NaN
   if (typeof ref === "number") return Number(ref)
@@ -2270,7 +2284,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     theme.settings.spacing = {
       defaultSpacingSizes: false,
       units: ["px", "rem", "%", "vh", "vw"],
-      spacingSizes,
+      spacingSizes: sortEntriesBySemanticSize(spacingSizes),
     }
 
     // 3) Typography: fontSizes and fontFamilies — uniquement les tokens
@@ -2297,7 +2311,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       defaultFontSizes: false,
       fluid: false,
       customFontSize: false,
-      fontSizes,
+      fontSizes: sortEntriesBySemanticSize(fontSizes),
     }
 
     const fontFamilies = []

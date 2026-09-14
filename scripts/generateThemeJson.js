@@ -87,66 +87,67 @@ const defaultFontWeights = {
   black: 900,
 };
 
+// "Poppins" n'est qu'un exemple de police de projet particulier — elle n'est
+// ni définie ni chargée (@font-face) par défaut dans theme.css. Seules
+// --font-base et --font-mono sont garanties par le générateur.
 const defaultFontFamilies = [
-  {
-    name: "Poppins",
-    slug: "poppins",
-    fontFamily: "Poppins, sans-serif",
-    fontFace: [
-      {
-        src: ["file:./assets/fonts/Poppins-Variable-opti.woff2"],
-        fontWeight: "100 900",
-        fontStyle: "normal",
-        fontFamily: "Poppins",
-      },
-    ],
-  },
   { name: "System", slug: "system", fontFamily: "system-ui, sans-serif" },
   { name: "Mono", slug: "mono", fontFamily: "ui-monospace, monospace" },
 ];
 
-const defaultStyles = {
-  color: { background: "var:preset|color|base", text: "var:preset|color|contrast" },
-  spacing: {
-    blockGap: "var:preset|spacing|spacing-m",
-    padding: { left: "var:preset|spacing|spacing-m", right: "var:preset|spacing|spacing-m" },
-  },
-  typography: {
-    fontFamily: "var:preset|font-family|poppins",
-    fontSize: "var(--text-m)",
-    fontWeight: "400",
-    lineHeight: "1.2",
-    fontStyle: "normal",
-  },
-  elements: {
-    heading: {
-      color: { text: "var:preset|color|accent-1" },
-      typography: { fontFamily: "var:preset|font-family|poppins", fontWeight: "600" },
+// Construit les styles par défaut. fontSizes (settings.typography.fontSizes,
+// déjà limité aux tokens réellement extraits de Figma — voir buildTypography)
+// détermine si une taille de police par défaut peut être référencée : jamais
+// de fontSize inventé, uniquement si le token correspondant existe vraiment.
+function buildDefaultStyles(fontSizes) {
+  const fontSizeSlugs = new Set((fontSizes || []).map((f) => f.slug));
+  const bodyFontSize = fontSizeSlugs.has("text-m") ? "var(--text-m)" : undefined;
+  const h1FontSize = fontSizeSlugs.has("text-xxl") ? "var(--text-xxl)" : undefined;
+  const h2FontSize = fontSizeSlugs.has("text-xl") ? "var(--text-xl)" : undefined;
+
+  return {
+    color: { background: "var:preset|color|base", text: "var:preset|color|contrast" },
+    spacing: {
+      blockGap: "var:preset|spacing|spacing-m",
+      padding: { left: "var:preset|spacing|spacing-m", right: "var:preset|spacing|spacing-m" },
     },
-    h1: {
-      typography: {
-        fontFamily: "var:preset|font-family|poppins",
-        fontSize: "var(--text-xxl)",
-        lineHeight: "1.05",
-        fontWeight: "600",
+    typography: {
+      fontFamily: "var(--font-base)",
+      ...(bodyFontSize ? { fontSize: bodyFontSize } : {}),
+      fontWeight: "var(--font-weight-regular)",
+      lineHeight: "1.2",
+      fontStyle: "normal",
+    },
+    elements: {
+      heading: {
+        color: { text: "var:preset|color|accent-1" },
+        typography: { fontFamily: "var(--font-base)", fontWeight: "var(--font-weight-semibold)" },
+      },
+      h1: {
+        typography: {
+          fontFamily: "var(--font-base)",
+          ...(h1FontSize ? { fontSize: h1FontSize } : {}),
+          lineHeight: "1.05",
+          fontWeight: "var(--font-weight-semibold)",
+        },
+      },
+      h2: {
+        typography: {
+          fontFamily: "var(--font-base)",
+          ...(h2FontSize ? { fontSize: h2FontSize } : {}),
+          lineHeight: "1.2",
+          fontWeight: "var(--font-weight-semibold)",
+        },
+      },
+      link: {
+        color: { text: "var(--link)" },
+        typography: { textDecoration: "underline" },
+        ":hover": { color: { text: "var(--link-hover)" }, typography: { fontWeight: "var(--font-weight-bold)" } },
       },
     },
-    h2: {
-      typography: {
-        fontFamily: "var:preset|font-family|poppins",
-        fontSize: "var(--text-xxl)",
-        lineHeight: "1.2",
-        fontWeight: "600",
-      },
-    },
-    link: {
-      color: { text: "var(--link)" },
-      typography: { textDecoration: "underline" },
-      ":hover": { color: { text: "var(--link-hover)" }, typography: { fontWeight: "700" } },
-    },
-  },
-  blocks: {},
-};
+    blocks: {},
+  };
+}
 
 function readJson(filePath) {
   try {
@@ -266,12 +267,8 @@ function buildTypography(primitives, tokens) {
 function injectDefaults(theme) {
   // layout
   theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" };
-  // spacing - use buildSpacing caller output inserted elsewhere
-  // styles defaults
-  // Ensure styles.typography references the CSS variables for base font and weight.
-  defaultStyles.typography.fontFamily = "var(--font-base)";
-  defaultStyles.typography.fontWeight = "var(--font-weight-regular)";
-  theme.styles = defaultStyles;
+  // styles defaults — dépend des fontSizes déjà résolues (settings.typography.fontSizes)
+  theme.styles = buildDefaultStyles(theme.settings.typography && theme.settings.typography.fontSizes);
 }
 
 function validate(theme, primitives, tokens) {
@@ -307,6 +304,18 @@ function validate(theme, primitives, tokens) {
   // Idem pour les tailles de police sémantiques (theme.css), distinctes de
   // l'échelle brute text-14..60 vérifiée via primitives.fontSize.
   const knownSemanticFontSizeVars = new Set(["text-s", "text-m", "text-l", "text-xl", "text-xxl"]);
+  // Familles/graisses de police toujours émises par le pipeline (voir
+  // client-utils.mjs otherDefaults), indépendamment des données Figma.
+  const knownFontVars = new Set([
+    "font-base",
+    "font-mono",
+    "font-weight-light",
+    "font-weight-regular",
+    "font-weight-semibold",
+    "font-weight-bold",
+    "font-weight-extrabold",
+    "font-weight-black",
+  ]);
 
   // Check var references exist in primitives or tokens where possible (naive check)
   const varRefs = JSON.stringify(theme).match(/var\(--[a-zA-Z0-9-]+\)/g) || [];
@@ -330,7 +339,8 @@ function validate(theme, primitives, tokens) {
       (tokens && tokens.fonts && tokens.fonts.fontSize && tokens.fonts.fontSize[name]) ||
       knownSemanticColorVars.has(name) ||
       knownSemanticSpacingVars.has(name) ||
-      knownSemanticFontSizeVars.has(name);
+      knownSemanticFontSizeVars.has(name) ||
+      knownFontVars.has(name);
 
     if (!exists) warnings.push(`Reference to ${v} not found in primitives`);
   });

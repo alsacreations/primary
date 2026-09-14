@@ -98,9 +98,10 @@ Exemple d'éléments :
     - `size`: référence directe à la variable CSS du token (ex. `"var(--text-s)"`), sans expression `clamp(...)` sous-jacente.
 - `fontFamilies`: détecter primitives `--font-*` et -> créer objet `{ name, slug, fontFamily, fontFace? }`.
   - Si `primitives.json` contient métadonnées de fontFace (src, poids, style), inclure `fontFace` comme dans l'exemple (utile pour l'embed).
+  - Si `primitives.json` ne fournit **aucune** famille de police projet, injecter uniquement `System` (`system-ui, sans-serif`) et `Mono` (`ui-monospace, monospace`), qui reflètent `--font-base`/`--font-mono` (garanties dans `theme.css`). Ne jamais injecter une famille de police fictive (ex. "Poppins") qui ne correspond à aucun `@font-face` réellement chargé par défaut.
 - Respecter les flags : `writingMode`, `defaultFontSizes`, `fluid`, `customFontSize`. Valeurs par défaut : `writingMode: true`, `defaultFontSizes: false`, `fluid: false`, `customFontSize: false`.
 
-**Remarque importante (line-height)** : N'ajoutez **pas** de clé top-level `settings.typography.lineHeights` (ce n'est pas pris en charge par le schéma WordPress). Les tokens de hauteur de ligne doivent rester dans `primitives.json` / `tokens.json` et être référencés depuis les mappings `styles.typography.lineHeight` (par exemple : `"lineHeight": "var(--line-height-24)"` ou une valeur numérique).
+**Remarque importante (line-height)** : N'ajoutez **pas** de clé top-level `settings.typography.lineHeights` (ce n'est pas pris en charge par le schéma WordPress). Les tokens de hauteur de ligne doivent rester dans `primitives.json` / `tokens.json` et être référencés depuis les mappings `styles.typography.lineHeight`. **Par défaut, utiliser une valeur numérique littérale** (ex. `"lineHeight": "1.2"`) plutôt qu'une référence `var(--line-height-*)` : contrairement aux couleurs/spacings/tailles de police, il n'existe pas de variable CSS de hauteur de ligne garantie dans `theme.css` — `--line-height-*` n'est qu'une primitive brute générée par l'extracteur à partir de `tokens.json`/`primitives.json`, absente tant que le projet ne fournit pas ces données. Ne référencer `var(--line-height-*)` que si le slug correspondant existe réellement dans `primitives.json` ou `tokens.json`.
 
 ---
 
@@ -121,7 +122,7 @@ Exemple d'éléments :
 
 ### 6) Validation et avertissements
 
-- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`, `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`, `text-s`, `text-m`, `text-l`, `text-xl`, `text-xxl`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
+- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`, `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`, `text-s`, `text-m`, `text-l`, `text-xl`, `text-xxl`, `font-base`, `font-mono`, `font-weight-light`, `font-weight-regular`, `font-weight-semibold`, `font-weight-bold`, `font-weight-extrabold`, `font-weight-black`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
 - Valider la structure minimale du `theme.json` (présence de `settings`, `settings.color.palette`, `settings.typography.fontSizes` et `settings.spacing.spacingSizes`).
 - Emettre des erreurs non bloquantes (warnings) pour : tokens mono-mode apparents, primitives sans utilisation, tokens dont la valeur est `NaN` ou `calc` invalide.
 
@@ -193,31 +194,24 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
 ]
 ```
 
-`fontFamilies` d'exemple :
+`fontFamilies` par défaut — **uniquement** `System`/`Mono` (qui reflètent `--font-base`/`--font-mono`, garantis dans `theme.css`) lorsque `primitives.json` ne fournit aucune famille de police projet. Ne jamais inventer une famille de police (ex. "Poppins") qui ne correspond à aucun `@font-face` réellement chargé par défaut :
 
 ```json
 [
-  {
-    "name": "Poppins",
-    "slug": "poppins",
-    "fontFamily": "Poppins, sans-serif",
-    "fontFace": [
-      {
-        "src": ["file:./assets/fonts/Poppins-Variable-opti.woff2"],
-        "fontWeight": "100 900",
-        "fontStyle": "normal",
-        "fontFamily": "Poppins"
-      }
-    ]
-  },
   { "name": "System", "slug": "system", "fontFamily": "system-ui, sans-serif" },
   { "name": "Mono", "slug": "mono", "fontFamily": "ui-monospace, monospace" }
 ]
 ```
 
+> Si `primitives.json` fournit de vraies familles de police projet (ex. une police "Poppins" avec son `fontFace`), les utiliser à la place — voir section 3.
+
 ### Mappings `styles`, `elements` et `blocks` par défaut
 
 Le script doit injecter les mappings suivants lorsqu'aucune configuration utilisateur n'est fournie (valeurs identiques à celles suivantes) :
+
+- `fontFamily` : toujours `var(--font-base)` (garanti dans `theme.css`), jamais une référence `var:preset|font-family|<slug>` vers une famille de police non garantie.
+- `fontWeight` : toujours `var(--font-weight-regular)` / `var(--font-weight-semibold)` / `var(--font-weight-bold)` selon le cas (garantis dans `theme.css`), jamais une valeur numérique littérale (`"400"`, `"600"`, `"700"`).
+- `fontSize` : **omis** si le token correspondant (`text-m` pour le corps, `text-xxl` pour h1, `text-xl` pour h2) n'existe pas réellement dans `tokens.json` — ne jamais inventer une taille par défaut (voir section 3). L'exemple ci-dessous suppose qu'aucun de ces tokens n'est présent.
 
 ```json
 "styles": {
@@ -230,27 +224,26 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
     "padding": { "left": "var:preset|spacing|spacing-m", "right": "var:preset|spacing|spacing-m" }
   },
   "typography": {
-    "fontFamily": "var:preset|font-family|poppins",
-    "fontSize": "var(--text-m)",
-    "fontWeight": "400",
-    "lineHeight": "var(--line-height-24)",
+    "fontFamily": "var(--font-base)",
+    "fontWeight": "var(--font-weight-regular)",
+    "lineHeight": "1.2",
     "fontStyle": "normal"
   },
   "elements": {
     "heading": {
       "color": { "text": "var:preset|color|accent-1" },
-      "typography": { "fontFamily": "var:preset|font-family|poppins", "fontWeight": "600" }
+      "typography": { "fontFamily": "var(--font-base)", "fontWeight": "var(--font-weight-semibold)" }
     },
     "h1": {
-      "typography": { "fontFamily": "var:preset|font-family|poppins", "fontSize": "var(--text-xxl)", "lineHeight": "1.05", "fontWeight": "600" }
+      "typography": { "fontFamily": "var(--font-base)", "lineHeight": "1.05", "fontWeight": "var(--font-weight-semibold)" }
     },
     "h2": {
-      "typography": { "fontFamily": "var:preset|font-family|poppins", "fontSize": "var(--text-xxl)", "lineHeight": "1.2", "fontWeight": "600" }
+      "typography": { "fontFamily": "var(--font-base)", "lineHeight": "1.2", "fontWeight": "var(--font-weight-semibold)" }
     },
     "link": {
       "color": { "text": "var(--link)" },
       "typography": { "textDecoration": "underline" },
-      ":hover": { "color": { "text": "var(--link-hover)" }, "typography": { "fontWeight": "700" } }
+      ":hover": { "color": { "text": "var(--link-hover)" }, "typography": { "fontWeight": "var(--font-weight-bold)" } }
     }
   },
   "blocks": {}

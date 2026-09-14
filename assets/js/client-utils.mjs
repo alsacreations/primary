@@ -2257,7 +2257,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     }
 
     // Note: do not inject a top-level `lineHeights` array in `settings.typography` (not allowed by WordPress theme.json schema).
-    // Keep line-height tokens in `primitives`/`tokens` and reference them via `styles.typography.lineHeight` (e.g., "var(--line-height-24)") when needed.
+    // Keep line-height tokens in `primitives`/`tokens` and reference them from `styles.typography.lineHeight` as a plain numeric value (e.g. "1.2") — there is no guaranteed `--line-height-*` CSS variable to fall back on.
     theme.settings.typography = {
       writingMode: true,
       defaultFontSizes: false,
@@ -2284,6 +2284,15 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     theme.settings.typography.fontFamilies = fontFamilies
 
     // 4) defaults for styles/elements/blocks
+    // fontFamily: toujours var(--font-base) — "poppins" n'est pas garanti par
+    // défaut dans theme.css (aucun @font-face n'est chargé sans configuration
+    // projet). fontSize: uniquement si le token correspondant existe vraiment
+    // parmi les tokens extraits de Figma (fontSizes ci-dessus), jamais inventé.
+    const fontSizeSlugs = new Set(fontSizes.map((f) => f.slug))
+    const bodyFontSize = fontSizeSlugs.has("text-m") ? "var(--text-m)" : undefined
+    const h1FontSize = fontSizeSlugs.has("text-xxl") ? "var(--text-xxl)" : undefined
+    const h2FontSize = fontSizeSlugs.has("text-xl") ? "var(--text-xl)" : undefined
+
     theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" }
     theme.styles = {
       color: {
@@ -2298,34 +2307,34 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         },
       },
       typography: {
-        fontFamily: "var:preset|font-family|poppins",
-        fontSize: "var(--text-m)",
-        fontWeight: "400",
-        lineHeight: "var(--line-height-24)",
+        fontFamily: "var(--font-base)",
+        ...(bodyFontSize ? { fontSize: bodyFontSize } : {}),
+        fontWeight: "var(--font-weight-regular)",
+        lineHeight: "1.2",
         fontStyle: "normal",
       },
       elements: {
         heading: {
           color: { text: "var:preset|color|accent-1" },
           typography: {
-            fontFamily: "var:preset|font-family|poppins",
-            fontWeight: "600",
+            fontFamily: "var(--font-base)",
+            fontWeight: "var(--font-weight-semibold)",
           },
         },
         h1: {
           typography: {
-            fontFamily: "var:preset|font-family|poppins",
-            fontSize: "var(--text-xxl)",
+            fontFamily: "var(--font-base)",
+            ...(h1FontSize ? { fontSize: h1FontSize } : {}),
             lineHeight: "1.05",
-            fontWeight: "600",
+            fontWeight: "var(--font-weight-semibold)",
           },
         },
         h2: {
           typography: {
-            fontFamily: "var:preset|font-family|poppins",
-            fontSize: "var(--text-xxl)",
+            fontFamily: "var(--font-base)",
+            ...(h2FontSize ? { fontSize: h2FontSize } : {}),
             lineHeight: "1.2",
-            fontWeight: "600",
+            fontWeight: "var(--font-weight-semibold)",
           },
         },
         link: {
@@ -2333,7 +2342,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           typography: { textDecoration: "underline" },
           ":hover": {
             color: { text: "var(--link-hover)" },
-            typography: { fontWeight: "700" },
+            typography: { fontWeight: "var(--font-weight-bold)" },
           },
         },
       },
@@ -2366,6 +2375,14 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       "text-l",
       "text-xl",
       "text-xxl",
+      "font-base",
+      "font-mono",
+      "font-weight-light",
+      "font-weight-regular",
+      "font-weight-semibold",
+      "font-weight-bold",
+      "font-weight-extrabold",
+      "font-weight-black",
     ])
     const allVars = new Set()
     const varRe = /var\(--([a-z0-9-]+)\)/gi

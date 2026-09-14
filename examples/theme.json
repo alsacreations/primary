@@ -121,19 +121,6 @@
       ],
       "fontFamilies": [
         {
-          "name": "Poppins",
-          "slug": "poppins",
-          "fontFamily": "Poppins, sans-serif",
-          "fontFace": [
-            {
-              "src": ["file:./assets/fonts/Poppins-Variable-opti.woff2"],
-              "fontWeight": "100 900",
-              "fontStyle": "normal",
-              "fontFamily": "Poppins"
-            }
-          ]
-        },
-        {
           "name": "System",
           "slug": "system",
           "fontFamily": "system-ui, sans-serif"
@@ -159,34 +146,34 @@
       }
     },
     "typography": {
-      "fontFamily": "var:preset|font-family|poppins",
+      "fontFamily": "var(--font-base)",
       "fontSize": "var:preset|font-size|text-m",
-      "fontWeight": "400",
-      "lineHeight": "var(--line-height-24)",
+      "fontWeight": "var(--font-weight-regular)",
+      "lineHeight": "1.2",
       "fontStyle": "normal"
     },
     "elements": {
       "heading": {
         "color": { "text": "var:preset|color|accent-1" },
         "typography": {
-          "fontFamily": "var:preset|font-family|poppins",
-          "fontWeight": "600"
+          "fontFamily": "var(--font-base)",
+          "fontWeight": "var(--font-weight-semibold)"
         }
       },
       "h1": {
         "typography": {
-          "fontFamily": "var:preset|font-family|poppins",
+          "fontFamily": "var(--font-base)",
           "fontSize": "var:preset|font-size|text-4-xl",
           "lineHeight": "1.05",
-          "fontWeight": "600"
+          "fontWeight": "var(--font-weight-semibold)"
         }
       },
       "h2": {
         "typography": {
-          "fontFamily": "var:preset|font-family|poppins",
-          "fontSize": "var:preset|font-size|text-4-xl",
+          "fontFamily": "var(--font-base)",
+          "fontSize": "var:preset|font-size|text-3-xl",
           "lineHeight": "1.2",
-          "fontWeight": "600"
+          "fontWeight": "var(--font-weight-semibold)"
         }
       },
       "link": {
@@ -194,7 +181,7 @@
         "typography": { "textDecoration": "underline" },
         ":hover": {
           "color": { "text": "var(--link-hover)" },
-          "typography": { "fontWeight": "700" }
+          "typography": { "fontWeight": "var(--font-weight-bold)" }
         }
       }
     },

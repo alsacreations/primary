@@ -139,11 +139,6 @@ function buildDefaultStyles(fontSizes) {
           fontWeight: "var(--font-weight-semibold)",
         },
       },
-      link: {
-        color: { text: "var(--link)" },
-        typography: { textDecoration: "underline" },
-        ":hover": { color: { text: "var(--link-hover)" }, typography: { fontWeight: "var(--font-weight-bold)" } },
-      },
     },
     blocks: {},
   };
@@ -283,21 +278,9 @@ function validate(theme, primitives, tokens) {
     warnings.push("Missing settings.spacing.spacingSizes");
 
   // Tokens de couleur sémantiques définis directement dans theme.css (pas des
-  // primitives) : base/contrast/accent-* toujours présents, plus link/selection
-  // qui restent des variables CSS classiques bien qu'absents de la palette.
-  const knownSemanticColorVars = new Set([
-    "base",
-    "base-2",
-    "base-3",
-    "contrast",
-    "accent-1",
-    "accent-2",
-    "accent-3",
-    "link",
-    "link-hover",
-    "link-active",
-    "selection",
-  ]);
+  // primitives), toujours présents : base/contrast/accent-*. (link/selection/
+  // états ne sont jamais référencés dans theme.json — voir buildPalette.)
+  const knownSemanticColorVars = new Set(["base", "base-2", "base-3", "contrast", "accent-1", "accent-2", "accent-3"]);
   // Tokens de spacing sémantiques (theme.css), distincts de l'échelle brute
   // spacing-0..48 vérifiée via primitives.spacing.
   const knownSemanticSpacingVars = new Set(["spacing-xs", "spacing-s", "spacing-m", "spacing-l", "spacing-xl"]);

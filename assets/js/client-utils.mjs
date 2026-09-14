@@ -2337,22 +2337,15 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
             fontWeight: "var(--font-weight-semibold)",
           },
         },
-        link: {
-          color: { text: "var(--link)" },
-          typography: { textDecoration: "underline" },
-          ":hover": {
-            color: { text: "var(--link-hover)" },
-            typography: { fontWeight: "var(--font-weight-bold)" },
-          },
-        },
       },
       blocks: {},
     }
 
     // 6) Validation: check var(...) references exist in primitives or tokens
     // Tokens sémantiques définis directement dans theme.css (pas des
-    // primitives) : couleurs base/contrast/accent-*/link/selection, spacings
-    // spacing-xs/s/m/l/xl, et tailles de police text-s/m/l/xl/xxl.
+    // primitives) : couleurs base/contrast/accent-* (link/selection/états ne
+    // sont jamais référencés dans theme.json), spacings spacing-xs/s/m/l/xl,
+    // et tailles de police text-s/m/l/xl/xxl.
     const knownSemanticVars = new Set([
       "base",
       "base-2",
@@ -2361,10 +2354,6 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       "accent-1",
       "accent-2",
       "accent-3",
-      "link",
-      "link-hover",
-      "link-active",
-      "selection",
       "spacing-xs",
       "spacing-s",
       "spacing-m",

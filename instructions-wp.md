@@ -70,7 +70,7 @@ Exemple d'éléments :
 { "name": "Contraste", "color": "var(--contrast)", "slug": "contrast" }
 ```
 
-> Les références `var:preset|color|<slug>` utilisées dans `styles` (section 4) doivent utiliser le **slug de palette** (donc `var:preset|color|contrast`, le slug reste en anglais). Pour les couleurs hors palette (`link`, `link-hover`), utiliser une référence directe `var(--link)` / `var(--link-hover)`.
+> Les références `var:preset|color|<slug>` utilisées dans `styles` (section 4) doivent utiliser le **slug de palette** (donc `var:preset|color|contrast`, le slug reste en anglais). Les couleurs exclues de la palette (`link`, `link-hover`, états) ne doivent **jamais** être référencées dans `theme.json`, ni via un preset ni via `var(--...)` — aucun mapping `styles`/`elements` par défaut ne doit s'appuyer dessus (voir la section 4 : pas de mapping `elements.link`).
 
 ---
 
@@ -110,6 +110,7 @@ Exemple d'éléments :
 - Conserver par défaut les mappings `styles.color`, `styles.spacing`, `styles.typography`, `styles.elements` et `styles.blocks` présents dans `examples/theme.json`.
 - Le script doit **injecter** ces mappings par défaut si l'utilisateur ne fournit pas de configuration spécifique.
 - Les valeurs doivent rester des références `var:preset|...` quand elles pointent vers un preset ou `var(--...)` si elles réfèrent directement à une primitive.
+- **`styles.elements` ne doit pas contenir de mapping `link`** : `link`/`link-hover` sont des couleurs exclues de la palette (voir section 1) et ne doivent jamais être référencées dans `theme.json`, ni en `var:preset|color|...` ni en `var(--...)`.
 
 ---
 
@@ -122,7 +123,7 @@ Exemple d'éléments :
 
 ### 6) Validation et avertissements
 
-- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`, `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`, `text-s`, `text-m`, `text-l`, `text-xl`, `text-xxl`, `font-base`, `font-mono`, `font-weight-light`, `font-weight-regular`, `font-weight-semibold`, `font-weight-bold`, `font-weight-extrabold`, `font-weight-black`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
+- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`, `text-s`, `text-m`, `text-l`, `text-xl`, `text-xxl`, `font-base`, `font-mono`, `font-weight-light`, `font-weight-regular`, `font-weight-semibold`, `font-weight-bold`, `font-weight-extrabold`, `font-weight-black`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
 - Valider la structure minimale du `theme.json` (présence de `settings`, `settings.color.palette`, `settings.typography.fontSizes` et `settings.spacing.spacingSizes`).
 - Emettre des erreurs non bloquantes (warnings) pour : tokens mono-mode apparents, primitives sans utilisation, tokens dont la valeur est `NaN` ou `calc` invalide.
 
@@ -239,11 +240,6 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
     },
     "h2": {
       "typography": { "fontFamily": "var(--font-base)", "lineHeight": "1.2", "fontWeight": "var(--font-weight-semibold)" }
-    },
-    "link": {
-      "color": { "text": "var(--link)" },
-      "typography": { "textDecoration": "underline" },
-      ":hover": { "color": { "text": "var(--link-hover)" }, "typography": { "fontWeight": "var(--font-weight-bold)" } }
     }
   },
   "blocks": {}

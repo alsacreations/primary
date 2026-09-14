@@ -175,14 +175,6 @@
           "lineHeight": "1.2",
           "fontWeight": "var(--font-weight-semibold)"
         }
-      },
-      "link": {
-        "color": { "text": "var(--link)" },
-        "typography": { "textDecoration": "underline" },
-        ":hover": {
-          "color": { "text": "var(--link-hover)" },
-          "typography": { "fontWeight": "var(--font-weight-bold)" }
-        }
       }
     },
     "blocks": {

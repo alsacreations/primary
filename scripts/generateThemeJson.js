@@ -64,15 +64,16 @@ function toSpacingDisplayName(slug) {
   return slug.replace(/^spacing-/, "").toUpperCase();
 }
 
-const defaultFontSizes = [
-  { name: "text-14", size: "var(--text-14)", slug: "text-14" },
-  { name: "text-16", size: "var(--text-16)", slug: "text-16" },
-  { name: "text-18", size: "var(--text-18)", slug: "text-18" },
-  { name: "text-20", size: "var(--text-20)", slug: "text-20" },
-  { name: "text-24", size: "var(--text-24)", slug: "text-24" },
-  { name: "text-30", size: "var(--text-30)", slug: "text-30" },
-  { name: "text-48", size: "var(--text-48)", slug: "text-48" },
-];
+// Contrairement aux couleurs/spacings, aucune valeur par défaut n'est
+// injectée pour les tailles de police : seuls les tokens réellement présents
+// dans les données extraites de Figma (tokens.json) doivent apparaître.
+function isFontSizeToken(slug) {
+  return !/^text-\d+$/.test(slug);
+}
+
+function toFontSizeDisplayName(slug) {
+  return slug.replace(/^text-/, "").toUpperCase();
+}
 
 // Defaults for base/mono fonts and weight scale
 const defaultFontBase = "system-ui, sans-serif";
@@ -112,7 +113,7 @@ const defaultStyles = {
   },
   typography: {
     fontFamily: "var:preset|font-family|poppins",
-    fontSize: "var:preset|font-size|text-16",
+    fontSize: "var(--text-m)",
     fontWeight: "400",
     lineHeight: "1.2",
     fontStyle: "normal",
@@ -125,7 +126,7 @@ const defaultStyles = {
     h1: {
       typography: {
         fontFamily: "var:preset|font-family|poppins",
-        fontSize: "var:preset|font-size|text-48",
+        fontSize: "var(--text-xxl)",
         lineHeight: "1.05",
         fontWeight: "600",
       },
@@ -133,7 +134,7 @@ const defaultStyles = {
     h2: {
       typography: {
         fontFamily: "var:preset|font-family|poppins",
-        fontSize: "var:preset|font-size|text-48",
+        fontSize: "var(--text-xxl)",
         lineHeight: "1.2",
         fontWeight: "600",
       },
@@ -227,32 +228,14 @@ function buildTypography(primitives, tokens) {
   const fontSizes = [];
   const seen = new Set();
 
-  // tokens first
+  // Uniquement les tokens de taille de police réellement extraits de Figma
+  // (tokens.fonts.fontSize) — ni valeurs par défaut inventées, ni primitives
+  // (--text-14, --text-16, ...).
   if (tokens && tokens.fonts && tokens.fonts.fontSize) {
-    Object.keys(tokens.fonts.fontSize).forEach((k) => {
-      const entry = tokens.fonts.fontSize[k];
-      const slug = k;
-      const size = entry.value || `var(--${slug})`;
-      fontSizes.push({ name: slug, size, slug });
+    Object.keys(tokens.fonts.fontSize).forEach((slug) => {
+      if (!isFontSizeToken(slug) || seen.has(slug)) return;
+      fontSizes.push({ name: toFontSizeDisplayName(slug), size: `var(--${slug})`, slug });
       seen.add(slug);
-    });
-  }
-
-  // add default font sizes
-  defaultFontSizes.forEach((s) => {
-    if (!seen.has(s.slug)) {
-      fontSizes.push(s);
-      seen.add(s.slug);
-    }
-  });
-
-  // add primitives font sizes
-  if (primitives && primitives.fontSize) {
-    Object.keys(primitives.fontSize).forEach((p) => {
-      if (!seen.has(p)) {
-        fontSizes.push({ name: p, size: `var(--${p})`, slug: p });
-        seen.add(p);
-      }
     });
   }
 
@@ -321,6 +304,9 @@ function validate(theme, primitives, tokens) {
   // Tokens de spacing sémantiques (theme.css), distincts de l'échelle brute
   // spacing-0..48 vérifiée via primitives.spacing.
   const knownSemanticSpacingVars = new Set(["spacing-xs", "spacing-s", "spacing-m", "spacing-l", "spacing-xl"]);
+  // Idem pour les tailles de police sémantiques (theme.css), distinctes de
+  // l'échelle brute text-14..60 vérifiée via primitives.fontSize.
+  const knownSemanticFontSizeVars = new Set(["text-s", "text-m", "text-l", "text-xl", "text-xxl"]);
 
   // Check var references exist in primitives or tokens where possible (naive check)
   const varRefs = JSON.stringify(theme).match(/var\(--[a-zA-Z0-9-]+\)/g) || [];
@@ -341,8 +327,10 @@ function validate(theme, primitives, tokens) {
       (primitives && primitives[name]) ||
       (tokens && tokens.colors && tokens.colors[name]) ||
       (tokens && tokens.spacing && tokens.spacing[name]) ||
+      (tokens && tokens.fonts && tokens.fonts.fontSize && tokens.fonts.fontSize[name]) ||
       knownSemanticColorVars.has(name) ||
-      knownSemanticSpacingVars.has(name);
+      knownSemanticSpacingVars.has(name) ||
+      knownSemanticFontSizeVars.has(name);
 
     if (!exists) warnings.push(`Reference to ${v} not found in primitives`);
   });

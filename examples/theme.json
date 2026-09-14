@@ -87,34 +87,34 @@
       "fluid": false,
       "customFontSize": false,
       "fontSizes": [
-        { "name": "text-s", "size": "var(--text-s)", "slug": "text-s" },
+        { "name": "S", "size": "var(--text-s)", "slug": "text-s" },
         {
-          "name": "text-m",
+          "name": "M",
           "size": "var(--text-m)",
           "slug": "text-m"
         },
         {
-          "name": "text-l",
+          "name": "L",
           "size": "var(--text-l)",
           "slug": "text-l"
         },
         {
-          "name": "text-xl",
+          "name": "XL",
           "size": "var(--text-xl)",
           "slug": "text-xl"
         },
         {
-          "name": "text-2-xl",
+          "name": "2-XL",
           "size": "var(--text-2xl)",
           "slug": "text-2-xl"
         },
         {
-          "name": "text-3-xl",
+          "name": "3-XL",
           "size": "var(--text-3xl)",
           "slug": "text-3-xl"
         },
         {
-          "name": "text-4-xl",
+          "name": "4-XL",
           "size": "var(--text-4xl)",
           "slug": "text-4-xl"
         }
@@ -176,7 +176,7 @@
       "h1": {
         "typography": {
           "fontFamily": "var:preset|font-family|poppins",
-          "fontSize": "var:preset|font-size|text-4xl",
+          "fontSize": "var:preset|font-size|text-4-xl",
           "lineHeight": "1.05",
           "fontWeight": "600"
         }
@@ -184,7 +184,7 @@
       "h2": {
         "typography": {
           "fontFamily": "var:preset|font-family|poppins",
-          "fontSize": "var:preset|font-size|text-4xl",
+          "fontSize": "var:preset|font-size|text-4-xl",
           "lineHeight": "1.2",
           "fontWeight": "600"
         }

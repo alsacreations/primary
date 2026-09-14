@@ -91,10 +91,11 @@ Exemple d'éléments :
 
 ### 3) Typographie — `settings.typography.fontSizes` & `fontFamilies`
 
-- `fontSizes`: inclure tous les tokens/primitives textuels (tokens projets d'abord); chaque entrée :
-  - `name`: slug du token (ex. `text-m`),
-  - `size`: `var(--text-*)` ou `clamp(...)` si token mobile/desktop,
-  - `slug`: identique.
+- `fontSizes`: **ne pas inclure les primitives** (`--text-14`, `--text-16`, ... issues de `primitives.json`) : elles restent des variables CSS internes, hors `theme.json`. **Important** : seuls les tokens de taille de police **réellement présents** dans les données extraites de Figma (`tokens.json` → `fonts.fontSize`) doivent figurer — contrairement aux couleurs et aux espacements, aucune valeur par défaut n'est injectée si le projet n'en fournit pas (`fontSizes` reste alors vide).
+  - Pour chaque token présent :
+    - `slug`: le slug du token tel quel (ex. `text-s`, `text-2-xl`).
+    - `name`: le suffixe du slug (après `text-`) tout en majuscules (ex. `text-s` → `"S"`, `text-2-xl` → `"2-XL"`).
+    - `size`: référence directe à la variable CSS du token (ex. `"var(--text-s)"`), sans expression `clamp(...)` sous-jacente.
 - `fontFamilies`: détecter primitives `--font-*` et -> créer objet `{ name, slug, fontFamily, fontFace? }`.
   - Si `primitives.json` contient métadonnées de fontFace (src, poids, style), inclure `fontFace` comme dans l'exemple (utile pour l'embed).
 - Respecter les flags : `writingMode`, `defaultFontSizes`, `fluid`, `customFontSize`. Valeurs par défaut : `writingMode: true`, `defaultFontSizes: false`, `fluid: false`, `customFontSize: false`.
@@ -120,7 +121,7 @@ Exemple d'éléments :
 
 ### 6) Validation et avertissements
 
-- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`, `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
+- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`, `spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, `spacing-xl`, `text-s`, `text-m`, `text-l`, `text-xl`, `text-xxl`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
 - Valider la structure minimale du `theme.json` (présence de `settings`, `settings.color.palette`, `settings.typography.fontSizes` et `settings.spacing.spacingSizes`).
 - Emettre des erreurs non bloquantes (warnings) pour : tokens mono-mode apparents, primitives sans utilisation, tokens dont la valeur est `NaN` ou `calc` invalide.
 
@@ -182,13 +183,13 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
 - `fluid`: `false`
 - `customFontSize`: `false`
 
-`fontSizes` d'exemple (le script doit générer ces entrées à partir des tokens/primitives) :
+`fontSizes` d'exemple (uniquement si ces tokens existent réellement dans `tokens.json` — sinon `fontSizes` reste vide) :
 
 ```json
 [
-  { "name": "text-s", "size": "var(--text-s)", "slug": "text-s" },
-  { "name": "text-m", "size": "var(--text-m)", "slug": "text-m" },
-  { "name": "text-l", "size": "var(--text-l)", "slug": "text-l" }
+  { "name": "S", "size": "var(--text-s)", "slug": "text-s" },
+  { "name": "M", "size": "var(--text-m)", "slug": "text-m" },
+  { "name": "L", "size": "var(--text-l)", "slug": "text-l" }
 ]
 ```
 
@@ -230,7 +231,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
   },
   "typography": {
     "fontFamily": "var:preset|font-family|poppins",
-    "fontSize": "var:preset|font-size|text-m",
+    "fontSize": "var(--text-m)",
     "fontWeight": "400",
     "lineHeight": "var(--line-height-24)",
     "fontStyle": "normal"
@@ -241,10 +242,10 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
       "typography": { "fontFamily": "var:preset|font-family|poppins", "fontWeight": "600" }
     },
     "h1": {
-      "typography": { "fontFamily": "var:preset|font-family|poppins", "fontSize": "var:preset|font-size|text-4xl", "lineHeight": "1.05", "fontWeight": "600" }
+      "typography": { "fontFamily": "var:preset|font-family|poppins", "fontSize": "var(--text-xxl)", "lineHeight": "1.05", "fontWeight": "600" }
     },
     "h2": {
-      "typography": { "fontFamily": "var:preset|font-family|poppins", "fontSize": "var:preset|font-size|text-4xl", "lineHeight": "1.2", "fontWeight": "600" }
+      "typography": { "fontFamily": "var:preset|font-family|poppins", "fontSize": "var(--text-xxl)", "lineHeight": "1.2", "fontWeight": "600" }
     },
     "link": {
       "color": { "text": "var(--link)" },
@@ -264,7 +265,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
 2. Construire :
    - `settings.color.palette` : uniquement les tokens couleur (tokens.json) dont le slug commence par `base`, `contrast` ou `accent` (slug conservé en anglais, name traduit en français et capitalisé — voir section 1), complétés par les valeurs par défaut si absents. Aucune primitive `--color-*` n'est ajoutée.
    - `settings.spacing.spacingSizes` : uniquement les tokens de spacing sémantiques (`tokens.json`), complétés par les valeurs par défaut si absents (voir section 2). Aucune primitive `--spacing-*` n'est ajoutée.
-   - `settings.typography.fontSizes` et `fontFamilies`.
+   - `settings.typography.fontSizes` : uniquement les tokens de taille de police réellement présents dans `tokens.json` (aucune valeur par défaut, aucune primitive `--text-*` — voir section 3), et `fontFamilies`.
    - Insérer les mappings `styles`, `elements`, `blocks` par défaut (copie depuis `examples/theme.json`).
 3. Valider la sortie et écrire `dist/theme.json`.
 4. Écrire `dist/theme-warnings.json` quand il y a des problèmes non bloquants.

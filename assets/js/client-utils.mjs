@@ -2239,42 +2239,22 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       spacingSizes,
     }
 
-    // 3) Typography: fontSizes and fontFamilies
+    // 3) Typography: fontSizes and fontFamilies — uniquement les tokens
+    // réellement extraits de Figma (tokens.fonts.fontSize), jamais l'échelle
+    // brute (--text-14, --text-16, ...) et sans valeur par défaut inventée.
+    const isFontSizeToken = (slug) => !/^text-\d+$/.test(slug)
+    const toFontSizeDisplayName = (slug) =>
+      slug.replace(/^text-/, "").toUpperCase()
+
     const fontSizes = []
     const seenFs = new Set()
     if (tokens && tokens.fonts && tokens.fonts.fontSize) {
-      Object.keys(tokens.fonts.fontSize).forEach((k) => {
-        const v = tokens.fonts.fontSize[k]
-        fontSizes.push({ name: k, size: v.value || `var(--${k})`, slug: k })
-        seenFs.add(k)
+      Object.keys(tokens.fonts.fontSize).forEach((slug) => {
+        if (!isFontSizeToken(slug) || seenFs.has(slug)) return
+        fontSizes.push({ name: toFontSizeDisplayName(slug), size: `var(--${slug})`, slug })
+        seenFs.add(slug)
       })
     }
-    if (primitives && primitives.fontSize) {
-      Object.keys(primitives.fontSize).forEach((k) => {
-        if (!seenFs.has(k)) {
-          fontSizes.push({
-            name: k,
-            size: primitives.fontSize[k].value || `var(--${k})`,
-            slug: k,
-          })
-          seenFs.add(k)
-        }
-      })
-    }
-    ;[
-      "text-14",
-      "text-16",
-      "text-18",
-      "text-20",
-      "text-24",
-      "text-30",
-      "text-48",
-    ].forEach((s) => {
-      if (!seenFs.has(s)) {
-        fontSizes.push({ name: s, size: `var(--${s})`, slug: s })
-        seenFs.add(s)
-      }
-    })
 
     // Note: do not inject a top-level `lineHeights` array in `settings.typography` (not allowed by WordPress theme.json schema).
     // Keep line-height tokens in `primitives`/`tokens` and reference them via `styles.typography.lineHeight` (e.g., "var(--line-height-24)") when needed.
@@ -2319,7 +2299,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       },
       typography: {
         fontFamily: "var:preset|font-family|poppins",
-        fontSize: "var:preset|font-size|text-m",
+        fontSize: "var(--text-m)",
         fontWeight: "400",
         lineHeight: "var(--line-height-24)",
         fontStyle: "normal",
@@ -2335,7 +2315,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         h1: {
           typography: {
             fontFamily: "var:preset|font-family|poppins",
-            fontSize: "var:preset|font-size|text-4xl",
+            fontSize: "var(--text-xxl)",
             lineHeight: "1.05",
             fontWeight: "600",
           },
@@ -2343,7 +2323,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         h2: {
           typography: {
             fontFamily: "var:preset|font-family|poppins",
-            fontSize: "var:preset|font-size|text-4xl",
+            fontSize: "var(--text-xxl)",
             lineHeight: "1.2",
             fontWeight: "600",
           },
@@ -2362,8 +2342,8 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
 
     // 6) Validation: check var(...) references exist in primitives or tokens
     // Tokens sémantiques définis directement dans theme.css (pas des
-    // primitives) : couleurs base/contrast/accent-*/link/selection, et
-    // spacings spacing-xs/s/m/l/xl.
+    // primitives) : couleurs base/contrast/accent-*/link/selection, spacings
+    // spacing-xs/s/m/l/xl, et tailles de police text-s/m/l/xl/xxl.
     const knownSemanticVars = new Set([
       "base",
       "base-2",
@@ -2381,6 +2361,11 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       "spacing-m",
       "spacing-l",
       "spacing-xl",
+      "text-s",
+      "text-m",
+      "text-l",
+      "text-xl",
+      "text-xxl",
     ])
     const allVars = new Set()
     const varRe = /var\(--([a-z0-9-]+)\)/gi

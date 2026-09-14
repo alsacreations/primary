@@ -56,9 +56,14 @@ function readJsonFiles(dir) {
         let modeName = null
         if (rawMode) {
           const lower = String(rawMode).toLowerCase()
-          if (["light", "dark", "mobile", "desktop"].includes(lower)) {
-            modeName = lower
-          } else {
+          // Reconnaît "desktop"/"mobile"/"light"/"dark" même intégrés dans un
+          // nom de mode plus long (ex. "Tablet et Mobile") : un mode Figma
+          // n'est pas toujours nommé exactement comme l'un de ces 4 mots.
+          if (/\bdesktop\b/.test(lower)) modeName = "desktop"
+          else if (/\bmobile\b/.test(lower)) modeName = "mobile"
+          else if (/\bdark\b/.test(lower)) modeName = "dark"
+          else if (/\blight\b/.test(lower)) modeName = "light"
+          else {
             // treat unknown mode names as modeless (primitive files)
             modeName = null
           }

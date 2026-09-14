@@ -180,6 +180,9 @@ if (rawArgs.length >= 2) {
       spacing: {},
       fonts: { fontSize: {}, lineHeight: {} },
     }
+    // Utilisé par resolvePrimitiveForValue (défini plus bas, hissé) — doit
+    // être initialisé avant tout appel, y compris depuis le bloc spacing.
+    const primitivesLookup = primitivesFlat
 
     // Colors: map to { type: 'color', value: 'var(--token)', modes: { light: 'var(--color-...)', dark: 'var(...)' } }
     Object.keys(rawColors || {}).forEach((tokenName) => {
@@ -210,12 +213,20 @@ if (rawArgs.length >= 2) {
       )
         return
       const item = rawSpacing[k]
-      normalized.spacing[clean] = { type: "number", value: item.value }
-      if (item.px !== undefined) normalized.spacing[clean].px = item.px
+      const out = { type: "number", value: item.value }
+      if (item.px !== undefined) out.px = item.px
+      if (item.modes) {
+        const modes = {}
+        Object.keys(item.modes).forEach((m) => {
+          const v = item.modes[m]
+          modes[m] = resolvePrimitiveForValue(v, "--spacing-", clean, m)
+        })
+        out.modes = modes
+      }
+      normalized.spacing[clean] = out
     })
 
     // Fonts: fontSize and lineHeight
-    const primitivesLookup = primitivesFlat // key: --text-12 -> value (number or hex)
 
     function resolvePrimitiveForValue(val, prefix, tokenClean, mode) {
       // If resolving a mode-specific primitive, prefer reusing an existing primitive with the same value

@@ -282,6 +282,26 @@ function emitSpacingTokenLines(spacingTokensObj, structuredPrimitivesParam) {
 }
 
 // Inline extractor for spacing (simple adaptation of scripts/extract/spacing.js)
+// Noms de tokens de spacing usuels ("t-shirt sizing"), seuls reconnus par le
+// repli "clés racine à plat" ci-dessous — une liste blanche plutôt qu'une
+// liste noire, pour ne jamais capter par erreur d'autres primitives à plat
+// (transition-duration, z-header-level, font-base, ...) qui partagent la
+// racine du fichier dans certains exports. Certains exports Figma déclarent
+// en effet les tokens de spacing comme des clés directement à la racine du
+// fichier, sans enveloppe "Spacing" (ex. une collection Figma "Spacing" sans
+// nœud de regroupement, exportée avec un fichier par mode).
+const SPACING_TOKEN_NAME_RE = /^(xs|s|m|l|x+l|[0-9]x+l)$/i
+
+function flatNumericSection(json) {
+  const out = {}
+  Object.keys(json || {}).forEach((k) => {
+    if (!SPACING_TOKEN_NAME_RE.test(k)) return
+    const val = json[k]
+    if (val && val.$type === "number") out[k] = val
+  })
+  return Object.keys(out).length ? out : null
+}
+
 function extractSpacing(entries) {
   const spacing = {}
   const modes = new Set()
@@ -290,7 +310,8 @@ function extractSpacing(entries) {
   entries.forEach(({ json, modeName }) => {
     if (modeName) modes.add(modeName.toLowerCase())
     if (modeName) return
-    const spacingSection = json.Spacing || json.spacing || json.spacings || null
+    const spacingSection =
+      json.Spacing || json.spacing || json.spacings || flatNumericSection(json)
     if (spacingSection) {
       Object.keys(spacingSection).forEach((k) => {
         const raw = spacingSection[k]
@@ -315,7 +336,8 @@ function extractSpacing(entries) {
   const spacingTokensByName = {}
   entries.forEach(({ json, modeName }) => {
     const mode = (modeName || "").toLowerCase()
-    const spacingSection = json.Spacing || json.spacing || json.spacings || null
+    const spacingSection =
+      json.Spacing || json.spacing || json.spacings || flatNumericSection(json)
     if (!spacingSection) return
     Object.keys(spacingSection).forEach((k) => {
       const name = k.startsWith("spacing-") ? k.replace(/^spacing-/, "") : k
@@ -507,9 +529,11 @@ function extractColors(entries) {
       Object.assign(primitives, flat)
     }
 
-    if (!modeName) return
-    const mode = modeName.toLowerCase()
-    modes.add(mode)
+    // Un fichier sans mode reconnu (ex. export Figma à mode unique nommé
+    // "Mode 1") contient quand même de vrais tokens couleur — on les scanne
+    // sous une clé de mode vide plutôt que de les ignorer entièrement.
+    const mode = modeName ? modeName.toLowerCase() : ""
+    if (modeName) modes.add(mode)
 
     if (json.color || json.colors)
       scanColorTokens(json.color || json.colors, [], mode)
@@ -603,7 +627,11 @@ function extractColors(entries) {
         : { value: entry.rawHex, primitive: null, variableId: entry.variableId }
     })
 
-    if (modesPresent.length === 1) {
+    // Les slots de convention WordPress (accent-1, base, contrast, ...) doivent
+    // toujours devenir de vrais tokens (tokensCss), même présents dans un seul
+    // mode — sinon ils ne peuvent jamais écraser la valeur par défaut émise par
+    // pushOrDefault() plus loin dans la génération du CSS.
+    if (modesPresent.length === 1 && !exceptions.has(normalizedToken)) {
       const only = modesPresent[0]
       const val = outPerMode[only]
       if (val && val.primitive)
@@ -693,8 +721,13 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       let modeName = null
       if (rawMode) {
         const lower = String(rawMode).toLowerCase()
-        if (["light", "dark", "mobile", "desktop"].includes(lower))
-          modeName = lower
+        // Reconnaît "desktop"/"mobile"/"light"/"dark" même intégrés dans un
+        // nom de mode plus long (ex. "Tablet et Mobile") : un mode Figma
+        // n'est pas toujours nommé exactement comme l'un de ces 4 mots.
+        if (/\bdesktop\b/.test(lower)) modeName = "desktop"
+        else if (/\bmobile\b/.test(lower)) modeName = "mobile"
+        else if (/\bdark\b/.test(lower)) modeName = "dark"
+        else if (/\blight\b/.test(lower)) modeName = "light"
       }
       entries.push({ fileName: file.name, json, modeName })
       const msg = `Parsed ${file.name} (mode: ${modeName || "none"})`

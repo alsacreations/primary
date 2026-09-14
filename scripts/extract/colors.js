@@ -58,10 +58,11 @@ function extractColors(entries) {
       Object.assign(primitives, flat);
     }
 
-    // If file declares a recognized mode, collect token overrides and top-level token colors
-    if (!modeName) return;
-    const mode = modeName.toLowerCase();
-    modes.add(mode);
+    // Un fichier sans mode reconnu (ex. export Figma à mode unique nommé
+    // "Mode 1") contient quand même de vrais tokens couleur — on les scanne
+    // sous une clé de mode vide plutôt que de les ignorer entièrement.
+    const mode = modeName ? modeName.toLowerCase() : "";
+    if (modeName) modes.add(mode);
 
     // scan color tree for overrides (tokens)
     if (json.color) scanColorTokens(json.color, [], mode);
@@ -141,8 +142,12 @@ function extractColors(entries) {
         : { value: entry.rawHex, primitive: null, variableId: entry.variableId };
     });
 
-    // If token only present in a single mode, treat as a primitive; otherwise keep as token
-    if (modesPresent.length === 1) {
+    // Les slots de convention WordPress (accent-1, base, contrast, ...) doivent
+    // toujours devenir de vrais tokens, même présents dans un seul mode — sinon
+    // ils ne peuvent jamais écraser la valeur par défaut émise plus loin dans
+    // figmatocss.js (pushOrDefault). Les autres tokens à mode unique restent
+    // traités comme des primitives (comportement existant).
+    if (modesPresent.length === 1 && !exceptions.has(normalizedToken)) {
       const only = modesPresent[0];
       const val = outPerMode[only];
       if (val && val.primitive) {

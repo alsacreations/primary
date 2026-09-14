@@ -536,13 +536,17 @@ if (btnEmptyProject) {
  */
 function getAppCssContent() {
   const addExtraCss = document.getElementById("add-extra-css-files")?.checked
-  return `/* Custom media queries (hors layers, requises avant leur utilisation) */
-@import "custom-media.css";
-
-/* L'ordre des layers définit la priorité des styles */
+  // Le @layer statement doit rester en tête, immédiatement suivi d'un bloc
+  // ininterrompu de @import (constaté en prod : un @import placé AVANT le
+  // @layer, donc coupant ce bloc en deux, invalide silencieusement tous les
+  // @import qui suivent — ils ne sont même plus requêtés par le navigateur).
+  return `/* L'ordre des layers définit la priorité des styles */
 
 /* Chaque layer écrase le précédent si conflit */
 @layer config, base, components, utilities;
+
+/* Custom media queries (hors layers, requises avant leur utilisation) */
+@import "custom-media.css";
 
 /* Config */
 ${addExtraCss ? '@import "reset.css" layer(config);\n' : ""}${addExtraCss ? '@import "natives.css" layer(config);\n' : ""}${addExtraCss ? '@import "layouts.css" layer(config);\n' : ""}@import "theme.css" layer(config);

@@ -1,12 +1,12 @@
 /* css/app.css */
 
-/* Custom media queries (hors layers, requises avant leur utilisation) */
-@import "custom-media.css";
-
 /* L'ordre des layers définit la priorité des styles */
 
 /* Chaque layer écrase le précédent si conflit */
 @layer config, base, components, utilities;
+
+/* Custom media queries (hors layers, requises avant leur utilisation) */
+@import "custom-media.css";
 
 /* Config */
 @import "reset.css" layer(config);

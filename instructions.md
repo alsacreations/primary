@@ -592,9 +592,18 @@ systématiquement en sortie à côté de `theme.css`, `primitives.json` et
 statique, identique à chaque génération).
 
 - **Dans `app.css`** : importé **sans layer** (`@import "custom-media.css";`),
-  placé avant la déclaration `@layer config, base, components, utilities;` —
-  les `@custom-media` doivent être définis avant toute utilisation de
-  `--md`/`--lg`/etc. et ne doivent pas être soumis à l'ordre des layers.
+  placé dans le même bloc que les autres `@import`, juste après la
+  déclaration `@layer config, base, components, utilities;` — ne jamais
+  scinder ce bloc en deux. **Important** : la déclaration `@layer` doit rester
+  en tête de fichier, **immédiatement suivie d'un bloc ininterrompu de
+  `@import`** (custom-media.css compris). Un `@import` placé **avant** cette
+  déclaration `@layer` — la coupant donc en deux groupes d'`@import` séparés
+  par le `@layer` — invalide silencieusement tous les `@import` qui suivent :
+  le navigateur ne les requête même plus (constaté en production : reset.css,
+  natives.css, layouts.css, theme.css, styles.css, utilities.css et anime.css
+  n'étaient plus chargés du tout, page totalement non stylée). Un `@layer`
+  seul en tête suivi d'un bloc ininterrompu d'`@import` fonctionne en
+  revanche normalement.
 - **Dans le kit téléchargeable** : `custom-media.css` doit systématiquement
   figurer parmi les fichiers du kit (au même titre que `theme.css`,
   `styles.css`, `utilities.css` et `app.css`), qu'il s'agisse du kit généré

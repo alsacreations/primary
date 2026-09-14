@@ -22,29 +22,27 @@ const defaultPalette = [
   { name: "Base", color: "var(--base)", slug: "base" },
   { name: "Base-2", color: "var(--base-2)", slug: "base-2" },
   { name: "Base-3", color: "var(--base-3)", slug: "base-3" },
-  { name: "Contrast", color: "var(--contrast)", slug: "contrast" },
+  { name: "Contraste", color: "var(--contrast)", slug: "contrast" },
   { name: "Accent-1", color: "var(--accent-1)", slug: "accent-1" },
   { name: "Accent-2", color: "var(--accent-2)", slug: "accent-2" },
   { name: "Accent-3", color: "var(--accent-3)", slug: "accent-3" },
 ];
 
-// Traduction des slugs conservés vers le français ("base" et "accent"
-// s'écrivent déjà pareil dans les deux langues).
-const FRENCH_COLOR_SLUGS = { contrast: "contraste" };
+// Traduction du name affiché vers le français ("base" et "accent" s'écrivent
+// déjà pareil dans les deux langues) — le slug, lui, reste celui de la
+// variable CSS (donc en anglais).
+const FRENCH_COLOR_WORDS = { contrast: "contraste" };
 
 function isKeptColorSlug(slug) {
   return /^(base|contrast|accent)/i.test(slug);
 }
 
-function toFrenchSlug(slug) {
+function toFrenchName(slug) {
   const match = slug.match(/^([a-z]+)(-.*)?$/i);
-  if (!match) return slug;
+  if (!match) return slug.charAt(0).toUpperCase() + slug.slice(1);
   const [, word, suffix = ""] = match;
-  return (FRENCH_COLOR_SLUGS[word.toLowerCase()] || word) + suffix;
-}
-
-function toDisplayName(slug) {
-  return slug.charAt(0).toUpperCase() + slug.slice(1);
+  const frenchWord = FRENCH_COLOR_WORDS[word.toLowerCase()] || word;
+  return frenchWord.charAt(0).toUpperCase() + frenchWord.slice(1) + suffix;
 }
 
 const defaultSpacingSizes = [
@@ -100,7 +98,7 @@ const defaultFontFamilies = [
 ];
 
 const defaultStyles = {
-  color: { background: "var:preset|color|base", text: "var:preset|color|contraste" },
+  color: { background: "var:preset|color|base", text: "var:preset|color|contrast" },
   spacing: {
     blockGap: "var:preset|spacing|spacing-16",
     padding: { left: "var:preset|spacing|spacing-16", right: "var:preset|spacing|spacing-16" },
@@ -173,21 +171,19 @@ function buildPalette(primitives, tokens) {
   if (tokens && tokens.colors) {
     Object.keys(tokens.colors).forEach((tk) => {
       if (!isKeptColorSlug(tk)) return;
-      const slug = toFrenchSlug(tk);
-      if (!seen.has(slug)) {
+      if (!seen.has(tk)) {
         const value = tokens.colors[tk].value || `var(--${tk})`;
-        palette.push({ name: toDisplayName(tk), color: value, slug });
-        seen.add(slug);
+        palette.push({ name: toFrenchName(tk), color: value, slug: tk });
+        seen.add(tk);
       }
     });
   }
 
   // Finally add defaults for commonly expected tokens if missing
   defaultPalette.forEach((entry) => {
-    const slug = toFrenchSlug(entry.slug);
-    if (!seen.has(slug)) {
-      palette.push({ ...entry, slug });
-      seen.add(slug);
+    if (!seen.has(entry.slug)) {
+      palette.push(entry);
+      seen.add(entry.slug);
     }
   });
 

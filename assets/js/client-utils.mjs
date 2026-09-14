@@ -2159,27 +2159,28 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
 
     // 1) Palette: uniquement les tokens de couleur sémantiques base/contrast/
     // accent (pas les primitives, pas link, pas les états warning/error/...)
-    const frenchColorSlugs = { contrast: "contraste" }
+    // Le slug reste celui de la variable CSS (anglais) ; seul le name affiché
+    // est traduit en français.
+    const frenchColorWords = { contrast: "contraste" }
     const isKeptColorSlug = (slug) => /^(base|contrast|accent)/i.test(slug)
-    const toFrenchSlug = (slug) => {
+    const toFrenchName = (slug) => {
       const match = slug.match(/^([a-z]+)(-.*)?$/i)
-      if (!match) return slug
+      if (!match) return slug.charAt(0).toUpperCase() + slug.slice(1)
       const [, word, suffix = ""] = match
-      return (frenchColorSlugs[word.toLowerCase()] || word) + suffix
+      const frenchWord = frenchColorWords[word.toLowerCase()] || word
+      return frenchWord.charAt(0).toUpperCase() + frenchWord.slice(1) + suffix
     }
-    const toDisplayName = (slug) => slug.charAt(0).toUpperCase() + slug.slice(1)
 
     const palette = []
     const seen = new Set()
     if (tokens && tokens.colors) {
       Object.keys(tokens.colors).forEach((tk) => {
         if (!isKeptColorSlug(tk)) return
-        const slug = toFrenchSlug(tk)
-        if (seen.has(slug)) return
+        if (seen.has(tk)) return
         const entry = tokens.colors[tk]
         const color = entry.value || `var(--${tk})`
-        palette.push({ name: toDisplayName(tk), color, slug })
-        seen.add(slug)
+        palette.push({ name: toFrenchName(tk), color, slug: tk })
+        seen.add(tk)
       })
     }
     // defaults for the semantic color tokens when the project doesn't provide them
@@ -2193,10 +2194,9 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       ["accent-3", "var(--accent-3)"],
     ]
     semanticColorDefaults.forEach(([slug, color]) => {
-      const frenchSlug = toFrenchSlug(slug)
-      if (!seen.has(frenchSlug)) {
-        palette.push({ name: toDisplayName(slug), color, slug: frenchSlug })
-        seen.add(frenchSlug)
+      if (!seen.has(slug)) {
+        palette.push({ name: toFrenchName(slug), color, slug })
+        seen.add(slug)
       }
     })
     theme.settings.color = {
@@ -2307,7 +2307,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     theme.styles = {
       color: {
         background: "var:preset|color|base",
-        text: "var:preset|color|contraste",
+        text: "var:preset|color|contrast",
       },
       spacing: {
         blockGap: "var:preset|spacing|spacing-16",

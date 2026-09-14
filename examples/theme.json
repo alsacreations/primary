@@ -30,9 +30,9 @@
           "slug": "base"
         },
         {
-          "name": "Contrast",
+          "name": "Contraste",
           "color": "var(--contrast)",
-          "slug": "contraste"
+          "slug": "contrast"
         },
         {
           "name": "Base-2",
@@ -149,7 +149,7 @@
   "styles": {
     "color": {
       "background": "var:preset|color|base",
-      "text": "var:preset|color|contraste"
+      "text": "var:preset|color|contrast"
     },
     "spacing": {
       "blockGap": "var:preset|spacing|spacing-16",

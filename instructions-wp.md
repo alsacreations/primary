@@ -12,7 +12,7 @@ Ce document décrit, étape par étape, les règles de mappage, les conventions 
 
 - **Toutes** les données extraites (primitives + tokens) doivent être représentées dans `theme.json` dans la section appropriée (couleurs, espacements, typographie, familles de police, etc.).
 - **Les tokens projet (tokens.json)** priment sur les primitives pour déterminer la valeur finale exposée à `theme.json` lorsqu'il y a un conflit.
-- **Les noms** affichés (`name`) sont dérivés du `slug` (même texte que le slug, en minuscules, avec tirets conservés), comme dans `examples/theme.json`. **Exception** : pour la palette de couleurs (`settings.color.palette`), voir les règles spécifiques de la section 1) ci-dessous (noms capitalisés, slugs en français).
+- **Les noms** affichés (`name`) sont dérivés du `slug` (même texte que le slug, en minuscules, avec tirets conservés), comme dans `examples/theme.json`. **Exception** : pour la palette de couleurs (`settings.color.palette`), voir les règles spécifiques de la section 1) ci-dessous (slugs en anglais, noms traduits en français).
 - Conserver par défaut les mappings `styles`, `elements` et `blocks` selon les valeurs listées dans la section **Valeurs par défaut (autonomes)** ci‑dessous (le script injectera ces mappings automatiquement si l'utilisateur n'en fournit pas).
 
 > **Comportement si aucune source fournie :** Si aucun fichier JSON n'est présent dans le dossier d'entrée (`source/`), le script doit générer `primitives.json` , `tokens.json` `theme.json` et `theme.css` malgré tout. Le résultat contiendra uniquement les **données globales** (commentaire général, custom breakpoints, color-scheme light par défaut, couleurs globales, couleurs tokens globales, autres primitives globales, et mappings `styles`/`elements`/`blocks` par défaut).
@@ -51,8 +51,8 @@ Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleu
   - `accent` (inclut `accent-1`, `accent-2`, `accent-3`, …)
 - **Exclure** `link` / `link-hover` et les couleurs d'état (`warning`, `error`, `success`, `info`, y compris leurs variantes numérotées comme `error-500`) : elles restent des variables CSS classiques, référencées directement en `var(--...)` dans les styles, sans passer par la palette.
 - Pour chaque entrée conservée :
-  - `name`: le mot anglais capitalisé (première lettre en majuscule), tirets et suffixes numériques conservés. Exemple : `accent-1` → `"Accent-1"`, `contrast` → `"Contrast"`.
-  - `slug`: la traduction française du slug. `base` et `accent-*` s'écrivent identiquement en français ; `contrast` devient `contraste`.
+  - `slug`: le slug tel quel (celui de la variable CSS, en anglais), tirets et suffixes numériques conservés. Exemple : `accent-1`, `contrast`, `base-2`.
+  - `name`: la traduction française du mot, capitalisée (première lettre en majuscule). `base` et `accent-*` s'écrivent identiquement en français (`"Accent-1"`, `"Base-2"`) ; `contrast` devient `"Contraste"`.
   - `color`: référence directe à la variable CSS sémantique, sans préfixe `color-` (ex. `"var(--accent-1)"`, `"var(--base)"`, `"var(--contrast)"`). Ne pas envelopper dans `light-dark(...)`.
 - Si le projet ne fournit pas ces tokens, injecter les valeurs par défaut `base`, `contrast`, `accent-1`, `accent-2`, `accent-3` avec les mêmes règles de nommage.
 
@@ -67,10 +67,10 @@ Exemple d'éléments :
 
 ```json
 { "name": "Accent-1", "color": "var(--accent-1)", "slug": "accent-1" },
-{ "name": "Contrast", "color": "var(--contrast)", "slug": "contraste" }
+{ "name": "Contraste", "color": "var(--contrast)", "slug": "contrast" }
 ```
 
-> Les références `var:preset|color|<slug>` utilisées dans `styles` (section 4) doivent utiliser le **slug de palette** (donc `var:preset|color|contraste`, pas `var:preset|color|contrast`). Pour les couleurs hors palette (`link`, `link-hover`), utiliser une référence directe `var(--link)` / `var(--link-hover)`.
+> Les références `var:preset|color|<slug>` utilisées dans `styles` (section 4) doivent utiliser le **slug de palette** (donc `var:preset|color|contrast`, le slug reste en anglais). Pour les couleurs hors palette (`link`, `link-hover`), utiliser une référence directe `var(--link)` / `var(--link-hover)`.
 
 ---
 
@@ -137,7 +137,7 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
   { "name": "Base", "color": "var(--base)", "slug": "base" },
   { "name": "Base-2", "color": "var(--base-2)", "slug": "base-2" },
   { "name": "Base-3", "color": "var(--base-3)", "slug": "base-3" },
-  { "name": "Contrast", "color": "var(--contrast)", "slug": "contraste" },
+  { "name": "Contraste", "color": "var(--contrast)", "slug": "contrast" },
   { "name": "Accent-1", "color": "var(--accent-1)", "slug": "accent-1" },
   { "name": "Accent-2", "color": "var(--accent-2)", "slug": "accent-2" },
   { "name": "Accent-3", "color": "var(--accent-3)", "slug": "accent-3" }
@@ -234,7 +234,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
 "styles": {
   "color": {
     "background": "var:preset|color|base",
-    "text": "var:preset|color|contraste"
+    "text": "var:preset|color|contrast"
   },
   "spacing": {
     "blockGap": "var:preset|spacing|spacing-16",
@@ -274,7 +274,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
 
 1. Lire `dist/primitives.json` et `dist/tokens.json`.
 2. Construire :
-   - `settings.color.palette` : uniquement les tokens couleur (tokens.json) dont le slug commence par `base`, `contrast` ou `accent` (traduits en français, noms capitalisés — voir section 1), complétés par les valeurs par défaut si absents. Aucune primitive `--color-*` n'est ajoutée.
+   - `settings.color.palette` : uniquement les tokens couleur (tokens.json) dont le slug commence par `base`, `contrast` ou `accent` (slug conservé en anglais, name traduit en français et capitalisé — voir section 1), complétés par les valeurs par défaut si absents. Aucune primitive `--color-*` n'est ajoutée.
    - `settings.spacing.spacingSizes` : tokens spacing (préférer tokens à primitives) ordonnés par slug ou valeur.
    - `settings.typography.fontSizes` et `fontFamilies`.
    - Insérer les mappings `styles`, `elements`, `blocks` par défaut (copie depuis `examples/theme.json`).

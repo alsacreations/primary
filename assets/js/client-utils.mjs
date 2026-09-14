@@ -2185,6 +2185,8 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     // defaults for the semantic color tokens when the project doesn't provide them
     const semanticColorDefaults = [
       ["base", "var(--base)"],
+      ["base-2", "var(--base-2)"],
+      ["base-3", "var(--base-3)"],
       ["contrast", "var(--contrast)"],
       ["accent-1", "var(--accent-1)"],
       ["accent-2", "var(--accent-2)"],

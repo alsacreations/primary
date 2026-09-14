@@ -20,6 +20,8 @@ const DEFAULTS = {
 // hors palette WordPress.
 const defaultPalette = [
   { name: "Base", color: "var(--base)", slug: "base" },
+  { name: "Base-2", color: "var(--base-2)", slug: "base-2" },
+  { name: "Base-3", color: "var(--base-3)", slug: "base-3" },
   { name: "Contrast", color: "var(--contrast)", slug: "contrast" },
   { name: "Accent-1", color: "var(--accent-1)", slug: "accent-1" },
   { name: "Accent-2", color: "var(--accent-2)", slug: "accent-2" },

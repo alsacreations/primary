@@ -135,6 +135,8 @@ Le script doit inclure au minimum les entrées suivantes (format `name`, `color`
 ```json
 [
   { "name": "Base", "color": "var(--base)", "slug": "base" },
+  { "name": "Base-2", "color": "var(--base-2)", "slug": "base-2" },
+  { "name": "Base-3", "color": "var(--base-3)", "slug": "base-3" },
   { "name": "Contrast", "color": "var(--contrast)", "slug": "contraste" },
   { "name": "Accent-1", "color": "var(--accent-1)", "slug": "accent-1" },
   { "name": "Accent-2", "color": "var(--accent-2)", "slug": "accent-2" },

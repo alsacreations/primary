@@ -2354,27 +2354,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           },
         },
       },
-      blocks: {
-        "core/button": {
-          border: { radius: "0.5rem" },
-          color: {
-            background: "var:preset|color|accent-1",
-            text: "var:preset|color|white",
-          },
-          typography: {
-            fontFamily: "var:preset|font-family|poppins",
-            fontWeight: "600",
-          },
-          spacing: {
-            padding: {
-              top: "var:preset|spacing|spacing-12",
-              right: "var:preset|spacing|spacing-12",
-              bottom: "var:preset|spacing|spacing-12",
-              left: "var:preset|spacing|spacing-12",
-            },
-          },
-        },
-      },
+      blocks: {},
     }
 
     // 6) Validation: check var(...) references exist in primitives or tokens

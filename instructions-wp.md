@@ -12,7 +12,7 @@ Ce document décrit, étape par étape, les règles de mappage, les conventions 
 
 - **Toutes** les données extraites (primitives + tokens) doivent être représentées dans `theme.json` dans la section appropriée (couleurs, espacements, typographie, familles de police, etc.).
 - **Les tokens projet (tokens.json)** priment sur les primitives pour déterminer la valeur finale exposée à `theme.json` lorsqu'il y a un conflit.
-- **Les noms** affichés (`name`) sont dérivés du `slug` (même texte que le slug, en minuscules, avec tirets conservés), comme dans `examples/theme.json`.
+- **Les noms** affichés (`name`) sont dérivés du `slug` (même texte que le slug, en minuscules, avec tirets conservés), comme dans `examples/theme.json`. **Exception** : pour la palette de couleurs (`settings.color.palette`), voir les règles spécifiques de la section 1) ci-dessous (noms capitalisés, slugs en français).
 - Conserver par défaut les mappings `styles`, `elements` et `blocks` selon les valeurs listées dans la section **Valeurs par défaut (autonomes)** ci‑dessous (le script injectera ces mappings automatiquement si l'utilisateur n'en fournit pas).
 
 > **Comportement si aucune source fournie :** Si aucun fichier JSON n'est présent dans le dossier d'entrée (`source/`), le script doit générer `primitives.json` , `tokens.json` `theme.json` et `theme.css` malgré tout. Le résultat contiendra uniquement les **données globales** (commentaire général, custom breakpoints, color-scheme light par défaut, couleurs globales, couleurs tokens globales, autres primitives globales, et mappings `styles`/`elements`/`blocks` par défaut).
@@ -44,14 +44,17 @@ Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleu
 
 ### 1) Couleurs — `settings.color.palette`
 
-- Inclure _toutes_ les primitives couleur presentes (`--color-*`) en entrée comme éléments de la palette. Pour chaque primitive `--color-XXX` :
-  - `slug`: `XXX` (supprime le préfixe `color-` si présent). Exemple : `--color-raspberry-500` → `slug: "raspberry-500"`.
-  - `name`: identique au `slug` (ex. `"raspberry-500"`).
-  - `color`: référence CSS telle quelle dans `primitives.json` (ex. `"var(--color-raspberry-500)"` ou la valeur littérale si présente).
-- Inclure aussi tous les **tokens couleurs** (ex. `--accent-1`, `--base`, `--accent-2`) comme entrées distinctes dans la palette si ces tokens existent dans `tokens.json` ou `primitives.json`.
-  - Si le token est **light/dark**, conserver l'expression `light-dark(var(...), var(...))` (ne pas l'évaluer).
-  - Si le token est **simple** ou référencé par `var(--...)`, mettre la chaîne telle quelle dans `color`.
-- Priorité : préférez la représentation à partir de `tokens.json` quand une entrée token existe, sinon tombez sur la primitive correspondante.
+- **Ne pas inclure les primitives couleur** (`--color-*`, ex. `raspberry-500`, `gray-900`, `slate-100`) : elles restent des variables CSS internes, hors palette WordPress.
+- Ne conserver que les **tokens de couleur sémantiques** dont le slug commence par :
+  - `base` (inclut `base`, `base-2`, `base-3`, …)
+  - `contrast`
+  - `accent` (inclut `accent-1`, `accent-2`, `accent-3`, …)
+- **Exclure** `link` / `link-hover` et les couleurs d'état (`warning`, `error`, `success`, `info`, y compris leurs variantes numérotées comme `error-500`) : elles restent des variables CSS classiques, référencées directement en `var(--...)` dans les styles, sans passer par la palette.
+- Pour chaque entrée conservée :
+  - `name`: le mot anglais capitalisé (première lettre en majuscule), tirets et suffixes numériques conservés. Exemple : `accent-1` → `"Accent-1"`, `contrast` → `"Contrast"`.
+  - `slug`: la traduction française du slug. `base` et `accent-*` s'écrivent identiquement en français ; `contrast` devient `contraste`.
+  - `color`: référence directe à la variable CSS sémantique, sans préfixe `color-` (ex. `"var(--accent-1)"`, `"var(--base)"`, `"var(--contrast)"`). Ne pas envelopper dans `light-dark(...)`.
+- Si le projet ne fournit pas ces tokens, injecter les valeurs par défaut `base`, `contrast`, `accent-1`, `accent-2`, `accent-3` avec les mêmes règles de nommage.
 
 - Flags couleur complémentaires : exposer aussi les flags suivants dans `settings.color` quand pertinent (valeurs par défaut indiquées) :
   - `defaultDuotone`: `false`
@@ -60,15 +63,14 @@ Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleu
 
 Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleur sont prises en charge dans le thème.
 
-Exemple d'élément :
+Exemple d'éléments :
 
 ```json
-{
-  "name": "raspberry-500",
-  "color": "var(--color-raspberry-500)",
-  "slug": "raspberry-500"
-}
+{ "name": "Accent-1", "color": "var(--accent-1)", "slug": "accent-1" },
+{ "name": "Contrast", "color": "var(--contrast)", "slug": "contraste" }
 ```
+
+> Les références `var:preset|color|<slug>` utilisées dans `styles` (section 4) doivent utiliser le **slug de palette** (donc `var:preset|color|contraste`, pas `var:preset|color|contrast`). Pour les couleurs hors palette (`link`, `link-hover`), utiliser une référence directe `var(--link)` / `var(--link-hover)`.
 
 ---
 
@@ -116,7 +118,7 @@ Exemple d'élément :
 
 ### 6) Validation et avertissements
 
-- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json` soit dans `tokens.json`. Lister les références manquantes dans `dist/theme-warnings.json`.
+- Vérifier que toutes les références `var(...)` mentionnées existent soit dans `primitives.json`, soit dans `tokens.json`, soit dans la liste des tokens sémantiques connus (`base`, `base-2`, `base-3`, `contrast`, `accent-1`, `accent-2`, `accent-3`, `link`, `link-hover`, `link-active`, `selection`) qui n'ont pas de primitive correspondante. Lister les références manquantes dans `dist/theme-warnings.json`.
 - Valider la structure minimale du `theme.json` (présence de `settings`, `settings.color.palette`, `settings.typography.fontSizes` et `settings.spacing.spacingSizes`).
 - Emettre des erreurs non bloquantes (warnings) pour : tokens mono-mode apparents, primitives sans utilisation, tokens dont la valeur est `NaN` ou `calc` invalide.
 
@@ -128,119 +130,19 @@ Le document contient ci‑dessous les valeurs par défaut que le script doit inj
 
 ### Palette de couleurs par défaut (`settings.color.palette`)
 
-Le script doit inclure au minimum les entrées suivantes (format `name`, `color`, `slug`) lorsque les primitives correspondantes n'existent pas explicitement dans `dist/primitives.json` :
+Le script doit inclure au minimum les entrées suivantes (format `name`, `color`, `slug`) lorsque les tokens correspondants n'existent pas explicitement dans `dist/tokens.json` :
 
 ```json
 [
-  { "name": "white", "color": "var(--color-white)", "slug": "white" },
-  { "name": "black", "color": "var(--color-black)", "slug": "black" },
-  { "name": "gray-50", "color": "var(--color-gray-50)", "slug": "gray-50" },
-  { "name": "gray-100", "color": "var(--color-gray-100)", "slug": "gray-100" },
-  { "name": "gray-200", "color": "var(--color-gray-200)", "slug": "gray-200" },
-  { "name": "gray-300", "color": "var(--color-gray-300)", "slug": "gray-300" },
-  { "name": "gray-400", "color": "var(--color-gray-400)", "slug": "gray-400" },
-  { "name": "gray-500", "color": "var(--color-gray-500)", "slug": "gray-500" },
-  { "name": "gray-600", "color": "var(--color-gray-600)", "slug": "gray-600" },
-  { "name": "gray-700", "color": "var(--color-gray-700)", "slug": "gray-700" },
-  { "name": "gray-800", "color": "var(--color-gray-800)", "slug": "gray-800" },
-  { "name": "gray-900", "color": "var(--color-gray-900)", "slug": "gray-900" },
-
-  {
-    "name": "error-100",
-    "color": "var(--color-error-100)",
-    "slug": "error-100"
-  },
-  {
-    "name": "error-300",
-    "color": "var(--color-error-300)",
-    "slug": "error-300"
-  },
-  {
-    "name": "error-500",
-    "color": "var(--color-error-500)",
-    "slug": "error-500"
-  },
-
-  {
-    "name": "success-100",
-    "color": "var(--color-success-100)",
-    "slug": "success-100"
-  },
-  {
-    "name": "success-300",
-    "color": "var(--color-success-300)",
-    "slug": "success-300"
-  },
-  {
-    "name": "success-500",
-    "color": "var(--color-success-500)",
-    "slug": "success-500"
-  },
-
-  {
-    "name": "warning-100",
-    "color": "var(--color-warning-100)",
-    "slug": "warning-100"
-  },
-  {
-    "name": "warning-300",
-    "color": "var(--color-warning-300)",
-    "slug": "warning-300"
-  },
-  {
-    "name": "warning-500",
-    "color": "var(--color-warning-500)",
-    "slug": "warning-500"
-  },
-
-  { "name": "info-100", "color": "var(--color-info-100)", "slug": "info-100" },
-  { "name": "info-300", "color": "var(--color-info-300)", "slug": "info-300" },
-  { "name": "info-500", "color": "var(--color-info-500)", "slug": "info-500" },
-
-  {
-    "name": "accent-1",
-    "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
-    "slug": "accent-1"
-  },
-  {
-    "name": "accent-2",
-    "color": "light-dark(var(--color-raspberry-300), var(--color-raspberry-500))",
-    "slug": "accent-2"
-  },
-  {
-    "name": "accent-3",
-    "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
-    "slug": "accent-3"
-  },
-  {
-    "name": "base",
-    "color": "light-dark(var(--color-white), var(--color-gray-900))",
-    "slug": "base"
-  },
-  {
-    "name": "contrast",
-    "color": "light-dark(var(--color-gray-900), var(--color-gray-100))",
-    "slug": "contrast"
-  },
-  {
-    "name": "link",
-    "color": "light-dark(var(--color-raspberry-500), var(--color-raspberry-300))",
-    "slug": "link"
-  },
-  {
-    "name": "link-hover",
-    "color": "light-dark(var(--color-raspberry-700), var(--color-raspberry-500))",
-    "slug": "link-hover"
-  },
-  {
-    "name": "selection",
-    "color": "light-dark(var(--color-raspberry-300), var(--color-raspberry-500))",
-    "slug": "selection"
-  }
+  { "name": "Base", "color": "var(--base)", "slug": "base" },
+  { "name": "Contrast", "color": "var(--contrast)", "slug": "contraste" },
+  { "name": "Accent-1", "color": "var(--accent-1)", "slug": "accent-1" },
+  { "name": "Accent-2", "color": "var(--accent-2)", "slug": "accent-2" },
+  { "name": "Accent-3", "color": "var(--accent-3)", "slug": "accent-3" }
 ]
 ```
 
-> Remarque : la palette ci‑dessus est la base minimale — le script doit ajouter **toutes** les primitives `--color-*` trouvées dans `primitives.json` en priorité.
+> Remarque : cette liste est la base minimale — le script doit y ajouter tout token couleur du projet (`tokens.json`) dont le slug commence par `base`, `contrast` ou `accent` (voir section 1). Les primitives `--color-*` et les tokens `link`/états ne sont **jamais** ajoutés à la palette.
 
 ### Layout par défaut
 
@@ -330,7 +232,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
 "styles": {
   "color": {
     "background": "var:preset|color|base",
-    "text": "var:preset|color|contrast"
+    "text": "var:preset|color|contraste"
   },
   "spacing": {
     "blockGap": "var:preset|spacing|spacing-16",
@@ -355,9 +257,9 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
       "typography": { "fontFamily": "var:preset|font-family|poppins", "fontSize": "var:preset|font-size|text-4xl", "lineHeight": "1.2", "fontWeight": "600" }
     },
     "link": {
-      "color": { "text": "var:preset|color|link" },
+      "color": { "text": "var(--link)" },
       "typography": { "textDecoration": "underline" },
-      ":hover": { "color": { "text": "var:preset|color|link-hover" }, "typography": { "fontWeight": "700" } }
+      ":hover": { "color": { "text": "var(--link-hover)" }, "typography": { "fontWeight": "700" } }
     }
   },
   "blocks": {}
@@ -370,7 +272,7 @@ Le script doit injecter les mappings suivants lorsqu'aucune configuration utilis
 
 1. Lire `dist/primitives.json` et `dist/tokens.json`.
 2. Construire :
-   - `settings.color.palette` : concaténation de (a) toutes les primitives `--color-*` (format palette entry) et (b) tous les tokens couleur (tokens.json) qui ne sont pas déjà représentés.
+   - `settings.color.palette` : uniquement les tokens couleur (tokens.json) dont le slug commence par `base`, `contrast` ou `accent` (traduits en français, noms capitalisés — voir section 1), complétés par les valeurs par défaut si absents. Aucune primitive `--color-*` n'est ajoutée.
    - `settings.spacing.spacingSizes` : tokens spacing (préférer tokens à primitives) ordonnés par slug ou valeur.
    - `settings.typography.fontSizes` et `fontFamilies`.
    - Insérer les mappings `styles`, `elements`, `blocks` par défaut (copie depuis `examples/theme.json`).

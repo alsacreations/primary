@@ -2157,44 +2157,44 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
 
     const warnings = []
 
-    // 1) Palette: include token colors (preferred) then primitives
+    // 1) Palette: uniquement les tokens de couleur sémantiques base/contrast/
+    // accent (pas les primitives, pas link, pas les états warning/error/...)
+    const frenchColorSlugs = { contrast: "contraste" }
+    const isKeptColorSlug = (slug) => /^(base|contrast|accent)/i.test(slug)
+    const toFrenchSlug = (slug) => {
+      const match = slug.match(/^([a-z]+)(-.*)?$/i)
+      if (!match) return slug
+      const [, word, suffix = ""] = match
+      return (frenchColorSlugs[word.toLowerCase()] || word) + suffix
+    }
+    const toDisplayName = (slug) => slug.charAt(0).toUpperCase() + slug.slice(1)
+
     const palette = []
     const seen = new Set()
     if (tokens && tokens.colors) {
       Object.keys(tokens.colors).forEach((tk) => {
+        if (!isKeptColorSlug(tk)) return
+        const slug = toFrenchSlug(tk)
+        if (seen.has(slug)) return
         const entry = tokens.colors[tk]
         const color = entry.value || `var(--${tk})`
-        palette.push({ name: tk, color, slug: tk })
-        seen.add(tk)
-      })
-    }
-    if (primitives && primitives.color) {
-      Object.keys(primitives.color).forEach((k) => {
-        if (!seen.has(k)) {
-          palette.push({ name: k, color: `var(--color-${k})`, slug: k })
-          seen.add(k)
-        }
-      })
-    }
-    // minimal defaults
-    const minDefaults = [
-      ["white", "var(--color-white)"],
-      ["black", "var(--color-black)"],
-      ["gray-50", "var(--color-gray-50)"],
-      ["gray-100", "var(--color-gray-100)"],
-      ["gray-200", "var(--color-gray-200)"],
-      ["gray-300", "var(--color-gray-300)"],
-      ["gray-400", "var(--color-gray-400)"],
-      ["gray-500", "var(--color-gray-500)"],
-      ["gray-600", "var(--color-gray-600)"],
-      ["gray-700", "var(--color-gray-700)"],
-      ["gray-800", "var(--color-gray-800)"],
-      ["gray-900", "var(--color-gray-900)"],
-    ]
-    minDefaults.forEach(([slug, color]) => {
-      if (!seen.has(slug)) {
-        palette.push({ name: slug, color, slug })
+        palette.push({ name: toDisplayName(tk), color, slug })
         seen.add(slug)
+      })
+    }
+    // defaults for the semantic color tokens when the project doesn't provide them
+    const semanticColorDefaults = [
+      ["base", "var(--base)"],
+      ["contrast", "var(--contrast)"],
+      ["accent-1", "var(--accent-1)"],
+      ["accent-2", "var(--accent-2)"],
+      ["accent-3", "var(--accent-3)"],
+    ]
+    semanticColorDefaults.forEach(([slug, color]) => {
+      const frenchSlug = toFrenchSlug(slug)
+      if (!seen.has(frenchSlug)) {
+        palette.push({ name: toDisplayName(slug), color, slug: frenchSlug })
+        seen.add(frenchSlug)
       }
     })
     theme.settings.color = {
@@ -2305,7 +2305,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     theme.styles = {
       color: {
         background: "var:preset|color|base",
-        text: "var:preset|color|contrast",
+        text: "var:preset|color|contraste",
       },
       spacing: {
         blockGap: "var:preset|spacing|spacing-16",
@@ -2346,10 +2346,10 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           },
         },
         link: {
-          color: { text: "var:preset|color|link" },
+          color: { text: "var(--link)" },
           typography: { textDecoration: "underline" },
           ":hover": {
-            color: { text: "var:preset|color|link-hover" },
+            color: { text: "var(--link-hover)" },
             typography: { fontWeight: "700" },
           },
         },

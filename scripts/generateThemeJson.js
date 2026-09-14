@@ -14,57 +14,36 @@ const DEFAULTS = {
   },
 };
 
+// Seuls les tokens de couleur sémantiques (base/contrast/accent) sont exposés
+// dans la palette theme.json — les primitives (gray, slate, error, etc.) et
+// les tokens non retenus (link, états) restent des variables CSS classiques,
+// hors palette WordPress.
 const defaultPalette = [
-  { name: "white", color: "var(--color-white)", slug: "white" },
-  { name: "black", color: "var(--color-black)", slug: "black" },
-  { name: "slate-100", color: "var(--color-slate-100)", slug: "slate-100" },
-  { name: "slate-400", color: "var(--color-slate-400)", slug: "slate-400" },
-  { name: "slate-700", color: "var(--color-slate-700)", slug: "slate-700" },
-  { name: "slate-800", color: "var(--color-slate-800)", slug: "slate-800" },
-  { name: "gray-50", color: "var(--color-gray-50)", slug: "gray-50" },
-  { name: "gray-100", color: "var(--color-gray-100)", slug: "gray-100" },
-  { name: "gray-200", color: "var(--color-gray-200)", slug: "gray-200" },
-  { name: "gray-300", color: "var(--color-gray-300)", slug: "gray-300" },
-  { name: "gray-400", color: "var(--color-gray-400)", slug: "gray-400" },
-  { name: "gray-500", color: "var(--color-gray-500)", slug: "gray-500" },
-  { name: "gray-600", color: "var(--color-gray-600)", slug: "gray-600" },
-  { name: "gray-700", color: "var(--color-gray-700)", slug: "gray-700" },
-  { name: "gray-800", color: "var(--color-gray-800)", slug: "gray-800" },
-  { name: "gray-900", color: "var(--color-gray-900)", slug: "gray-900" },
-
-  { name: "error-100", color: "var(--color-error-100)", slug: "error-100" },
-  { name: "error-300", color: "var(--color-error-300)", slug: "error-300" },
-  { name: "error-500", color: "var(--color-error-500)", slug: "error-500" },
-
-  { name: "success-100", color: "var(--color-success-100)", slug: "success-100" },
-  { name: "success-300", color: "var(--color-success-300)", slug: "success-300" },
-  { name: "success-500", color: "var(--color-success-500)", slug: "success-500" },
-
-  { name: "warning-100", color: "var(--color-warning-100)", slug: "warning-100" },
-  { name: "warning-300", color: "var(--color-warning-300)", slug: "warning-300" },
-  { name: "warning-500", color: "var(--color-warning-500)", slug: "warning-500" },
-
-  { name: "info-100", color: "var(--color-info-100)", slug: "info-100" },
-  { name: "info-300", color: "var(--color-info-300)", slug: "info-300" },
-  { name: "info-500", color: "var(--color-info-500)", slug: "info-500" },
-
-  { name: "accent-1", color: "light-dark(var(--color-gray-500), var(--color-gray-300))", slug: "accent-1" },
-  { name: "accent-2", color: "light-dark(var(--color-gray-300), var(--color-gray-500))", slug: "accent-2" },
-  {
-    name: "accent-3",
-    color: "light-dark(var(--color-gray-500), var(--color-gray-300))",
-    slug: "accent-3",
-  },
-  { name: "base", color: "light-dark(var(--color-white), var(--color-gray-900))", slug: "base" },
-  { name: "contrast", color: "light-dark(var(--color-gray-900), var(--color-gray-100))", slug: "contrast" },
-  { name: "link", color: "light-dark(var(--color-gray-500), var(--color-gray-300))", slug: "link" },
-  {
-    name: "link-hover",
-    color: "light-dark(var(--color-gray-700), var(--color-gray-500))",
-    slug: "link-hover",
-  },
-  { name: "selection", color: "light-dark(var(--color-gray-300), var(--color-gray-500))", slug: "selection" },
+  { name: "Base", color: "var(--base)", slug: "base" },
+  { name: "Contrast", color: "var(--contrast)", slug: "contrast" },
+  { name: "Accent-1", color: "var(--accent-1)", slug: "accent-1" },
+  { name: "Accent-2", color: "var(--accent-2)", slug: "accent-2" },
+  { name: "Accent-3", color: "var(--accent-3)", slug: "accent-3" },
 ];
+
+// Traduction des slugs conservés vers le français ("base" et "accent"
+// s'écrivent déjà pareil dans les deux langues).
+const FRENCH_COLOR_SLUGS = { contrast: "contraste" };
+
+function isKeptColorSlug(slug) {
+  return /^(base|contrast|accent)/i.test(slug);
+}
+
+function toFrenchSlug(slug) {
+  const match = slug.match(/^([a-z]+)(-.*)?$/i);
+  if (!match) return slug;
+  const [, word, suffix = ""] = match;
+  return (FRENCH_COLOR_SLUGS[word.toLowerCase()] || word) + suffix;
+}
+
+function toDisplayName(slug) {
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
+}
 
 const defaultSpacingSizes = [
   { name: "spacing-0", size: "var(--spacing-0)", slug: "spacing-0" },
@@ -119,7 +98,7 @@ const defaultFontFamilies = [
 ];
 
 const defaultStyles = {
-  color: { background: "var:preset|color|base", text: "var:preset|color|contrast" },
+  color: { background: "var:preset|color|base", text: "var:preset|color|contraste" },
   spacing: {
     blockGap: "var:preset|spacing|spacing-16",
     padding: { left: "var:preset|spacing|spacing-16", right: "var:preset|spacing|spacing-16" },
@@ -153,9 +132,9 @@ const defaultStyles = {
       },
     },
     link: {
-      color: { text: "var:preset|color|link" },
+      color: { text: "var(--link)" },
       typography: { textDecoration: "underline" },
-      ":hover": { color: { text: "var:preset|color|link-hover" }, typography: { fontWeight: "700" } },
+      ":hover": { color: { text: "var(--link-hover)" }, typography: { fontWeight: "700" } },
     },
   },
   blocks: {},
@@ -182,66 +161,20 @@ function toVarName(prefix, slug) {
   return `var(--${prefix}${slug})`;
 }
 
-// Par défaut (aucun token du projet ne fournit les deux modes light ET dark),
-// on ne garde que la valeur "light" des couleurs de palette par défaut plutôt
-// que de les envelopper dans light-dark() — nos projets n'ont que très
-// rarement un vrai mode sombre. La fonctionnalité s'active dès que le projet
-// fournit réellement des tokens en mode light et dark.
-function hasProjectLightDarkMode(tokens) {
-  const colors = (tokens && tokens.colors) || {};
-  return Object.values(colors).some(
-    (t) => t && t.modes && t.modes.light && t.modes.dark,
-  );
-}
-
-// (parenthèses imbriquées dans var(...)/color-mix(...) obligent à compter la
-// profondeur plutôt que de s'appuyer sur une regex non-ancrée : la virgule qui
-// sépare les deux arguments de light-dark() doit être trouvée à profondeur 1.)
-function resolveDefaultForMode(value, hasLightDarkMode) {
-  if (hasLightDarkMode) return value;
-  const start = value.indexOf("light-dark(");
-  if (start === -1) return value;
-  const argsStart = start + "light-dark(".length;
-  let depth = 1;
-  let i = argsStart;
-  let commaIdx = -1;
-  for (; i < value.length; i++) {
-    if (value[i] === "(") depth++;
-    else if (value[i] === ")") {
-      depth--;
-      if (depth === 0) break;
-    } else if (value[i] === "," && depth === 1 && commaIdx === -1) {
-      commaIdx = i;
-    }
-  }
-  const lightVal = (
-    commaIdx === -1 ? value.slice(argsStart, i) : value.slice(argsStart, commaIdx)
-  ).trim();
-  return value.slice(0, start) + lightVal + value.slice(i + 1);
-}
-
 function buildPalette(primitives, tokens) {
   const palette = [];
   const seen = new Set();
-  const hasLightDarkMode = hasProjectLightDarkMode(tokens);
 
-  // Add color primitives first
-  if (primitives && primitives.color) {
-    Object.keys(primitives.color).forEach((key) => {
-      const slug = key;
-      const entry = { name: slug, color: `var(--color-${slug})`, slug };
-      palette.push(entry);
-      seen.add(slug);
-    });
-  }
-
-  // Add tokens color entries (if any), prefer token representation
+  // Ne garder que les tokens de couleur (pas les primitives) dont le slug
+  // commence par base/contrast/accent — on exclut link et les états
+  // (warning/error/success/info).
   if (tokens && tokens.colors) {
     Object.keys(tokens.colors).forEach((tk) => {
-      const slug = tk;
+      if (!isKeptColorSlug(tk)) return;
+      const slug = toFrenchSlug(tk);
       if (!seen.has(slug)) {
-        const value = tokens.colors[tk].value || `var(--${slug})`;
-        palette.push({ name: slug, color: value, slug });
+        const value = tokens.colors[tk].value || `var(--${tk})`;
+        palette.push({ name: toDisplayName(tk), color: value, slug });
         seen.add(slug);
       }
     });
@@ -249,12 +182,10 @@ function buildPalette(primitives, tokens) {
 
   // Finally add defaults for commonly expected tokens if missing
   defaultPalette.forEach((entry) => {
-    if (!seen.has(entry.slug)) {
-      palette.push({
-        ...entry,
-        color: resolveDefaultForMode(entry.color, hasLightDarkMode),
-      });
-      seen.add(entry.slug);
+    const slug = toFrenchSlug(entry.slug);
+    if (!seen.has(slug)) {
+      palette.push({ ...entry, slug });
+      seen.add(slug);
     }
   });
 
@@ -376,6 +307,23 @@ function validate(theme, primitives, tokens) {
   if (!theme.settings.spacing || !Array.isArray(theme.settings.spacing.spacingSizes))
     warnings.push("Missing settings.spacing.spacingSizes");
 
+  // Tokens de couleur sémantiques définis directement dans theme.css (pas des
+  // primitives) : base/contrast/accent-* toujours présents, plus link/selection
+  // qui restent des variables CSS classiques bien qu'absents de la palette.
+  const knownSemanticColorVars = new Set([
+    "base",
+    "base-2",
+    "base-3",
+    "contrast",
+    "accent-1",
+    "accent-2",
+    "accent-3",
+    "link",
+    "link-hover",
+    "link-active",
+    "selection",
+  ]);
+
   // Check var references exist in primitives or tokens where possible (naive check)
   const varRefs = JSON.stringify(theme).match(/var\(--[a-zA-Z0-9-]+\)/g) || [];
   varRefs.forEach((v) => {
@@ -392,7 +340,9 @@ function validate(theme, primitives, tokens) {
       (primitives && primitives.fontSize && primitives.fontSize[name]) ||
       (primitives && primitives.lineHeight && primitives.lineHeight[name]) ||
       (primitives && primitives.rounded && primitives.rounded[name]) ||
-      (primitives && primitives[name]);
+      (primitives && primitives[name]) ||
+      (tokens && tokens.colors && tokens.colors[name]) ||
+      knownSemanticColorVars.has(name);
 
     if (!exists) warnings.push(`Reference to ${v} not found in primitives`);
   });

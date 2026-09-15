@@ -25,11 +25,25 @@ async function run() {
     process.exit(1)
   }
   if (
+    color.customGradient !== false ||
     color.defaultDuotone !== false ||
     color.defaultGradients !== false ||
-    color.defaultPalette !== false
+    color.defaultPalette !== false ||
+    color.link !== false
   ) {
     console.error("FAIL: color defaults must be present and falsy by default")
+    process.exit(1)
+  }
+
+  const background = themeJson.settings.background
+  if (!background || background.gradient !== false) {
+    console.error("FAIL: settings.background.gradient must be present and false")
+    process.exit(1)
+  }
+
+  const border = themeJson.settings.border
+  if (!border || border.color !== false || border.style !== false || border.width !== false) {
+    console.error("FAIL: settings.border.{color,style,width} must be present and false")
     process.exit(1)
   }
 

@@ -4,10 +4,15 @@
   "settings": {
     "appearanceTools": true,
     "useRootPaddingAwareAlignments": true,
+    "background": {
+      "gradient": false
+    },
     "color": {
+      "customGradient": false,
       "defaultDuotone": false,
       "defaultGradients": false,
       "defaultPalette": false,
+      "link": false,
       "palette": [
         {
           "name": "Accent-1",
@@ -49,6 +54,11 @@
     "layout": {
       "contentSize": "48rem",
       "wideSize": "80rem"
+    },
+    "border": {
+      "color": false,
+      "style": false,
+      "width": false
     },
     "spacing": {
       "defaultSpacingSizes": false,

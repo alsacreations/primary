@@ -306,6 +306,8 @@ function buildTypography(primitives, tokens) {
 function injectDefaults(theme, tokens) {
   // layout
   theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" };
+  // border : pas de personnalisation de bordure exposée dans l'éditeur FSE par défaut
+  theme.settings.border = { color: false, style: false, width: false };
   // styles defaults — dépend des fontSizes déjà résolues (settings.typography.fontSizes)
   theme.styles = buildDefaultStyles(theme.settings.typography && theme.settings.typography.fontSizes, tokens);
 }
@@ -390,7 +392,14 @@ function main() {
   const tokens = readJson(path.join(IN_DIR, "tokens.json")) || {};
 
   const theme = Object.assign({}, DEFAULTS);
-  theme.settings.color = { defaultDuotone: false, defaultGradients: false, defaultPalette: false };
+  theme.settings.background = { gradient: false };
+  theme.settings.color = {
+    customGradient: false,
+    defaultDuotone: false,
+    defaultGradients: false,
+    defaultPalette: false,
+    link: false,
+  };
 
   // build palette
   theme.settings.color.palette = buildPalette(primitives, tokens);

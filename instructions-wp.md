@@ -36,11 +36,16 @@ Ce document décrit, étape par étape, les règles de mappage, les conventions 
 - Ajoutez ces flags au début de l'objet `settings` généré quand approprié.
 
 - **Flags de couleur** : pour l'éditeur FSE, exposez aussi dans `settings.color` les flags suivants (valeurs par défaut indiquées) :
+  - `customGradient`: `false`
   - `defaultDuotone`: `false`
   - `defaultGradients`: `false`
   - `defaultPalette`: `false`
+  - `link`: `false`
 
 Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleur sont prises en charge dans le thème.
+
+- **Flags de fond** : exposer `settings.background.gradient`: `false` (pas de dégradé d'arrière-plan par défaut).
+- **Flags de bordure** : exposer `settings.border` avec `color`: `false`, `style`: `false`, `width`: `false` (pas de personnalisation de bordure par défaut dans l'éditeur FSE).
 
 ### 1) Couleurs — `settings.color.palette`
 

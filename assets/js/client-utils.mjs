@@ -2225,10 +2225,13 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         seen.add(slug)
       }
     })
+    theme.settings.background = { gradient: false }
     theme.settings.color = {
+      customGradient: false,
       defaultDuotone: false,
       defaultGradients: false,
       defaultPalette: false,
+      link: false,
       palette,
     }
 
@@ -2341,6 +2344,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       : "1.2"
 
     theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" }
+    theme.settings.border = { color: false, style: false, width: false }
     theme.styles = {
       color: {
         background: "var:preset|color|base",

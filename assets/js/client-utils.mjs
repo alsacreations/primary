@@ -1645,24 +1645,6 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "--selection: light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%));",
   )
   parts.push("\n")
-  parts.push("  /* États d'alerte */\n")
-  pushOrDefault(
-    "warning",
-    "--warning: light-dark(var(--color-warning-500), var(--color-warning-300));",
-  )
-  pushOrDefault(
-    "error",
-    "--error: light-dark(var(--color-error-500), var(--color-error-300));",
-  )
-  pushOrDefault(
-    "success",
-    "--success: light-dark(var(--color-success-500), var(--color-success-300));",
-  )
-  pushOrDefault(
-    "info",
-    "--info: light-dark(var(--color-info-500), var(--color-info-300));",
-  )
-  parts.push("\n")
 
   // Project color tokens (exclude global tokens)
   const colorTokenLines = colorResult.tokensCss || []
@@ -1678,10 +1660,6 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "link-hover",
     "link-active",
     "selection",
-    "warning",
-    "error",
-    "success",
-    "info",
   ])
   const projectTokenLines = colorTokenLines.filter((line) => {
     const m = String(line).match(/^\s*--([a-z0-9\-]+):/)

@@ -51,12 +51,6 @@ async function run() {
     "",
     "  /* Couleur de sélection */",
     "  --selection: color-mix(in srgb, var(--accent-1), white 20%);",
-    "",
-    "  /* États d'alerte */",
-    "  --warning: var(--color-warning-500);",
-    "  --error: var(--color-error-500);",
-    "  --success: var(--color-success-500);",
-    "  --info: var(--color-info-500);",
   ]
 
   const actual = lines.slice(0, expected.length)
@@ -74,6 +68,16 @@ async function run() {
         `line ${d.index}: expected: "${d.expected}", actual: "${d.actual}"`,
       ),
     )
+    process.exit(1)
+  }
+
+  // Les couleurs d'état (warning/error/success/info) ne doivent plus jamais
+  // être générées comme tokens globaux — seules leurs primitives numérotées
+  // (--color-error-500, ...) restent.
+  const forbidden = ["États d'alerte", "--warning:", "--error:", "--success:", "--info:"]
+  const present = forbidden.filter((f) => css.includes(f))
+  if (present.length) {
+    console.error("Alert-state color tokens must not be generated:", present)
     process.exit(1)
   }
 

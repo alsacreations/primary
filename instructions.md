@@ -88,10 +88,6 @@ Les couleurs suivantes sont à convertir en variables CSS avec un nommage spéci
 --link-hover: …;
 --link-active: …;
 --selection: …;
---warning: …;
---error: …;
---success: …;
---info: …;
 ```
 
 ## Tokens simple
@@ -466,12 +462,6 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 
 /* Couleur de sélection */
 --selection: color-mix(in srgb, var(--accent-1), white 20%);
-
-/* États d'alerte */
---warning: var(--color-warning-500);
---error: var(--color-error-500);
---success: var(--color-success-500);
---info: var(--color-info-500);
 ```
 
 **Cas où le projet définit des modes light/dark** (fichiers `source/` en mode `light` et `dark`) :
@@ -496,12 +486,6 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 
 /* Couleur de sélection */
 --selection: light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%));
-
-/* États d'alerte */
---warning: light-dark(var(--color-warning-500), var(--color-warning-300));
---error: light-dark(var(--color-error-500), var(--color-error-300));
---success: light-dark(var(--color-success-500), var(--color-success-300));
---info: light-dark(var(--color-info-500), var(--color-info-300));
 ```
 
 ### 8. Couleurs Tokens du projet (contenus dans `tokens.json`)

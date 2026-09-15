@@ -940,10 +940,6 @@ if (rawArgs.length >= 2) {
     "link-hover": "light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1))",
     "link-active": "light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1))",
     selection: "light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%))",
-    warning: "light-dark(var(--color-warning-500), var(--color-warning-300))",
-    error: "light-dark(var(--color-error-500), var(--color-error-300))",
-    success: "light-dark(var(--color-success-500), var(--color-success-300))",
-    info: "light-dark(var(--color-info-500), var(--color-info-300))",
   }
 
   // Par défaut (aucun mode light/dark détecté dans la source), on ne garde que la
@@ -1001,10 +997,6 @@ if (rawArgs.length >= 2) {
       keys: ["link", "link-hover", "link-active"],
     },
     { comment: "/* Couleur de sélection */", keys: ["selection"] },
-    {
-      comment: "/* États d'alerte */",
-      keys: ["warning", "error", "success", "info"],
-    },
   ]
 
   const globalColorTokensLines = []

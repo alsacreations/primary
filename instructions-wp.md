@@ -49,7 +49,8 @@ Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleu
   - `base` (inclut `base`, `base-2`, `base-3`, …)
   - `contrast`
   - `accent` (inclut `accent-1`, `accent-2`, `accent-3`, …)
-- **Exclure** `link` / `link-hover` et les couleurs d'état (`warning`, `error`, `success`, `info`, y compris leurs variantes numérotées comme `error-500`) : elles restent des variables CSS classiques, référencées directement en `var(--...)` dans les styles, sans passer par la palette.
+- **Exclure** `link` / `link-hover` : ils restent des variables CSS classiques, référencées directement en `var(--...)` dans les styles, sans passer par la palette.
+- **Les couleurs d'état** (`warning`, `error`, `success`, `info`) ne sont **plus générées du tout** dans `theme.css` (ni comme tokens globaux, ni ailleurs) — seules leurs primitives numérotées (`--color-error-500`, `--color-warning-300`, …, voir section 5 de `instructions.md`) restent disponibles comme variables CSS internes. Ne jamais référencer `var(--warning)`, `var(--error)`, `var(--success)` ou `var(--info)` dans `theme.json`.
 - Pour chaque entrée conservée :
   - `slug`: le slug tel quel (celui de la variable CSS, en anglais), tirets et suffixes numériques conservés. Exemple : `accent-1`, `contrast`, `base-2`.
   - `name`: la traduction française du mot, capitalisée (première lettre en majuscule). `base` et `accent-*` s'écrivent identiquement en français (`"Accent-1"`, `"Base-2"`) ; `contrast` devient `"Contraste"`.

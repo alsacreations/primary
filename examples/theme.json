@@ -58,7 +58,44 @@
     "border": {
       "color": false,
       "style": false,
-      "width": false
+      "width": false,
+      "radiusSizes": [
+        {
+          "name": "0",
+          "size": "var(--radius-none)",
+          "slug": "radius-none"
+        },
+        {
+          "name": "4px",
+          "size": "var(--radius-4)",
+          "slug": "radius-4"
+        },
+        {
+          "name": "8px",
+          "size": "var(--radius-8)",
+          "slug": "radius-8"
+        },
+        {
+          "name": "12px",
+          "size": "var(--radius-12)",
+          "slug": "radius-12"
+        },
+        {
+          "name": "16px",
+          "size": "var(--radius-16)",
+          "slug": "radius-16"
+        },
+        {
+          "name": "24px",
+          "size": "var(--radius-24)",
+          "slug": "radius-24"
+        },
+        {
+          "name": "Full",
+          "size": "var(--radius-full)",
+          "slug": "radius-full"
+        }
+      ]
     },
     "spacing": {
       "defaultSpacingSizes": false,

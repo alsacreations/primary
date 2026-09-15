@@ -14,6 +14,18 @@ const DEFAULTS = {
   },
 };
 
+// Rayons de bordure — primitives globales toujours présentes dans theme.css
+// (--radius-none/4/8/12/16/24/full), indépendamment des données Figma du projet.
+const defaultRadiusSizes = [
+  { name: "0", size: "var(--radius-none)", slug: "radius-none" },
+  { name: "4px", size: "var(--radius-4)", slug: "radius-4" },
+  { name: "8px", size: "var(--radius-8)", slug: "radius-8" },
+  { name: "12px", size: "var(--radius-12)", slug: "radius-12" },
+  { name: "16px", size: "var(--radius-16)", slug: "radius-16" },
+  { name: "24px", size: "var(--radius-24)", slug: "radius-24" },
+  { name: "Full", size: "var(--radius-full)", slug: "radius-full" },
+];
+
 // Seuls les tokens de couleur sémantiques (base/contrast/accent) sont exposés
 // dans la palette theme.json — les primitives (gray, slate, error, etc.) et
 // les tokens non retenus (link, états) restent des variables CSS classiques,
@@ -306,8 +318,9 @@ function buildTypography(primitives, tokens) {
 function injectDefaults(theme, tokens) {
   // layout
   theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" };
-  // border : pas de personnalisation de bordure exposée dans l'éditeur FSE par défaut
-  theme.settings.border = { color: false, style: false, width: false };
+  // border : pas de personnalisation de bordure exposée dans l'éditeur FSE par défaut,
+  // mais les rayons globaux (toujours présents dans theme.css) restent proposés.
+  theme.settings.border = { color: false, style: false, width: false, radiusSizes: defaultRadiusSizes };
   // styles defaults — dépend des fontSizes déjà résolues (settings.typography.fontSizes)
   theme.styles = buildDefaultStyles(theme.settings.typography && theme.settings.typography.fontSizes, tokens);
 }
@@ -345,6 +358,8 @@ function validate(theme, primitives, tokens) {
     "font-weight-extrabold",
     "font-weight-black",
   ]);
+  // Rayons de bordure globaux (theme.css), toujours présents.
+  const knownRadiusVars = new Set(["radius-none", "radius-4", "radius-8", "radius-12", "radius-16", "radius-24", "radius-full"]);
 
   // Check var references exist in primitives or tokens where possible (naive check)
   const varRefs = JSON.stringify(theme).match(/var\(--[a-zA-Z0-9-]+\)/g) || [];
@@ -370,7 +385,8 @@ function validate(theme, primitives, tokens) {
       knownSemanticColorVars.has(name) ||
       knownSemanticSpacingVars.has(name) ||
       knownSemanticFontSizeVars.has(name) ||
-      knownFontVars.has(name);
+      knownFontVars.has(name) ||
+      knownRadiusVars.has(name);
 
     if (!exists) warnings.push(`Reference to ${v} not found in primitives`);
   });

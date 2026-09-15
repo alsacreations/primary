@@ -45,7 +45,7 @@ Ce document décrit, étape par étape, les règles de mappage, les conventions 
 Ces flags aident l'éditeur FSE à connaître quelles fonctionnalités de couleur sont prises en charge dans le thème.
 
 - **Flags de fond** : exposer `settings.background.gradient`: `false` (pas de dégradé d'arrière-plan par défaut).
-- **Flags de bordure** : exposer `settings.border` avec `color`: `false`, `style`: `false`, `width`: `false` (pas de personnalisation de bordure par défaut dans l'éditeur FSE).
+- **Flags de bordure** : exposer `settings.border` avec `color`: `false`, `style`: `false`, `width`: `false` (pas de personnalisation de bordure par défaut dans l'éditeur FSE), plus `radiusSizes` : la liste des rayons globaux, toujours présents dans `theme.css` (`--radius-none`, `--radius-4`, `--radius-8`, `--radius-12`, `--radius-16`, `--radius-24`, `--radius-full`), au même format que `spacingSizes`/`fontSizes` (`name`, `size: "var(--radius-<slug>)"`, `slug`).
 
 ### 1) Couleurs — `settings.color.palette`
 

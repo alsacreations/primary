@@ -46,6 +46,20 @@ async function run() {
     console.error("FAIL: settings.border.{color,style,width} must be present and false")
     process.exit(1)
   }
+  const radiusSlugs = (border.radiusSizes || []).map((r) => r.slug)
+  const expectedRadiusSlugs = [
+    "radius-none",
+    "radius-4",
+    "radius-8",
+    "radius-12",
+    "radius-16",
+    "radius-24",
+    "radius-full",
+  ]
+  if (expectedRadiusSlugs.some((s) => !radiusSlugs.includes(s))) {
+    console.error("FAIL: settings.border.radiusSizes missing expected slugs", radiusSlugs)
+    process.exit(1)
+  }
 
   console.log("Theme settings flags — OK")
 }

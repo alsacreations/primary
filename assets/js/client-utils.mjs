@@ -1268,6 +1268,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       "--radius-none": "0",
       "--radius-4": "0.25rem",
       "--radius-8": "0.5rem",
+      "--radius-12": "0.75rem",
       "--radius-16": "1rem",
       "--radius-24": "1.5rem",
       "--radius-full": "9999px",
@@ -1685,6 +1686,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "--radius-none": "0",
     "--radius-4": "0.25rem",
     "--radius-8": "0.5rem",
+    "--radius-12": "0.75rem",
     "--radius-16": "1rem",
     "--radius-24": "1.5rem",
     "--radius-full": "9999px",
@@ -1732,6 +1734,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "--radius-none",
     "--radius-4",
     "--radius-8",
+    "--radius-12",
     "--radius-16",
     "--radius-24",
     "--radius-full",
@@ -2344,7 +2347,22 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       : "1.2"
 
     theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" }
-    theme.settings.border = { color: false, style: false, width: false }
+    // Rayons de bordure — primitives globales toujours présentes dans theme.css.
+    const defaultRadiusSizes = [
+      { name: "0", size: "var(--radius-none)", slug: "radius-none" },
+      { name: "4px", size: "var(--radius-4)", slug: "radius-4" },
+      { name: "8px", size: "var(--radius-8)", slug: "radius-8" },
+      { name: "12px", size: "var(--radius-12)", slug: "radius-12" },
+      { name: "16px", size: "var(--radius-16)", slug: "radius-16" },
+      { name: "24px", size: "var(--radius-24)", slug: "radius-24" },
+      { name: "Full", size: "var(--radius-full)", slug: "radius-full" },
+    ]
+    theme.settings.border = {
+      color: false,
+      style: false,
+      width: false,
+      radiusSizes: defaultRadiusSizes,
+    }
     theme.styles = {
       color: {
         background: "var:preset|color|base",
@@ -2423,6 +2441,13 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       "font-weight-bold",
       "font-weight-extrabold",
       "font-weight-black",
+      "radius-none",
+      "radius-4",
+      "radius-8",
+      "radius-12",
+      "radius-16",
+      "radius-24",
+      "radius-full",
     ])
     const allVars = new Set()
     const varRe = /var\(--([a-z0-9-]+)\)/gi

@@ -293,7 +293,7 @@ Lorsque `source/` est vide, le script injecte un jeu minimal de primitives globa
 
 Parmi les primitives injectées par défaut on trouve :
 
-- **Couleurs** (voir étape 5) : `--color-white`, `--color-black`, `--color-slate-100`, `--color-slate-400`, `--color-slate-700`, `--color-slate-800`, `--color-gray-*` (50..900), `--color-error-*`, `--color-success-*`, `--color-warning-*`, `--color-info-*`.
+- **Couleurs** (voir étape 5) : `--color-white`, `--color-black`, `--color-slate-100`, `--color-slate-400`, `--color-slate-700`, `--color-slate-900`, `--color-gray-*` (50..900), `--color-error-*`, `--color-success-*`, `--color-warning-*`, `--color-info-*`.
 - **Espacements** : `--spacing-0` (0), `--spacing-2` (0.125rem) `--spacing-4` (0.25rem), `--spacing-8` (0.5rem), `--spacing-12` (0.75rem), `--spacing-16` (1rem), `--spacing-24` (1.5rem), `--spacing-32` (2rem), `--spacing-48` (3rem).
 - **Tailles de texte** : `--text-14` (0.875rem), `--text-16` (1rem), `--text-18` (1.125rem), `--text-20` (1.25rem), `--text-24` (1.5rem), `--text-30` (1.875rem), `--text-48` (3rem).
 - **Hauteurs de ligne** : non spécifiées par défaut.
@@ -393,7 +393,7 @@ Les couleurs globales à inclure sont les suivantes, **si elles sont présentes 
 --color-slate-100: #F1F5F9;
 --color-slate-400: #90A1B9;
 --color-slate-700: #314158;
---color-slate-800: #161F2C;
+--color-slate-900: #161F2C;
 --color-gray-50: #F5F5F5;
 --color-gray-100: #E5E5E5;
 --color-gray-200: #D4D4D4;

@@ -540,7 +540,7 @@ if (rawArgs.length >= 2) {
     "slate-100": "#F1F5F9",
     "slate-400": "#90A1B9",
     "slate-700": "#314158",
-    "slate-800": "#161F2C",
+    "slate-900": "#161F2C",
     "gray-50": "#F5F5F5",
     "gray-100": "#E5E5E5",
     "gray-200": "#D4D4D4",

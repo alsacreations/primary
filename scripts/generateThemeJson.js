@@ -6,7 +6,7 @@ const OUT_DIR = path.join(__dirname, "..", "dist");
 // Allow overriding the input directory where primitives.json and tokens.json are read from
 let IN_DIR = OUT_DIR;
 const DEFAULTS = {
-  $schema: "https://schemas.wp.org/wp/6.7/theme.json",
+  $schema: "https://schemas.wp.org/wp/7.1/theme.json",
   version: 3,
   settings: {
     appearanceTools: true,

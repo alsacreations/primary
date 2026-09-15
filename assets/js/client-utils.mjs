@@ -1233,7 +1233,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
       "--color-slate-100": "#F1F5F9",
       "--color-slate-400": "#90A1B9",
       "--color-slate-700": "#314158",
-      "--color-slate-800": "#161F2C",
+      "--color-slate-900": "#161F2C",
       "--color-gray-50": "#F5F5F5",
       "--color-gray-100": "#E5E5E5",
       "--color-gray-200": "#D4D4D4",
@@ -1437,7 +1437,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "slate-100": "#F1F5F9",
     "slate-400": "#90A1B9",
     "slate-700": "#314158",
-    "slate-800": "#161F2C",
+    "slate-900": "#161F2C",
     "gray-50": "#F5F5F5",
     "gray-100": "#E5E5E5",
     "gray-200": "#D4D4D4",
@@ -1477,7 +1477,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     "slate-100",
     "slate-400",
     "slate-700",
-    "slate-800",
+    "slate-900",
     "gray-50",
     "gray-100",
     "gray-200",
@@ -2171,7 +2171,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     } catch (e) {}
 
     const theme = {
-      $schema: "https://schemas.wp.org/wp/6.7/theme.json",
+      $schema: "https://schemas.wp.org/wp/7.1/theme.json",
       version: 3,
       settings: {},
       styles: {},

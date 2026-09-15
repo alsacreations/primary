@@ -75,6 +75,13 @@ function toFontSizeDisplayName(slug) {
   return slug.replace(/^text-/, "").toUpperCase();
 }
 
+// Même logique que isFontSizeToken, côté line-height : seuls les slugs
+// sémantiques (line-height-s, line-height-m, ...) comptent, jamais l'échelle
+// brute (line-height-14, line-height-22, ...).
+function isLineHeightToken(slug) {
+  return !/^line-height-\d+$/.test(slug);
+}
+
 // Ordre "t-shirt sizing" attendu pour les listes de tailles (spacing, texte) —
 // l'ordre d'itération de tokens.json (dépendant de l'export Figma) n'est pas
 // garanti, donc on trie explicitement avant de renvoyer settings.*.
@@ -121,11 +128,22 @@ const defaultFontFamilies = [
 // déjà limité aux tokens réellement extraits de Figma — voir buildTypography)
 // détermine si une taille de police par défaut peut être référencée : jamais
 // de fontSize inventé, uniquement si le token correspondant existe vraiment.
-function buildDefaultStyles(fontSizes) {
+// Même principe pour lineHeight : on ne référence var(--line-height-*) que si
+// le token sémantique correspondant a réellement été extrait de Figma
+// (tokens.fonts.lineHeight) ; sinon on garde la valeur numérique littérale
+// par défaut (voir instructions-wp.md).
+function buildDefaultStyles(fontSizes, tokens) {
   const fontSizeSlugs = new Set((fontSizes || []).map((f) => f.slug));
   const bodyFontSize = fontSizeSlugs.has("text-m") ? "var(--text-m)" : undefined;
   const h1FontSize = fontSizeSlugs.has("text-xxl") ? "var(--text-xxl)" : undefined;
   const h2FontSize = fontSizeSlugs.has("text-xl") ? "var(--text-xl)" : undefined;
+
+  const lineHeightSlugs = new Set(
+    Object.keys((tokens && tokens.fonts && tokens.fonts.lineHeight) || {}).filter(isLineHeightToken)
+  );
+  const bodyLineHeight = lineHeightSlugs.has("line-height-m") ? "var(--line-height-m)" : "1.2";
+  const h1LineHeight = lineHeightSlugs.has("line-height-xxl") ? "var(--line-height-xxl)" : "1.05";
+  const h2LineHeight = lineHeightSlugs.has("line-height-xl") ? "var(--line-height-xl)" : "1.2";
 
   return {
     color: { background: "var:preset|color|base", text: "var:preset|color|contrast" },
@@ -137,7 +155,7 @@ function buildDefaultStyles(fontSizes) {
       fontFamily: "var(--font-base)",
       ...(bodyFontSize ? { fontSize: bodyFontSize } : {}),
       fontWeight: "var(--font-weight-regular)",
-      lineHeight: "1.2",
+      lineHeight: bodyLineHeight,
       fontStyle: "normal",
     },
     elements: {
@@ -149,7 +167,7 @@ function buildDefaultStyles(fontSizes) {
         typography: {
           fontFamily: "var(--font-base)",
           ...(h1FontSize ? { fontSize: h1FontSize } : {}),
-          lineHeight: "1.05",
+          lineHeight: h1LineHeight,
           fontWeight: "var(--font-weight-semibold)",
         },
       },
@@ -157,7 +175,7 @@ function buildDefaultStyles(fontSizes) {
         typography: {
           fontFamily: "var(--font-base)",
           ...(h2FontSize ? { fontSize: h2FontSize } : {}),
-          lineHeight: "1.2",
+          lineHeight: h2LineHeight,
           fontWeight: "var(--font-weight-semibold)",
         },
       },
@@ -285,11 +303,11 @@ function buildTypography(primitives, tokens) {
   }; // Note: font base/mono and weight scale are exposed in CSS variables (`--font-base`, `--font-mono`, `--font-weight-*`) and should be referenced from `styles.typography` if desired.
 }
 
-function injectDefaults(theme) {
+function injectDefaults(theme, tokens) {
   // layout
   theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" };
   // styles defaults — dépend des fontSizes déjà résolues (settings.typography.fontSizes)
-  theme.styles = buildDefaultStyles(theme.settings.typography && theme.settings.typography.fontSizes);
+  theme.styles = buildDefaultStyles(theme.settings.typography && theme.settings.typography.fontSizes, tokens);
 }
 
 function validate(theme, primitives, tokens) {
@@ -346,6 +364,7 @@ function validate(theme, primitives, tokens) {
       (tokens && tokens.colors && tokens.colors[name]) ||
       (tokens && tokens.spacing && tokens.spacing[name]) ||
       (tokens && tokens.fonts && tokens.fonts.fontSize && tokens.fonts.fontSize[name]) ||
+      (tokens && tokens.fonts && tokens.fonts.lineHeight && tokens.fonts.lineHeight[name]) ||
       knownSemanticColorVars.has(name) ||
       knownSemanticSpacingVars.has(name) ||
       knownSemanticFontSizeVars.has(name) ||
@@ -384,7 +403,7 @@ function main() {
   theme.settings.typography = typ.typography;
 
   // inject defaults
-  injectDefaults(theme);
+  injectDefaults(theme, tokens);
 
   // write theme
   writeJson(outPath, theme);

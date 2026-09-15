@@ -2305,7 +2305,9 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     }
 
     // Note: do not inject a top-level `lineHeights` array in `settings.typography` (not allowed by WordPress theme.json schema).
-    // Keep line-height tokens in `primitives`/`tokens` and reference them from `styles.typography.lineHeight` as a plain numeric value (e.g. "1.2") — there is no guaranteed `--line-height-*` CSS variable to fall back on.
+    // Keep line-height tokens in `primitives`/`tokens` and reference them from `styles.typography.lineHeight`.
+    // Reference var(--line-height-*) only when the matching semantic token was actually extracted from Figma
+    // (tokens.fonts.lineHeight) — otherwise fall back to a plain numeric value (e.g. "1.2"), never invent a token.
     theme.settings.typography = {
       writingMode: true,
       defaultFontSizes: false,
@@ -2341,6 +2343,25 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
     const h1FontSize = fontSizeSlugs.has("text-xxl") ? "var(--text-xxl)" : undefined
     const h2FontSize = fontSizeSlugs.has("text-xl") ? "var(--text-xl)" : undefined
 
+    // Même principe côté line-height : ne référencer var(--line-height-*) que
+    // si le slug sémantique correspondant existe vraiment (tokens.fonts.lineHeight),
+    // jamais l'échelle brute (line-height-14, line-height-22, ...).
+    const isLineHeightToken = (slug) => !/^line-height-\d+$/.test(slug)
+    const lineHeightSlugs = new Set(
+      Object.keys((tokens && tokens.fonts && tokens.fonts.lineHeight) || {}).filter(
+        isLineHeightToken,
+      ),
+    )
+    const bodyLineHeight = lineHeightSlugs.has("line-height-m")
+      ? "var(--line-height-m)"
+      : "1.2"
+    const h1LineHeight = lineHeightSlugs.has("line-height-xxl")
+      ? "var(--line-height-xxl)"
+      : "1.05"
+    const h2LineHeight = lineHeightSlugs.has("line-height-xl")
+      ? "var(--line-height-xl)"
+      : "1.2"
+
     theme.settings.layout = { contentSize: "48rem", wideSize: "80rem" }
     theme.styles = {
       color: {
@@ -2358,7 +2379,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
         fontFamily: "var(--font-base)",
         ...(bodyFontSize ? { fontSize: bodyFontSize } : {}),
         fontWeight: "var(--font-weight-regular)",
-        lineHeight: "1.2",
+        lineHeight: bodyLineHeight,
         fontStyle: "normal",
       },
       elements: {
@@ -2373,7 +2394,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           typography: {
             fontFamily: "var(--font-base)",
             ...(h1FontSize ? { fontSize: h1FontSize } : {}),
-            lineHeight: "1.05",
+            lineHeight: h1LineHeight,
             fontWeight: "var(--font-weight-semibold)",
           },
         },
@@ -2381,7 +2402,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
           typography: {
             fontFamily: "var(--font-base)",
             ...(h2FontSize ? { fontSize: h2FontSize } : {}),
-            lineHeight: "1.2",
+            lineHeight: h2LineHeight,
             fontWeight: "var(--font-weight-semibold)",
           },
         },

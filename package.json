@@ -21,6 +21,7 @@
     "test:spacing-order": "node scripts/tests/check-spacing-order.js",
     "test:fontsize-order": "node scripts/tests/check-fontsize-order.js",
     "test:lineheight-order": "node scripts/tests/check-lineheight-order.js",
+    "test:lineheight-fontsize-mapping": "node scripts/tests/check-lineheight-fontsize-mapping.js",
     "test:spacing-tokens-project": "node scripts/tests/check-spacing-tokens-project.js",
     "test:spacing-tokens-simple": "node scripts/tests/check-spacing-tokens-simple.js"
   },

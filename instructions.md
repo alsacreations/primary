@@ -183,7 +183,7 @@ Exemple de token light/dark présent dans JSON source (lié à l'autre alias via
 
 Les tokens light/dark sont à convertir en variables CSS via `light-dark()` selon cette convention de nommage (+ exemples) :
 
-- Couleurs : `--variable: light-dark(var(primitive light), var(primitive dark))`. Exemple: `--base: light-dark(var(--color-white), var(--color-gray-900));` ou `--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));`
+- Couleurs : `--variable: light-dark(var(primitive light), var(primitive dark))`. Exemple: `--base: light-dark(var(--color-white), var(--color-gray-900));` ou `--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), var(--color-white) 20%));`
 - Ombres : `--shadow-*: light-dark(var(primitive light), var(primitive dark))`. Exemple: `--shadow-xs: light-dark(var(--shadow-light), var(--shadow-dark));`
 
 ## Tokens de mode mobile/desktop
@@ -312,6 +312,8 @@ Ces valeurs sont des _fallbacks_ : si `source/` contient des primitives correspo
 
 ## Composition précise du fichier `theme.css`
 
+> **Mise en forme** : le fichier produit doit passer tel quel `prettier --check` et `stylelint` avec les configurations de `config_files/`. La mise en forme finale est assurée par `assets/js/theme-format.mjs`, commun à l'interface web et à la CLI : hexadécimaux en minuscules, ligne vide avant chaque commentaire (sauf en tête de bloc), aucune ligne vide en début ou en fin de bloc, valeurs de plus de 80 colonnes découpées comme le fait Prettier (un argument par ligne).
+
 ### 1. Débuter par ce commentaire général
 
 ```css
@@ -382,7 +384,7 @@ color-scheme: light;
 
 Présentes dans tous les cas et tous les themes, même si non présentes dans les données JSON exportées de Figma.
 
-> **Notation** : toutes les couleurs (primitives et tokens) sont exprimées en notation hexadécimale (`#RRGGBB` / `#RRGGBBAA`), jamais en `oklch()`. Figma ne propose pas nativement la notation OKLCH, ce qui crée des divergences entre les valeurs vues par les designers et celles produites par le script. Les ajustements dynamiques (éclaircir/assombrir une couleur runtime comme `--accent-1`) utilisent `color-mix(in srgb, ...)` plutôt que la syntaxe de couleur relative `oklch(from ...)`.
+> **Notation** : toutes les couleurs (primitives et tokens) sont exprimées en notation hexadécimale (`#RRGGBB` / `#RRGGBBAA`), jamais en `oklch()`. Figma ne propose pas nativement la notation OKLCH, ce qui crée des divergences entre les valeurs vues par les designers et celles produites par le script. Les ajustements dynamiques (éclaircir/assombrir une couleur runtime comme `--accent-1`) utilisent `color-mix(in srgb, ...)` plutôt que la syntaxe de couleur relative `oklch(from ...)`, mélangée aux primitives `var(--color-white)` / `var(--color-black)` (jamais aux couleurs nommées `white` / `black`, refusées par Stylelint).
 
 Les couleurs globales à inclure sont les suivantes, **si elles sont présentes dans les données JSON exportées de Figma, elles doivent être remplacées par les valeurs extraites**:
 
@@ -444,10 +446,11 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 
 ```css
 /* Couleurs Tokens globales */
+
 /* Couleurs d'accent */
 --accent-1: var(--color-gray-500);
 --accent-2: var(--accent-1);
---accent-3: color-mix(in srgb, var(--accent-1), white 20%);
+--accent-3: color-mix(in srgb, var(--accent-1), var(--color-white) 20%);
 
 /* Base */
 --base: var(--color-white);
@@ -457,21 +460,22 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 
 /* Interactions */
 --link: var(--accent-1);
---link-hover: color-mix(in srgb, var(--accent-1), black 20%);
---link-active: color-mix(in srgb, var(--accent-1), black 20%);
+--link-hover: color-mix(in srgb, var(--accent-1), var(--color-black) 20%);
+--link-active: color-mix(in srgb, var(--accent-1), var(--color-black) 20%);
 
 /* Couleur de sélection */
---selection: color-mix(in srgb, var(--accent-1), white 20%);
+--selection: color-mix(in srgb, var(--accent-1), var(--color-white) 20%);
 ```
 
 **Cas où le projet définit des modes light/dark** (fichiers `source/` en mode `light` et `dark`) :
 
 ```css
 /* Couleurs Tokens globales */
+
 /* Couleurs d'accent */
 --accent-1: var(--color-gray-500);
---accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));
---accent-3: light-dark(color-mix(in srgb, var(--accent-1), white 20%), var(--accent-1));
+--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), var(--color-white) 20%));
+--accent-3: light-dark(color-mix(in srgb, var(--accent-1), var(--color-white) 20%), var(--accent-1));
 
 /* Base */
 --base: light-dark(var(--color-white), var(--color-gray-900));
@@ -480,12 +484,12 @@ Les couleurs suivantes sont à ajouter à `theme.css` en tant que variables CSS 
 --base-3: light-dark(var(--color-gray-100), var(--color-gray-700));
 
 /* Interactions */
---link: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));
---link-hover: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));
---link-active: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));
+--link: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), var(--color-white) 20%));
+--link-hover: light-dark(color-mix(in srgb, var(--accent-1), var(--color-black) 20%), var(--accent-1));
+--link-active: light-dark(color-mix(in srgb, var(--accent-1), var(--color-black) 20%), var(--accent-1));
 
 /* Couleur de sélection */
---selection: light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%));
+--selection: light-dark(color-mix(in srgb, var(--accent-1), var(--color-white) 20%), color-mix(in srgb, var(--accent-1), var(--color-black) 20%));
 ```
 
 ### 8. Couleurs Tokens du projet (contenus dans `tokens.json`)
@@ -502,6 +506,7 @@ Autres variables CSS globales à inclure dans tous les thèmes, **si elles sont 
 
 ```css
 /* Autres Primitives globales */
+
 /* Transitions et animations */
 --transition-duration: 250ms;
 

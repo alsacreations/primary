@@ -28,7 +28,7 @@ async function run() {
   }
 
   const m = css.match(
-    /\/\* Espacements Primitives du projet \*\/[\s\S]*?(?=\n\n)/,
+    /\/\* Espacements Primitives du projet \*\/[\s\S]*?(?=\n\n|\n\})/,
   )
   if (!m) {
     console.error("Could not find spacing section")

@@ -1,6 +1,8 @@
 // ESM client utilities (spacing-focused)
 // Exports: processFiles, emitSpacingTokenLines
 
+import { formatThemeCss } from "./theme-format.mjs"
+
 function pxToRem(px) {
   if (px === undefined || px === null) return "0rem"
   if (typeof px === "string") {
@@ -1423,11 +1425,11 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
 
   if (hasLightDarkModes) {
     parts.push(
-      '  /* Theme (color-scheme) */\n  color-scheme: light dark;\n\n  &[data-theme="light"] { color-scheme: light; }\n  &[data-theme="dark"] { color-scheme: dark; }\n\n',
+      '  /* Theme (color-scheme) */\n  color-scheme: light dark;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n\n',
     )
   } else {
     parts.push(
-      '  /* Theme (color-scheme) */\n  color-scheme: light;\n\n  &[data-theme="light"] { color-scheme: light; }\n  &[data-theme="dark"] { color-scheme: dark; }\n\n',
+      '  /* Theme (color-scheme) */\n  color-scheme: light;\n\n  &[data-theme="light"] {\n    color-scheme: light;\n  }\n\n  &[data-theme="dark"] {\n    color-scheme: dark;\n  }\n\n',
     )
   }
 
@@ -1599,11 +1601,11 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   pushOrDefault("accent-1", "--accent-1: var(--color-gray-500);")
   pushOrDefault(
     "accent-2",
-    "--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));",
+    "--accent-2: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), var(--color-white) 20%));",
   )
   pushOrDefault(
     "accent-3",
-    "--accent-3: light-dark(color-mix(in srgb, var(--accent-1), white 20%), var(--accent-1));",
+    "--accent-3: light-dark(color-mix(in srgb, var(--accent-1), var(--color-white) 20%), var(--accent-1));",
   )
   parts.push("\n")
 
@@ -1629,21 +1631,21 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
   parts.push("  /* Interactions */\n")
   pushOrDefault(
     "link",
-    "--link: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%));",
+    "--link: light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), var(--color-white) 20%));",
   )
   pushOrDefault(
     "link-hover",
-    "--link-hover: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));",
+    "--link-hover: light-dark(color-mix(in srgb, var(--accent-1), var(--color-black) 20%), var(--accent-1));",
   )
   pushOrDefault(
     "link-active",
-    "--link-active: light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1));",
+    "--link-active: light-dark(color-mix(in srgb, var(--accent-1), var(--color-black) 20%), var(--accent-1));",
   )
   parts.push("\n")
   parts.push("  /* Couleur de sélection */\n")
   pushOrDefault(
     "selection",
-    "--selection: light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%));",
+    "--selection: light-dark(color-mix(in srgb, var(--accent-1), var(--color-white) 20%), color-mix(in srgb, var(--accent-1), var(--color-black) 20%));",
   )
   parts.push("\n")
 
@@ -2154,7 +2156,7 @@ export async function processFiles(fileList, logger = console.log, opts = {}) {
 
   parts.push("}\n")
 
-  const themeCss = parts.join("")
+  const themeCss = formatThemeCss(parts.join(""))
   const primitivesJsonStr = JSON.stringify(structured, null, 2)
   const tokensJsonStr = JSON.stringify(
     Object.assign({ colors: colorResult.tokensJson || {} }, normalized),

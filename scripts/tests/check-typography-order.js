@@ -31,7 +31,8 @@ async function run() {
     console.error("Missing Typographie Tokens section")
     process.exit(1)
   }
-  const block = css.slice(start, css.indexOf("\n\n", start) + 2)
+  // Fin du bloc : ligne vide suivante ou accolade fermante de :root
+  const block = css.slice(start, start + css.slice(start).search(/\n\n|\n\}/))
   const idxS = block.indexOf("--line-height-s:")
   const idxM = block.indexOf("--line-height-m:")
   if (idxS === -1 || idxM === -1) {

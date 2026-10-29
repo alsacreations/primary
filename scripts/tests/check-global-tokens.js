@@ -33,10 +33,11 @@ async function run() {
 
   const expected = [
     "  /* Couleurs Tokens globales */",
+    "",
     "  /* Couleurs d'accent */",
     "  --accent-1: var(--color-gray-500);",
     "  --accent-2: var(--accent-1);",
-    "  --accent-3: color-mix(in srgb, var(--accent-1), white 20%);",
+    "  --accent-3: color-mix(in srgb, var(--accent-1), var(--color-white) 20%);",
     "",
     "  /* Base */",
     "  --base: var(--color-white);",
@@ -46,11 +47,11 @@ async function run() {
     "",
     "  /* Interactions */",
     "  --link: var(--accent-1);",
-    "  --link-hover: color-mix(in srgb, var(--accent-1), black 20%);",
-    "  --link-active: color-mix(in srgb, var(--accent-1), black 20%);",
+    "  --link-hover: color-mix(in srgb, var(--accent-1), var(--color-black) 20%);",
+    "  --link-active: color-mix(in srgb, var(--accent-1), var(--color-black) 20%);",
     "",
     "  /* Couleur de sélection */",
-    "  --selection: color-mix(in srgb, var(--accent-1), white 20%);",
+    "  --selection: color-mix(in srgb, var(--accent-1), var(--color-white) 20%);",
   ]
 
   const actual = lines.slice(0, expected.length)

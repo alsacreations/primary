@@ -77,10 +77,10 @@ if (rawArgs.length >= 2) {
   const hasDark = colorResult.modes.includes("dark")
   const hasLightDarkMode = hasLight && hasDark
   if (hasLight && hasDark) {
-    colorSchemeProperty = `/* Theme (color-scheme) */\ncolor-scheme: light dark;\n\n&[data-theme="light"] { color-scheme: light; }\n&[data-theme="dark"] { color-scheme: dark; }`
+    colorSchemeProperty = `/* Theme (color-scheme) */\ncolor-scheme: light dark;\n\n&[data-theme="light"] {\n  color-scheme: light;\n}\n\n&[data-theme="dark"] {\n  color-scheme: dark;\n}`
     colorSchemeSelectors = ""
   } else {
-    colorSchemeProperty = `/* Theme (color-scheme) */\ncolor-scheme: light;\n\n&[data-theme="light"] { color-scheme: light; }\n&[data-theme="dark"] { color-scheme: dark; }`
+    colorSchemeProperty = `/* Theme (color-scheme) */\ncolor-scheme: light;\n\n&[data-theme="light"] {\n  color-scheme: light;\n}\n\n&[data-theme="dark"] {\n  color-scheme: dark;\n}`
     colorSchemeSelectors = ""
   }
 
@@ -930,16 +930,16 @@ if (rawArgs.length >= 2) {
   // Convention de nommage WordPress Twenty Twenty-Five (accent-1/2/3, base, contrast, base-2/3).
   const globalColorTokenDefaults = {
     "accent-1": "var(--color-gray-500)",
-    "accent-2": "light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%))",
-    "accent-3": "light-dark(color-mix(in srgb, var(--accent-1), white 20%), var(--accent-1))",
+    "accent-2": "light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), var(--color-white) 20%))",
+    "accent-3": "light-dark(color-mix(in srgb, var(--accent-1), var(--color-white) 20%), var(--accent-1))",
     base: "light-dark(var(--color-white), var(--color-gray-900))",
     contrast: "light-dark(var(--color-gray-900), var(--color-gray-100))",
     "base-2": "light-dark(var(--color-gray-50), var(--color-gray-800))",
     "base-3": "light-dark(var(--color-gray-100), var(--color-gray-700))",
-    link: "light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), white 20%))",
-    "link-hover": "light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1))",
-    "link-active": "light-dark(color-mix(in srgb, var(--accent-1), black 20%), var(--accent-1))",
-    selection: "light-dark(color-mix(in srgb, var(--accent-1), white 20%), color-mix(in srgb, var(--accent-1), black 20%))",
+    link: "light-dark(var(--accent-1), color-mix(in srgb, var(--accent-1), var(--color-white) 20%))",
+    "link-hover": "light-dark(color-mix(in srgb, var(--accent-1), var(--color-black) 20%), var(--accent-1))",
+    "link-active": "light-dark(color-mix(in srgb, var(--accent-1), var(--color-black) 20%), var(--accent-1))",
+    selection: "light-dark(color-mix(in srgb, var(--accent-1), var(--color-white) 20%), color-mix(in srgb, var(--accent-1), var(--color-black) 20%))",
   }
 
   // Par défaut (aucun mode light/dark détecté dans la source), on ne garde que la
@@ -1463,8 +1463,9 @@ if (rawArgs.length >= 2) {
 
   const cssPartsFinal = [header, ":root {", rootBody, "}"].join("\n\n")
 
-  // Collapse multiple consecutive blank lines into a single blank line for tidy output
-  let cleanedCss = cssPartsFinal.replace(/\n{3,}/g, "\n\n").trimEnd() + "\n"
+  // Mise en forme partagée avec l'interface web (Prettier / Stylelint)
+  const { formatThemeCss } = await import("../assets/js/theme-format.mjs")
+  const cleanedCss = formatThemeCss(cssPartsFinal)
 
   // Write outputs
   writeFile(path.join(OUT_DIR, "theme.css"), cleanedCss)

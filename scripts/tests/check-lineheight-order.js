@@ -26,7 +26,7 @@ async function run() {
   }
 
   const m = css.match(
-    /\/\* Typographie Primitives du projet \*\/[\s\S]*?(?=\n\n)/,
+    /\/\* Typographie Primitives du projet \*\/[\s\S]*?(?=\n\n|\n\})/,
   )
   if (!m) {
     console.error("Could not find typography primitives section")

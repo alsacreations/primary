@@ -1,13 +1,12 @@
 /**
  * @see https://prettier.io/docs/configuration
  * @type {import("prettier").Config}
- * Mise à jour : 2025-11-12
+ * Mise à jour : 2026-10-29
  */
 export default {
   arrowParens: "always",
   bracketSpacing: true,
   bracketSameLine: true,
-  editorconfig: true,
   jsxSingleQuote: true,
   printWidth: 80,
   quoteProps: "as-needed",

@@ -1073,6 +1073,7 @@ async function createAndDownloadKit() {
           ".stylelintignore",
           ".vscode/extensions.json",
           ".vscode/settings.json",
+          "eslint.config.js",
           "postcss.config.mjs",
           "prettier.config.mjs",
           "stylelint.config.mjs",

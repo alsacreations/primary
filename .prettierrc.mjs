@@ -3,7 +3,6 @@ export default {
   arrowParens: "always",
   bracketSpacing: true,
   bracketSameLine: true,
-  editorconfig: true,
   jsxSingleQuote: true,
   printWidth: 80,
   quoteProps: "as-needed",

@@ -14,26 +14,24 @@ const previewThemeJson = document.getElementById("preview-themejson")
 
 let STYLES_CSS_CONTENT = ""
 let UTILITIES_CSS_CONTENT = ""
-let CUSTOM_MEDIA_CSS_CONTENT = ""
 
 /**
- * Fetch template files for styles.css, utilities.css and custom-media.css
+ * Fetch kit source files (kit/styles.css and kit/utilities.css)
+ * custom-media.css est généré par processFiles, comme theme.css
  */
 async function initTemplates() {
   try {
-    const [styles, utilities, customMedia] = await Promise.all([
-      fetchTextIfAvailable("assets/templates/styles.css"),
-      fetchTextIfAvailable("assets/templates/utilities.css"),
-      fetchTextIfAvailable("assets/templates/custom-media.css"),
+    const [styles, utilities] = await Promise.all([
+      fetchTextIfAvailable("kit/styles.css"),
+      fetchTextIfAvailable("kit/utilities.css"),
     ])
     if (styles) STYLES_CSS_CONTENT = styles
     if (utilities) UTILITIES_CSS_CONTENT = utilities
-    if (customMedia) CUSTOM_MEDIA_CSS_CONTENT = customMedia
   } catch (e) {
-    console.warn("Could not load CSS templates from assets/templates/", e)
+    console.warn("Could not load kit files from kit/", e)
   }
 }
-// Initial fetching of templates
+// Initial fetching of kit files
 initTemplates()
 
 const EXTRA_CSS_FILES = [
@@ -606,7 +604,7 @@ function renderGenerationSummaryText(container, txt, artifacts = {}) {
     // 1a. custom-media.css (default)
     filesToDisplay.push({
       name: "custom-media.css",
-      content: (artifacts && artifacts["custom-media.css"]) || CUSTOM_MEDIA_CSS_CONTENT,
+      content: (artifacts && artifacts["custom-media.css"]) || "",
     })
 
     // 1. styles.css (default)
@@ -959,9 +957,7 @@ async function createAndDownloadKit() {
 
     // custom-media.css (obligatoire, importé sans layer depuis app.css)
     const customMediaCss =
-      (lastArtifacts && lastArtifacts["custom-media.css"]) ||
-      CUSTOM_MEDIA_CSS_CONTENT ||
-      ""
+      (lastArtifacts && lastArtifacts["custom-media.css"]) || ""
     if (cssFolder) cssFolder.file("custom-media.css", customMediaCss)
 
     if (cssFolder) cssFolder.file("styles.css", STYLES_CSS_CONTENT)

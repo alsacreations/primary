@@ -28,10 +28,16 @@
 
 ### Structure des fichiers
 
+Ce que Primary **distribue** aux projets :
+
+- `config_files/` : Fichiers de configuration (EditorConfig, Prettier, Stylelint, ESLint, PostCSS, Vite, VS Code).
+- `kit/` : Fichiers CSS statiques du kit (`styles.css`, `utilities.css`). `theme.css` et `custom-media.css` sont générés par les scripts.
+
+Ce qui fait **fonctionner le site** Primary (jamais copié dans un projet) :
+
 - `index.html` : Structure de l'application.
 - `assets/js/` : Logique de l'application.
-- `assets/templates/` : Templates CSS statiques utilisés pour générer le kit.
-- `assets/css/` : Styles propres à l'application web.
+- `assets/css/` : Styles propres à l'application web. Ne pas confondre avec les fichiers du kit, même si certains portent le même nom.
 
 ---
 
@@ -39,10 +45,10 @@
 
 ### Mettre à jour les modèles de fichiers
 
-Les fichiers générés dans le kit (`styles.css` et `utilities.css`) sont basés sur des templates externes pour faciliter leur maintenance sans toucher au code JavaScript.
+Les fichiers générés dans le kit (`styles.css` et `utilities.css`) proviennent du dossier `kit/` pour faciliter leur maintenance sans toucher au code JavaScript.
 
-- Modifiez `assets/templates/styles.css` pour changer les styles de base par défaut.
-- Modifiez `assets/templates/utilities.css` pour ajuster les classes utilitaires (marges, paddings, etc.).
+- Modifiez `kit/styles.css` pour changer les styles de base par défaut.
+- Modifiez `kit/utilities.css` pour ajuster les classes utilitaires (marges, paddings, etc.).
 
 ### Modifier la logique de génération
 
@@ -57,7 +63,7 @@ Les fichiers générés dans le kit (`styles.css` et `utilities.css`) sont basé
 Pour faire tourner Primary en local :
 
 1. Clonez le dépôt.
-2. Lancez un serveur local (utile pour les imports de modules ESM et les fetches de templates) :
+2. Lancez un serveur local (utile pour les imports de modules ESM et le chargement des fichiers du kit) :
 
    ```bash
    npx serve .

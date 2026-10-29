@@ -16,14 +16,15 @@ Outil web de transformation d'exports JSON Figma en kits CSS structurés et arti
 ## Conventions Projet
 
 - **Logique** : `assets/js/client-utils.mjs` (calculs) et `assets/js/app.js` (Interface/ZIP).
-- **Templates** : Modifier `assets/templates/*.css` pour impacter le kit généré.
+- **Kit distribué** : `config_files/` (configurations) et `kit/*.css` (styles du kit). Modifier ces fichiers pour impacter les projets ; `theme.css` et `custom-media.css` sont générés.
+- **Site Primary** : `assets/` ne sert qu'à l'application web, n'est jamais copié dans un projet. Ses fichiers CSS peuvent porter le même nom que ceux du kit : ne pas les confondre.
 - **Commits** : Conventional Commits (type EN, desc FR). Ex: `feat(ui): ajoute bouton`.
 - **Commentaires** : Uniquement en français.
 
 ## Conventions Générales (Critiques)
 
 - **CSS** : Pas de styles inline (CSP). CSS natif uniquement (pas de Tailwind/Bootstrap).
-- **Variables** : Utiliser `assets/css/theme.css`. Préférer les **tokens** aux primitives.
+- **Variables** : Pour les styles du site, utiliser `assets/css/theme.css`. Préférer les **tokens** aux primitives.
 - **Layouts** : Système **Bretzel** via `data-layout` (`duo`, `stack`, `cluster`, `autogrid`, etc.). Préférer ces attributs aux styles `flex`/`grid` personnalisés.
 
 ## Subagents

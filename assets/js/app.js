@@ -1069,6 +1069,8 @@ async function createAndDownloadKit() {
         const cfg = [
           ".editorconfig",
           ".gitignore",
+          ".prettierignore",
+          ".stylelintignore",
           ".vscode/extensions.json",
           ".vscode/settings.json",
           "postcss.config.mjs",
@@ -1086,7 +1088,12 @@ async function createAndDownloadKit() {
             // If destination is a dotted file like '.editorconfig' but the fetched path was non-dotted,
             // also create a copy with dotted name to be safe
             if (
-              (p === ".editorconfig" || p === ".gitignore") &&
+              [
+                ".editorconfig",
+                ".gitignore",
+                ".prettierignore",
+                ".stylelintignore",
+              ].includes(p) &&
               !result.path.includes("." + p.slice(1))
             ) {
               zip.file(p, result.text)

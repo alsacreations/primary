@@ -1,0 +1,14 @@
+#
+# *** Fichiers exclus de Prettier pour les projets Alsacréations ***
+# Mise à jour : 2026-10-29
+# (Prettier ignore déjà les fichiers listés dans .gitignore)
+#
+
+# Fichiers CSS externes, à ne jamais modifier
+reset.css
+print.css
+natives.css
+layouts.css
+
+# Fichier de verrouillage généré par pnpm
+pnpm-lock.yaml

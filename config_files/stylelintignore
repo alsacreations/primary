@@ -1,0 +1,13 @@
+#
+# *** Fichiers exclus de Stylelint pour les projets Alsacréations ***
+# Mise à jour : 2026-10-29
+#
+
+# Fichiers CSS externes, à ne jamais modifier
+reset.css
+print.css
+natives.css
+layouts.css
+
+# Fichiers compilés
+dist/
